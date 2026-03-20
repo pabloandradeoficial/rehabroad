@@ -72,9 +72,7 @@ const PoliticaPrivacidadePage = lazy(
 const PoliticaCancelamentoPage = lazy(
   () => import("@/react-app/pages/legal/PoliticaCancelamento")
 );
-const ComparacaoPage = lazy(
-  () => import("@/react-app/pages/Comparacao")
-);
+const ComparacaoPage = lazy(() => import("@/react-app/pages/Comparacao"));
 const BlogPage = lazy(() => import("@/react-app/pages/Blog"));
 const BlogPostPage = lazy(() => import("@/react-app/pages/BlogPost"));
 const LandingOrtopediaPage = lazy(
@@ -110,17 +108,26 @@ function OAuthReturnBridge() {
   const { user, isPending } = useAppAuth();
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const hasCode = searchParams.has("code");
     const hasSupabaseHash =
       window.location.hash.includes("access_token=") ||
       window.location.hash.includes("refresh_token=");
 
+    // Se voltar para /?code=..., manda para a rota correta do callback
+    if (location.pathname === "/" && hasCode) {
+      navigate(`/auth/callback${location.search}`, { replace: true });
+      return;
+    }
+
+    // Compatibilidade se o Supabase ainda voltar com hash na raiz
     if (!isPending && user && hasSupabaseHash && location.pathname === "/") {
       const loginMode = localStorage.getItem("loginMode");
       navigate(loginMode === "student" ? "/estudante" : "/dashboard", {
         replace: true,
       });
     }
-  }, [user, isPending, location.pathname, navigate]);
+  }, [user, isPending, location.pathname, location.search, navigate]);
 
   return null;
 }
@@ -135,6 +142,7 @@ export default function App() {
               <ToastProvider>
                 <Router>
                   <OAuthReturnBridge />
+
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       {/* Public */}
