@@ -102,23 +102,24 @@ function PageLoader() {
   );
 }
 
+function RootOAuthCodeRedirect() {
+  useEffect(() => {
+    const targetUrl = `/auth/callback${window.location.search}`;
+    window.location.replace(targetUrl);
+  }, []);
+
+  return <PageLoader />;
+}
+
 function OAuthReturnBridge() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isPending } = useAppAuth();
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const hasCode = searchParams.has("code");
     const hasSupabaseHash =
       window.location.hash.includes("access_token=") ||
       window.location.hash.includes("refresh_token=");
-
-    // Se voltar para /?code=..., manda para a rota correta do callback
-    if (location.pathname === "/" && hasCode) {
-      navigate(`/auth/callback${location.search}`, { replace: true });
-      return;
-    }
 
     // Compatibilidade se o Supabase ainda voltar com hash na raiz
     if (!isPending && user && hasSupabaseHash && location.pathname === "/") {
@@ -127,12 +128,21 @@ function OAuthReturnBridge() {
         replace: true,
       });
     }
-  }, [user, isPending, location.pathname, location.search, navigate]);
+  }, [user, isPending, location.pathname, navigate]);
 
   return null;
 }
 
 export default function App() {
+  const isRootOAuthCodeReturn =
+    typeof window !== "undefined" &&
+    window.location.pathname === "/" &&
+    new URLSearchParams(window.location.search).has("code");
+
+  if (isRootOAuthCodeReturn) {
+    return <RootOAuthCodeRedirect />;
+  }
+
   return (
     <AppAuthProvider>
       <LanguageProvider>
