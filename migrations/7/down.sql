@@ -1,0 +1,1 @@
+ALTER TABLE beta_waitlist DROP COLUMN is_approved;

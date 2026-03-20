@@ -1,0 +1,1 @@
+ALTER TABLE beta_waitlist ADD COLUMN is_approved BOOLEAN DEFAULT 0;

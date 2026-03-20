@@ -1,0 +1,1 @@
+ALTER TABLE student_progress ADD COLUMN avatar_url TEXT;
