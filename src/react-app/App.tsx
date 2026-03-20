@@ -5,6 +5,7 @@ import { SubscriptionProvider } from "@/react-app/contexts/SubscriptionContext";
 import { ToastProvider } from "@/react-app/components/ui/microinteractions";
 import { ThemeProvider } from "@/react-app/hooks/useTheme";
 import { LanguageProvider } from "@/react-app/contexts/LanguageContext";
+import { AppAuthProvider } from "@/react-app/contexts/AuthContext";
 
 // Light pages - load immediately
 import LoginPage from "@/react-app/pages/Login";
@@ -61,66 +62,69 @@ function PageLoader() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <ToastProvider>
-              <Router>
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                  {/* Public */}
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/comparacao" element={<ComparacaoPage />} />
-                  <Route path="/fisioterapia-ortopedica" element={<LandingOrtopediaPage />} />
-                  <Route path="/fisioterapia-esportiva" element={<LandingEsportivaPage />} />
-                  <Route path="/fisioterapia-neurologica" element={<LandingNeurologicaPage />} />
-                  <Route path="/blog" element={<BlogPage />} />
-                  <Route path="/blog/:slug" element={<BlogPostPage />} />
-                  <Route path="/biblioteca" element={<BibliotecaClinicaPage />} />
-                  <Route path="/biblioteca/:slug" element={<BibliotecaClinicaPage />} />
-                  <Route path="/estudante" element={<StudentHubPage />} />
-                  <Route path="/caso-da-semana" element={<CasoSemanaPage />} />
-                  
-                  {/* Auth */}
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                  
-                  {/* Dashboard - Área Interna */}
-                  <Route path="/dashboard" element={<ProtectedDashboard />}>
-                    <Route index element={<PainelPage />} />
-                    <Route path="paciente/:id" element={<PatientDetailPage />} />
-                    <Route path="caminho" element={<CaminhoPage />} />
-                    <Route path="suporte" element={<SuportePage />} />
-                    <Route path="testes" element={<TestesInteligentesPage />} />
-                    <Route path="alertas" element={<AlertasPage />} />
-                    <Route path="plano" element={<PlanoPage />} />
-                    <Route path="exportacao" element={<ExportacaoPage />} />
-                    <Route path="contato" element={<ContatoSuportePage />} />
-                    <Route path="neuroflux" element={<NeuroFluxPage />} />
-                    <Route path="exercicios" element={<ExerciciosPage />} />
-                    <Route path="admin" element={<AdminPage />} />
-                    <Route path="admin-estudante" element={<AdminEstudantePage />} />
-                    <Route path="agenda" element={<AgendaPage />} />
-                    <Route path="forum" element={<ForumPage />} />
-                    <Route path="financeiro" element={<FinanceiroPage />} />
-                    <Route path="indicacao" element={<IndicacaoPage />} />
-                  </Route>
+    <AppAuthProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <SubscriptionProvider>
+              <ToastProvider>
+                <Router>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      {/* Public */}
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/comparacao" element={<ComparacaoPage />} />
+                      <Route path="/fisioterapia-ortopedica" element={<LandingOrtopediaPage />} />
+                      <Route path="/fisioterapia-esportiva" element={<LandingEsportivaPage />} />
+                      <Route path="/fisioterapia-neurologica" element={<LandingNeurologicaPage />} />
+                      <Route path="/blog" element={<BlogPage />} />
+                      <Route path="/blog/:slug" element={<BlogPostPage />} />
+                      <Route path="/biblioteca" element={<BibliotecaClinicaPage />} />
+                      <Route path="/biblioteca/:slug" element={<BibliotecaClinicaPage />} />
+                      <Route path="/estudante" element={<StudentHubPage />} />
+                      <Route path="/caso-da-semana" element={<CasoSemanaPage />} />
 
-                  {/* Páginas Legais */}
-                  <Route path="/termos-de-uso" element={<TermosDeUsoPage />} />
-                  <Route path="/politica-de-privacidade" element={<PoliticaPrivacidadePage />} />
-                  <Route path="/politica-de-cancelamento" element={<PoliticaCancelamentoPage />} />
+                      {/* Auth */}
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
-                  {/* Fallback */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-            </Router>
-          </ToastProvider>
-        </SubscriptionProvider>
-      </AuthProvider>
-    </ThemeProvider>
-    </LanguageProvider>
+                      {/* Dashboard - Área Interna */}
+                      <Route path="/dashboard" element={<ProtectedDashboard />}>
+                        <Route index element={<PainelPage />} />
+                        <Route path="paciente/:id" element={<PatientDetailPage />} />
+                        <Route path="caminho" element={<CaminhoPage />} />
+                        <Route path="suporte" element={<SuportePage />} />
+                        <Route path="testes" element={<TestesInteligentesPage />} />
+                        <Route path="alertas" element={<AlertasPage />} />
+                        <Route path="plano" element={<PlanoPage />} />
+                        <Route path="exportacao" element={<ExportacaoPage />} />
+                        <Route path="contato" element={<ContatoSuportePage />} />
+                        <Route path="neuroflux" element={<NeuroFluxPage />} />
+                        <Route path="exercicios" element={<ExerciciosPage />} />
+                        <Route path="admin" element={<AdminPage />} />
+                        <Route path="admin-estudante" element={<AdminEstudantePage />} />
+                        <Route path="agenda" element={<AgendaPage />} />
+                        <Route path="forum" element={<ForumPage />} />
+                        <Route path="financeiro" element={<FinanceiroPage />} />
+                        <Route path="indicacao" element={<IndicacaoPage />} />
+                      </Route>
+
+                      {/* Páginas Legais */}
+                      <Route path="/termos-de-uso" element={<TermosDeUsoPage />} />
+                      <Route path="/politica-de-privacidade" element={<PoliticaPrivacidadePage />} />
+                      <Route path="/politica-de-cancelamento" element={<PoliticaCancelamentoPage />} />
+
+                      {/* Fallback */}
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Suspense>
+                </Router>
+              </ToastProvider>
+            </SubscriptionProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </LanguageProvider>
+    </AppAuthProvider>
   );
 }
+

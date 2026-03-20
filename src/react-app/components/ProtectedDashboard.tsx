@@ -1,20 +1,19 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "@getmocha/users-service/react";
 import { Activity, Loader2 } from "lucide-react";
 import DashboardLayout from "./layout/DashboardLayout";
+import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
 export default function ProtectedDashboard() {
   const navigate = useNavigate();
-  const { user, isPending } = useAuth();
+  const { user, isPending } = useAppAuth();
 
   useEffect(() => {
     if (!isPending && !user) {
-      navigate("/login");
+      navigate("/login", { replace: true });
     }
   }, [user, isPending, navigate]);
 
-  // Loading state
   if (isPending) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent flex items-center justify-center">
@@ -31,11 +30,9 @@ export default function ProtectedDashboard() {
     );
   }
 
-  // Not logged in
   if (!user) {
     return null;
   }
 
-  // Show dashboard directly
   return <DashboardLayout />;
 }
