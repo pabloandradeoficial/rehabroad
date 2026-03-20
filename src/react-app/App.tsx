@@ -1,11 +1,21 @@
-import { lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
+import { lazy, Suspense, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { AuthProvider } from "@getmocha/users-service/react";
 import { SubscriptionProvider } from "@/react-app/contexts/SubscriptionContext";
 import { ToastProvider } from "@/react-app/components/ui/microinteractions";
 import { ThemeProvider } from "@/react-app/hooks/useTheme";
 import { LanguageProvider } from "@/react-app/contexts/LanguageContext";
-import { AppAuthProvider } from "@/react-app/contexts/AuthContext";
+import {
+  AppAuthProvider,
+  useAppAuth,
+} from "@/react-app/contexts/AuthContext";
 
 // Light pages - load immediately
 import LoginPage from "@/react-app/pages/Login";
@@ -17,34 +27,68 @@ import ProtectedDashboard from "@/react-app/components/ProtectedDashboard";
 
 // Lazy load heavy pages
 const PainelPage = lazy(() => import("@/react-app/pages/dashboard/Painel"));
-const PatientDetailPage = lazy(() => import("@/react-app/pages/dashboard/PatientDetail"));
+const PatientDetailPage = lazy(
+  () => import("@/react-app/pages/dashboard/PatientDetail")
+);
 const CaminhoPage = lazy(() => import("@/react-app/pages/dashboard/Caminho"));
 const SuportePage = lazy(() => import("@/react-app/pages/dashboard/Suporte"));
-const TestesInteligentesPage = lazy(() => import("@/react-app/pages/dashboard/TestesInteligentes"));
+const TestesInteligentesPage = lazy(
+  () => import("@/react-app/pages/dashboard/TestesInteligentes")
+);
 const AlertasPage = lazy(() => import("@/react-app/pages/dashboard/Alertas"));
 const PlanoPage = lazy(() => import("@/react-app/pages/dashboard/Plano"));
-const ExportacaoPage = lazy(() => import("@/react-app/pages/dashboard/Exportacao"));
-const ContatoSuportePage = lazy(() => import("@/react-app/pages/dashboard/ContatoSuporte"));
-const NeuroFluxPage = lazy(() => import("@/react-app/pages/dashboard/NeuroFlux"));
-const ExerciciosPage = lazy(() => import("@/react-app/pages/dashboard/Exercicios"));
+const ExportacaoPage = lazy(
+  () => import("@/react-app/pages/dashboard/Exportacao")
+);
+const ContatoSuportePage = lazy(
+  () => import("@/react-app/pages/dashboard/ContatoSuporte")
+);
+const NeuroFluxPage = lazy(
+  () => import("@/react-app/pages/dashboard/NeuroFlux")
+);
+const ExerciciosPage = lazy(
+  () => import("@/react-app/pages/dashboard/Exercicios")
+);
 const AdminPage = lazy(() => import("@/react-app/pages/dashboard/Admin"));
-const AdminEstudantePage = lazy(() => import("@/react-app/pages/dashboard/AdminEstudante"));
+const AdminEstudantePage = lazy(
+  () => import("@/react-app/pages/dashboard/AdminEstudante")
+);
 const AgendaPage = lazy(() => import("@/react-app/pages/dashboard/Agenda"));
 const ForumPage = lazy(() => import("@/react-app/pages/dashboard/Forum"));
-const FinanceiroPage = lazy(() => import("@/react-app/pages/dashboard/Financeiro"));
-const IndicacaoPage = lazy(() => import("@/react-app/pages/dashboard/Indicacao"));
+const FinanceiroPage = lazy(
+  () => import("@/react-app/pages/dashboard/Financeiro")
+);
+const IndicacaoPage = lazy(
+  () => import("@/react-app/pages/dashboard/Indicacao")
+);
 
 // Lazy load secondary pages
-const TermosDeUsoPage = lazy(() => import("@/react-app/pages/legal/TermosDeUso"));
-const PoliticaPrivacidadePage = lazy(() => import("@/react-app/pages/legal/PoliticaPrivacidade"));
-const PoliticaCancelamentoPage = lazy(() => import("@/react-app/pages/legal/PoliticaCancelamento"));
-const ComparacaoPage = lazy(() => import("@/react-app/pages/Comparacao"));
+const TermosDeUsoPage = lazy(
+  () => import("@/react-app/pages/legal/TermosDeUso")
+);
+const PoliticaPrivacidadePage = lazy(
+  () => import("@/react-app/pages/legal/PoliticaPrivacidade")
+);
+const PoliticaCancelamentoPage = lazy(
+  () => import("@/react-app/pages/legal/PoliticaCancelamento")
+);
+const ComparacaoPage = lazy(
+  () => import("@/react-app/pages/Comparacao")
+);
 const BlogPage = lazy(() => import("@/react-app/pages/Blog"));
 const BlogPostPage = lazy(() => import("@/react-app/pages/BlogPost"));
-const LandingOrtopediaPage = lazy(() => import("@/react-app/pages/LandingOrtopedia"));
-const LandingEsportivaPage = lazy(() => import("@/react-app/pages/LandingEsportiva"));
-const LandingNeurologicaPage = lazy(() => import("@/react-app/pages/LandingNeurologica"));
-const BibliotecaClinicaPage = lazy(() => import("@/react-app/pages/BibliotecaClinicaPage"));
+const LandingOrtopediaPage = lazy(
+  () => import("@/react-app/pages/LandingOrtopedia")
+);
+const LandingEsportivaPage = lazy(
+  () => import("@/react-app/pages/LandingEsportiva")
+);
+const LandingNeurologicaPage = lazy(
+  () => import("@/react-app/pages/LandingNeurologica")
+);
+const BibliotecaClinicaPage = lazy(
+  () => import("@/react-app/pages/BibliotecaClinicaPage")
+);
 const StudentHubPage = lazy(() => import("@/react-app/pages/StudentHub"));
 const CasoSemanaPage = lazy(() => import("@/react-app/pages/CasoSemana"));
 
@@ -60,6 +104,27 @@ function PageLoader() {
   );
 }
 
+function OAuthReturnBridge() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isPending } = useAppAuth();
+
+  useEffect(() => {
+    const hasSupabaseHash =
+      window.location.hash.includes("access_token=") ||
+      window.location.hash.includes("refresh_token=");
+
+    if (!isPending && user && hasSupabaseHash && location.pathname === "/") {
+      const loginMode = localStorage.getItem("loginMode");
+      navigate(loginMode === "student" ? "/estudante" : "/dashboard", {
+        replace: true,
+      });
+    }
+  }, [user, isPending, location.pathname, navigate]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <AppAuthProvider>
@@ -69,50 +134,102 @@ export default function App() {
             <SubscriptionProvider>
               <ToastProvider>
                 <Router>
+                  <OAuthReturnBridge />
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       {/* Public */}
                       <Route path="/" element={<HomePage />} />
                       <Route path="/comparacao" element={<ComparacaoPage />} />
-                      <Route path="/fisioterapia-ortopedica" element={<LandingOrtopediaPage />} />
-                      <Route path="/fisioterapia-esportiva" element={<LandingEsportivaPage />} />
-                      <Route path="/fisioterapia-neurologica" element={<LandingNeurologicaPage />} />
+                      <Route
+                        path="/fisioterapia-ortopedica"
+                        element={<LandingOrtopediaPage />}
+                      />
+                      <Route
+                        path="/fisioterapia-esportiva"
+                        element={<LandingEsportivaPage />}
+                      />
+                      <Route
+                        path="/fisioterapia-neurologica"
+                        element={<LandingNeurologicaPage />}
+                      />
                       <Route path="/blog" element={<BlogPage />} />
                       <Route path="/blog/:slug" element={<BlogPostPage />} />
-                      <Route path="/biblioteca" element={<BibliotecaClinicaPage />} />
-                      <Route path="/biblioteca/:slug" element={<BibliotecaClinicaPage />} />
+                      <Route
+                        path="/biblioteca"
+                        element={<BibliotecaClinicaPage />}
+                      />
+                      <Route
+                        path="/biblioteca/:slug"
+                        element={<BibliotecaClinicaPage />}
+                      />
                       <Route path="/estudante" element={<StudentHubPage />} />
-                      <Route path="/caso-da-semana" element={<CasoSemanaPage />} />
+                      <Route
+                        path="/caso-da-semana"
+                        element={<CasoSemanaPage />}
+                      />
 
                       {/* Auth */}
                       <Route path="/login" element={<LoginPage />} />
-                      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                      <Route
+                        path="/auth/callback"
+                        element={<AuthCallbackPage />}
+                      />
 
                       {/* Dashboard - Área Interna */}
                       <Route path="/dashboard" element={<ProtectedDashboard />}>
                         <Route index element={<PainelPage />} />
-                        <Route path="paciente/:id" element={<PatientDetailPage />} />
+                        <Route
+                          path="paciente/:id"
+                          element={<PatientDetailPage />}
+                        />
                         <Route path="caminho" element={<CaminhoPage />} />
                         <Route path="suporte" element={<SuportePage />} />
-                        <Route path="testes" element={<TestesInteligentesPage />} />
+                        <Route
+                          path="testes"
+                          element={<TestesInteligentesPage />}
+                        />
                         <Route path="alertas" element={<AlertasPage />} />
                         <Route path="plano" element={<PlanoPage />} />
-                        <Route path="exportacao" element={<ExportacaoPage />} />
-                        <Route path="contato" element={<ContatoSuportePage />} />
+                        <Route
+                          path="exportacao"
+                          element={<ExportacaoPage />}
+                        />
+                        <Route
+                          path="contato"
+                          element={<ContatoSuportePage />}
+                        />
                         <Route path="neuroflux" element={<NeuroFluxPage />} />
-                        <Route path="exercicios" element={<ExerciciosPage />} />
+                        <Route
+                          path="exercicios"
+                          element={<ExerciciosPage />}
+                        />
                         <Route path="admin" element={<AdminPage />} />
-                        <Route path="admin-estudante" element={<AdminEstudantePage />} />
+                        <Route
+                          path="admin-estudante"
+                          element={<AdminEstudantePage />}
+                        />
                         <Route path="agenda" element={<AgendaPage />} />
                         <Route path="forum" element={<ForumPage />} />
-                        <Route path="financeiro" element={<FinanceiroPage />} />
+                        <Route
+                          path="financeiro"
+                          element={<FinanceiroPage />}
+                        />
                         <Route path="indicacao" element={<IndicacaoPage />} />
                       </Route>
 
                       {/* Páginas Legais */}
-                      <Route path="/termos-de-uso" element={<TermosDeUsoPage />} />
-                      <Route path="/politica-de-privacidade" element={<PoliticaPrivacidadePage />} />
-                      <Route path="/politica-de-cancelamento" element={<PoliticaCancelamentoPage />} />
+                      <Route
+                        path="/termos-de-uso"
+                        element={<TermosDeUsoPage />}
+                      />
+                      <Route
+                        path="/politica-de-privacidade"
+                        element={<PoliticaPrivacidadePage />}
+                      />
+                      <Route
+                        path="/politica-de-cancelamento"
+                        element={<PoliticaCancelamentoPage />}
+                      />
 
                       {/* Fallback */}
                       <Route path="*" element={<Navigate to="/" replace />} />
@@ -127,4 +244,3 @@ export default function App() {
     </AppAuthProvider>
   );
 }
-
