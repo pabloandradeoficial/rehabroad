@@ -7,7 +7,6 @@ import {
   useLocation,
   useNavigate,
 } from "react-router";
-import { AuthProvider } from "@getmocha/users-service/react";
 import { SubscriptionProvider } from "@/react-app/contexts/SubscriptionContext";
 import { ToastProvider } from "@/react-app/components/ui/microinteractions";
 import { ThemeProvider } from "@/react-app/hooks/useTheme";
@@ -137,111 +136,106 @@ export default function App() {
     <AppAuthProvider>
       <LanguageProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <SubscriptionProvider>
-              <ToastProvider>
-                <Router>
-                  <OAuthReturnBridge />
+          <SubscriptionProvider>
+            <ToastProvider>
+              <Router>
+                <OAuthReturnBridge />
 
-                  <Suspense fallback={<PageLoader />}>
-                    <Routes>
-                      <Route path="/" element={<HomePage />} />
-                      <Route path="/comparacao" element={<ComparacaoPage />} />
-                      <Route
-                        path="/fisioterapia-ortopedica"
-                        element={<LandingOrtopediaPage />}
-                      />
-                      <Route
-                        path="/fisioterapia-esportiva"
-                        element={<LandingEsportivaPage />}
-                      />
-                      <Route
-                        path="/fisioterapia-neurologica"
-                        element={<LandingNeurologicaPage />}
-                      />
-                      <Route path="/blog" element={<BlogPage />} />
-                      <Route path="/blog/:slug" element={<BlogPostPage />} />
-                      <Route
-                        path="/biblioteca"
-                        element={<BibliotecaClinicaPage />}
-                      />
-                      <Route
-                        path="/biblioteca/:slug"
-                        element={<BibliotecaClinicaPage />}
-                      />
-                      <Route path="/estudante" element={<StudentHubPage />} />
-                      <Route
-                        path="/caso-da-semana"
-                        element={<CasoSemanaPage />}
-                      />
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/comparacao" element={<ComparacaoPage />} />
+                    <Route
+                      path="/fisioterapia-ortopedica"
+                      element={<LandingOrtopediaPage />}
+                    />
+                    <Route
+                      path="/fisioterapia-esportiva"
+                      element={<LandingEsportivaPage />}
+                    />
+                    <Route
+                      path="/fisioterapia-neurologica"
+                      element={<LandingNeurologicaPage />}
+                    />
+                    <Route path="/blog" element={<BlogPage />} />
+                    <Route path="/blog/:slug" element={<BlogPostPage />} />
+                    <Route
+                      path="/biblioteca"
+                      element={<BibliotecaClinicaPage />}
+                    />
+                    <Route
+                      path="/biblioteca/:slug"
+                      element={<BibliotecaClinicaPage />}
+                    />
+                    <Route path="/estudante" element={<StudentHubPage />} />
+                    <Route
+                      path="/caso-da-semana"
+                      element={<CasoSemanaPage />}
+                    />
 
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route
-                        path="/auth/callback"
-                        element={<AuthCallbackPage />}
-                      />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route
+                      path="/auth/callback"
+                      element={<AuthCallbackPage />}
+                    />
 
-                      <Route path="/dashboard" element={<ProtectedDashboard />}>
-                        <Route index element={<PainelPage />} />
-                        <Route
-                          path="paciente/:id"
-                          element={<PatientDetailPage />}
-                        />
-                        <Route path="caminho" element={<CaminhoPage />} />
-                        <Route path="suporte" element={<SuportePage />} />
-                        <Route
-                          path="testes"
-                          element={<TestesInteligentesPage />}
-                        />
-                        <Route path="alertas" element={<AlertasPage />} />
-                        <Route path="plano" element={<PlanoPage />} />
-                        <Route
-                          path="exportacao"
-                          element={<ExportacaoPage />}
-                        />
-                        <Route
-                          path="contato"
-                          element={<ContatoSuportePage />}
-                        />
-                        <Route path="neuroflux" element={<NeuroFluxPage />} />
-                        <Route
-                          path="exercicios"
-                          element={<ExerciciosPage />}
-                        />
-                        <Route path="admin" element={<AdminPage />} />
-                        <Route
-                          path="admin-estudante"
-                          element={<AdminEstudantePage />}
-                        />
-                        <Route path="agenda" element={<AgendaPage />} />
-                        <Route path="forum" element={<ForumPage />} />
-                        <Route
-                          path="financeiro"
-                          element={<FinanceiroPage />}
-                        />
-                        <Route path="indicacao" element={<IndicacaoPage />} />
-                      </Route>
+                    <Route path="/dashboard" element={<ProtectedDashboard />}>
+                      <Route index element={<PainelPage />} />
+                      <Route
+                        path="paciente/:id"
+                        element={<PatientDetailPage />}
+                      />
+                      <Route path="caminho" element={<CaminhoPage />} />
+                      <Route path="suporte" element={<SuportePage />} />
+                      <Route
+                        path="testes"
+                        element={<TestesInteligentesPage />}
+                      />
+                      <Route path="alertas" element={<AlertasPage />} />
+                      <Route path="plano" element={<PlanoPage />} />
+                      <Route
+                        path="exportacao"
+                        element={<ExportacaoPage />}
+                      />
+                      <Route
+                        path="contato"
+                        element={<ContatoSuportePage />}
+                      />
+                      <Route path="neuroflux" element={<NeuroFluxPage />} />
+                      <Route path="exercicios" element={<ExerciciosPage />} />
+                      <Route path="admin" element={<AdminPage />} />
+                      <Route
+                        path="admin-estudante"
+                        element={<AdminEstudantePage />}
+                      />
+                      <Route path="agenda" element={<AgendaPage />} />
+                      <Route path="forum" element={<ForumPage />} />
+                      <Route
+                        path="financeiro"
+                        element={<FinanceiroPage />}
+                      />
+                      <Route path="indicacao" element={<IndicacaoPage />} />
+                    </Route>
 
-                      <Route
-                        path="/termos-de-uso"
-                        element={<TermosDeUsoPage />}
-                      />
-                      <Route
-                        path="/politica-de-privacidade"
-                        element={<PoliticaPrivacidadePage />}
-                      />
-                      <Route
-                        path="/politica-de-cancelamento"
-                        element={<PoliticaCancelamentoPage />}
-                      />
+                    <Route
+                      path="/termos-de-uso"
+                      element={<TermosDeUsoPage />}
+                    />
+                    <Route
+                      path="/politica-de-privacidade"
+                      element={<PoliticaPrivacidadePage />}
+                    />
+                    <Route
+                      path="/politica-de-cancelamento"
+                      element={<PoliticaCancelamentoPage />}
+                    />
 
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </Suspense>
-                </Router>
-              </ToastProvider>
-            </SubscriptionProvider>
-          </AuthProvider>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
+              </Router>
+            </ToastProvider>
+          </SubscriptionProvider>
         </ThemeProvider>
       </LanguageProvider>
     </AppAuthProvider>
