@@ -57,6 +57,12 @@ interface StudentDashboardProps {
   onProgressUpdate?: () => void;
 }
 
+function getProgressStorageKey(userId?: string) {
+  return userId
+    ? `rehabroad_student_progress_${userId}`
+    : "rehabroad_student_progress_guest";
+}
+
 function parseStoredProgress(raw: string | null): CaseProgress[] {
   if (!raw) return [];
 
@@ -81,6 +87,62 @@ function parseStoredProgress(raw: string | null): CaseProgress[] {
   }
 }
 
+function toSafeNumber(value: unknown): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : 0;
+
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseRankingResponse(data: unknown): RankingUser[] {
+  const rankingSource = Array.isArray(data)
+    ? data
+    : data &&
+        typeof data === "object" &&
+        Array.isArray((data as { ranking?: unknown }).ranking)
+      ? (data as { ranking: unknown[] }).ranking
+      : [];
+
+  return rankingSource
+    .filter(
+      (item): item is Record<string, unknown> =>
+        Boolean(item) && typeof item === "object"
+    )
+    .map((item) => ({
+      user_name:
+        typeof item.user_name === "string" && item.user_name.trim()
+          ? item.user_name.trim()
+          : "Anônimo",
+      cases_completed: toSafeNumber(item.cases_completed),
+      cases_correct: toSafeNumber(item.cases_correct),
+      streak: toSafeNumber(item.streak),
+      accuracy: Math.max(0, Math.min(100, Math.round(toSafeNumber(item.accuracy)))),
+    }))
+    .sort((a, b) => {
+      if (b.cases_completed !== a.cases_completed) {
+        return b.cases_completed - a.cases_completed;
+      }
+
+      if (b.accuracy !== a.accuracy) {
+        return b.accuracy - a.accuracy;
+      }
+
+      if (b.cases_correct !== a.cases_correct) {
+        return b.cases_correct - a.cases_correct;
+      }
+
+      if (b.streak !== a.streak) {
+        return b.streak - a.streak;
+      }
+
+      return a.user_name.localeCompare(b.user_name, "pt-BR");
+    });
+}
+
 export default function StudentDashboard({
   onProgressUpdate,
 }: StudentDashboardProps = {}) {
@@ -98,22 +160,19 @@ export default function StudentDashboard({
   const [progress, setProgress] = useState<CaseProgress[]>([]);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
-  // Load progress from localStorage
   useEffect(() => {
-    const progressKey = user?.id
-      ? `rehabroad_student_progress_${user.id}`
-      : "rehabroad_student_progress_guest";
-
-    const parsed = parseStoredProgress(localStorage.getItem(progressKey));
+    const parsed = parseStoredProgress(
+      localStorage.getItem(getProgressStorageKey(user?.id))
+    );
     setProgress(parsed);
   }, [user?.id]);
 
   useEffect(() => {
-    if (viewMode !== "ranking" || ranking.length > 0) {
+    if (viewMode !== "ranking") {
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
 
     const loadRanking = async () => {
       setLoadingRanking(true);
@@ -121,24 +180,30 @@ export default function StudentDashboard({
       try {
         const res = await fetch("/api/student/ranking", {
           credentials: "include",
+          signal: controller.signal,
         });
 
         if (!res.ok) {
           throw new Error(`Ranking request failed: ${res.status}`);
         }
 
-        const data = await res.json();
+        const data: unknown = await res.json();
 
-        if (!isMounted) return;
-
-        setRanking(Array.isArray(data?.ranking) ? data.ranking : []);
+        if (!controller.signal.aborted) {
+          setRanking(parseRankingResponse(data));
+        }
       } catch (error) {
+        if ((error as Error).name === "AbortError") {
+          return;
+        }
+
         console.error("Error loading student ranking:", error);
 
-        if (!isMounted) return;
-        setRanking([]);
+        if (!controller.signal.aborted) {
+          setRanking([]);
+        }
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setLoadingRanking(false);
         }
       }
@@ -147,14 +212,15 @@ export default function StudentDashboard({
     void loadRanking();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
-  }, [viewMode, ranking.length]);
+  }, [viewMode]);
 
   const stats = useMemo(() => {
     const completed = progress.length;
     const correct = progress.filter((p) => p.correct).length;
     const accuracy = completed > 0 ? Math.round((correct / completed) * 100) : 0;
+
     return { completed, correct, accuracy, total: clinicalCases.length };
   }, [progress]);
 
@@ -167,9 +233,11 @@ export default function StudentDashboard({
   }, [categoryFilter, difficultyFilter]);
 
   const getCaseStatus = (caseId: string) => {
-    const p = progress.find((p) => p.caseId === caseId);
-    if (!p) return "pending";
-    return p.correct ? "correct" : "incorrect";
+    const existingProgress = progress.find((item) => item.caseId === caseId);
+
+    if (!existingProgress) return "pending";
+
+    return existingProgress.correct ? "correct" : "incorrect";
   };
 
   const handleStartCase = (clinicalCase: ClinicalCase, isDaily = false) => {
@@ -202,18 +270,16 @@ export default function StudentDashboard({
     if (!alreadyAnswered) {
       const updated = [...progress, newProgress];
       setProgress(updated);
-
-      const progressKey = user?.id
-        ? `rehabroad_student_progress_${user.id}`
-        : "rehabroad_student_progress_guest";
-      localStorage.setItem(progressKey, JSON.stringify(updated));
+      localStorage.setItem(
+        getProgressStorageKey(user?.id),
+        JSON.stringify(updated)
+      );
 
       if (isCorrect) {
         setShowSuccessAnimation(true);
       }
 
       if (user?.id) {
-        // POST to server - retry once on failure
         const postProgress = async (retries = 1) => {
           try {
             const res = await fetch("/api/student/progress", {
@@ -225,16 +291,32 @@ export default function StudentDashboard({
                 cases_correct: isCorrect ? 1 : 0,
               }),
             });
+
             if (!res.ok && retries > 0) {
-              setTimeout(() => postProgress(retries - 1), 1000);
-            } else if (res.ok && onProgressUpdate) {
-              onProgressUpdate();
+              window.setTimeout(() => {
+                void postProgress(retries - 1);
+              }, 1000);
+              return;
             }
-          } catch (e) {
-            console.error("Error saving progress:", e);
-            if (retries > 0) setTimeout(() => postProgress(retries - 1), 1000);
+
+            if (res.ok) {
+              setRanking([]);
+
+              if (onProgressUpdate) {
+                onProgressUpdate();
+              }
+            }
+          } catch (error) {
+            console.error("Error saving progress:", error);
+
+            if (retries > 0) {
+              window.setTimeout(() => {
+                void postProgress(retries - 1);
+              }, 1000);
+            }
           }
         };
+
         void postProgress();
       }
     }
@@ -259,6 +341,7 @@ export default function StudentDashboard({
       await navigator.clipboard.writeText(message);
       alert("Copiado!");
     }
+
     setShowShareDialog(false);
   };
 
@@ -295,12 +378,10 @@ export default function StudentDashboard({
     }
   };
 
-  // Dashboard View
   if (viewMode === "dashboard") {
     return (
       <div className="min-h-screen bg-slate-50 py-4 sm:py-8 px-3 sm:px-4 pb-28 md:pb-8">
         <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
-          {/* Header */}
           <div className="text-center mb-4 sm:mb-8">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-1 sm:mb-2">
               Casos Clínicos
@@ -310,7 +391,6 @@ export default function StudentDashboard({
             </p>
           </div>
 
-          {/* Daily Challenge */}
           <Card className="border-0 shadow-sm bg-gradient-to-r from-orange-500 to-amber-500 text-white overflow-hidden">
             <CardContent className="p-4 sm:p-5">
               <button
@@ -333,7 +413,6 @@ export default function StudentDashboard({
             </CardContent>
           </Card>
 
-          {/* Stats Row */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <Card className="border-0 shadow-sm bg-gradient-to-br from-violet-50 to-purple-50">
               <CardContent className="p-3 sm:p-4 text-center">
@@ -375,7 +454,6 @@ export default function StudentDashboard({
             </Card>
           </div>
 
-          {/* Progress Bar */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
@@ -390,7 +468,7 @@ export default function StudentDashboard({
                 </span>
               </div>
               <Progress
-                value={(stats.completed / stats.total) * 100}
+                value={stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}
                 className="h-2.5"
               />
               <p className="text-xs text-slate-500 mt-2">
@@ -399,7 +477,6 @@ export default function StudentDashboard({
             </CardContent>
           </Card>
 
-          {/* Filters - Mobile optimized */}
           <div className="flex items-center gap-2 sm:gap-3">
             <Filter className="w-4 h-4 text-slate-400 flex-shrink-0 hidden sm:block" />
             <select
@@ -427,7 +504,6 @@ export default function StudentDashboard({
             </select>
           </div>
 
-          {/* Cases Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
             {filteredCases.map((clinicalCase, index) => {
               const status = getCaseStatus(clinicalCase.id);
@@ -499,7 +575,6 @@ export default function StudentDashboard({
     );
   }
 
-  // Case View
   if (viewMode === "case" && selectedCase) {
     const difficulty = getDifficultyStyle(selectedCase.difficulty);
 
@@ -592,13 +667,13 @@ export default function StudentDashboard({
                   Sintomas
                 </h3>
                 <ul className="space-y-1">
-                  {selectedCase.symptoms.map((s, i) => (
+                  {selectedCase.symptoms.map((symptom, index) => (
                     <li
-                      key={i}
+                      key={index}
                       className="flex items-start gap-2 text-slate-700 text-sm"
                     >
                       <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2" />
-                      {s}
+                      {symptom}
                     </li>
                   ))}
                 </ul>
@@ -610,13 +685,13 @@ export default function StudentDashboard({
                   Achados Clínicos
                 </h3>
                 <ul className="space-y-1">
-                  {selectedCase.clinicalFindings.map((f, i) => (
+                  {selectedCase.clinicalFindings.map((finding, index) => (
                     <li
-                      key={i}
+                      key={index}
                       className="flex items-start gap-2 text-slate-700 text-sm"
                     >
                       <span className="w-1.5 h-1.5 bg-teal-500 rounded-full mt-2" />
-                      {f}
+                      {finding}
                     </li>
                   ))}
                 </ul>
@@ -684,10 +759,9 @@ export default function StudentDashboard({
     );
   }
 
-  // Result View
   if (viewMode === "result" && selectedCase) {
     const selectedOption = selectedCase.diagnosticOptions.find(
-      (o) => o.id === selectedAnswer
+      (option) => option.id === selectedAnswer
     );
     const isCorrect = selectedOption?.isCorrect || false;
 
@@ -796,9 +870,9 @@ export default function StudentDashboard({
                     Testes Recomendados
                   </h3>
                   <ul className="space-y-2">
-                    {selectedCase.recommendedTests.map((test, i) => (
+                    {selectedCase.recommendedTests.map((test, index) => (
                       <li
-                        key={i}
+                        key={index}
                         className="flex items-start gap-2 text-slate-700 text-sm"
                       >
                         <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5" />
@@ -816,13 +890,13 @@ export default function StudentDashboard({
                     Conduta Inicial
                   </h3>
                   <ul className="space-y-2">
-                    {selectedCase.initialTreatment.map((t, i) => (
+                    {selectedCase.initialTreatment.map((treatment, index) => (
                       <li
-                        key={i}
+                        key={index}
                         className="flex items-start gap-2 text-slate-700 text-sm"
                       >
                         <ArrowRight className="w-4 h-4 text-emerald-500 mt-0.5" />
-                        {t}
+                        {treatment}
                       </li>
                     ))}
                   </ul>
@@ -891,7 +965,6 @@ export default function StudentDashboard({
     );
   }
 
-  // Ranking View
   if (viewMode === "ranking") {
     return (
       <div className="min-h-screen bg-slate-50 py-6 px-4">
@@ -955,47 +1028,47 @@ export default function StudentDashboard({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {ranking.map((u, i) => (
+                  {ranking.map((student, index) => (
                     <motion.div
-                      key={i}
+                      key={`${student.user_name}-${student.cases_completed}-${student.cases_correct}-${student.streak}-${index}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
+                      transition={{ delay: index * 0.05 }}
                       className={`flex items-center gap-4 p-4 rounded-xl ${
-                        i === 0
+                        index === 0
                           ? "bg-amber-50 border-2 border-amber-200"
-                          : i === 1
+                          : index === 1
                             ? "bg-slate-50 border border-slate-200"
-                            : i === 2
+                            : index === 2
                               ? "bg-orange-50 border border-orange-200"
                               : "bg-slate-50"
                       }`}
                     >
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                          i === 0
+                          index === 0
                             ? "bg-gradient-to-br from-amber-400 to-yellow-500 text-white"
-                            : i === 1
+                            : index === 1
                               ? "bg-gradient-to-br from-slate-300 to-gray-400 text-white"
-                              : i === 2
+                              : index === 2
                                 ? "bg-gradient-to-br from-orange-400 to-amber-500 text-white"
                                 : "bg-slate-200 text-slate-600"
                         }`}
                       >
-                        {i + 1}
+                        {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-900 truncate">
-                          {u.user_name || "Anônimo"}
+                          {student.user_name || "Anônimo"}
                         </p>
                         <p className="text-sm text-slate-500">
-                          {u.cases_completed} casos • {u.accuracy}% acerto
+                          {student.cases_completed} casos • {student.accuracy}% acerto
                         </p>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-1 text-teal-600 font-bold">
                           <Target className="w-4 h-4" />
-                          {u.accuracy}%
+                          {student.accuracy}%
                         </div>
                       </div>
                     </motion.div>
