@@ -24,7 +24,7 @@ import { useAppAuth } from "@/react-app/contexts/AuthContext";
 // Pages that expired users can still access
 const ALLOWED_PAGES_FOR_EXPIRED = [
   "/dashboard/plano",
-  "/dashboard/suporte-contato",
+  "/dashboard/contato",
   "/dashboard/admin",
 ];
 
