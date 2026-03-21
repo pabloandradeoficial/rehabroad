@@ -11,6 +11,25 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     let isMounted = true;
+    let redirectTimeout: number | undefined;
+
+    const wait = (ms: number) =>
+      new Promise((resolve) => window.setTimeout(resolve, ms));
+
+    const waitForSession = async () => {
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        if (data.session) {
+          return data.session;
+        }
+
+        await wait(300);
+      }
+
+      return null;
+    };
 
     const handleAuthCallback = async () => {
       try {
@@ -29,14 +48,26 @@ export default function AuthCallbackPage() {
           throw new Error(decodeURIComponent(providerError));
         }
 
-        const code = searchParams.get("code");
+        const hasOAuthReturn =
+          searchParams.has("code") ||
+          hashParams.has("access_token") ||
+          hashParams.has("refresh_token");
 
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
+        if (!hasOAuthReturn) {
+          throw new Error("Retorno de autenticação inválido.");
+        }
+
+        // Com detectSessionInUrl=true no client, o Supabase já trata a troca
+        // automática do code por sessão. Aqui só aguardamos a sessão estabilizar.
+        const session = await waitForSession();
+
+        if (!session) {
+          throw new Error("A sessão não foi concluída a tempo.");
         }
 
         await refreshSession();
+
+        if (!isMounted) return;
 
         const loginMode = localStorage.getItem("loginMode");
         const destination =
@@ -54,7 +85,7 @@ export default function AuthCallbackPage() {
             : "Não foi possível concluir o login."
         );
 
-        setTimeout(() => {
+        redirectTimeout = window.setTimeout(() => {
           navigate("/login", { replace: true });
         }, 2500);
       }
@@ -64,6 +95,10 @@ export default function AuthCallbackPage() {
 
     return () => {
       isMounted = false;
+
+      if (redirectTimeout) {
+        window.clearTimeout(redirectTimeout);
+      }
     };
   }, [navigate, refreshSession]);
 
@@ -87,14 +122,12 @@ export default function AuthCallbackPage() {
               </p>
             </>
           ) : (
-            <>
-              <div className="flex items-center justify-center gap-3">
-                <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                <span className="text-muted-foreground font-medium">
-                  Finalizando login...
-                </span>
-              </div>
-            </>
+            <div className="flex items-center justify-center gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <span className="text-muted-foreground font-medium">
+                Finalizando login...
+              </span>
+            </div>
           )}
         </div>
       </div>
