@@ -1,20 +1,15 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
-  useLocation,
-  useNavigate,
 } from "react-router";
 import { SubscriptionProvider } from "@/react-app/contexts/SubscriptionContext";
 import { ToastProvider } from "@/react-app/components/ui/microinteractions";
 import { ThemeProvider } from "@/react-app/hooks/useTheme";
 import { LanguageProvider } from "@/react-app/contexts/LanguageContext";
-import {
-  AppAuthProvider,
-  useAppAuth,
-} from "@/react-app/contexts/AuthContext";
+import { AppAuthProvider } from "@/react-app/contexts/AuthContext";
 
 // Intercepta OAuth return na raiz ANTES de qualquer render do React
 if (
@@ -110,27 +105,6 @@ function PageLoader() {
   );
 }
 
-function OAuthReturnBridge() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, isPending } = useAppAuth();
-
-  useEffect(() => {
-    const hasSupabaseHash =
-      window.location.hash.includes("access_token=") ||
-      window.location.hash.includes("refresh_token=");
-
-    if (!isPending && user && hasSupabaseHash && location.pathname === "/") {
-      const loginMode = localStorage.getItem("loginMode");
-      navigate(loginMode === "student" ? "/estudante" : "/dashboard", {
-        replace: true,
-      });
-    }
-  }, [user, isPending, location.pathname, navigate]);
-
-  return null;
-}
-
 export default function App() {
   return (
     <AppAuthProvider>
@@ -139,8 +113,6 @@ export default function App() {
           <SubscriptionProvider>
             <ToastProvider>
               <Router>
-                <OAuthReturnBridge />
-
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
                     <Route path="/" element={<HomePage />} />
