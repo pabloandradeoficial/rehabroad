@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@getmocha/users-service/react";
+import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
 import { useToast } from "@/react-app/components/ui/microinteractions";
 import { Button } from "@/react-app/components/ui/button";
@@ -91,7 +91,7 @@ function getCategoryInfo(categoryId: string) {
 }
 
 export default function Forum() {
-  const { user } = useAuth();
+  const { user } = useAppAuth();
   const toast = useToast();
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +108,6 @@ export default function Forum() {
   const [editingComment, setEditingComment] = useState<ForumComment | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
 
-  // New post form
   const [newPostForm, setNewPostForm] = useState({
     category: "casos",
     title: "",
@@ -116,15 +115,16 @@ export default function Forum() {
   });
 
   useEffect(() => {
-    fetchPosts();
+    void fetchPosts();
   }, [selectedCategory]);
 
   async function fetchPosts() {
     try {
       setLoading(true);
-      const url = selectedCategory === "all" 
-        ? "/api/forum/posts" 
-        : `/api/forum/posts?category=${selectedCategory}`;
+      const url =
+        selectedCategory === "all"
+          ? "/api/forum/posts"
+          : `/api/forum/posts?category=${selectedCategory}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -155,9 +155,9 @@ export default function Forum() {
         toast.showSuccess("Post publicado!");
         setShowNewPost(false);
         setNewPostForm({ category: "casos", title: "", content: "" });
-        fetchPosts();
+        await fetchPosts();
       }
-    } catch (err) {
+    } catch (_err) {
       toast.showError("Erro ao publicar");
     } finally {
       setSubmitting(false);
@@ -206,21 +206,24 @@ export default function Forum() {
 
       if (res.ok) {
         setNewComment("");
-        // Refresh comments
         const postRes = await fetch(`/api/forum/posts/${selectedPost.id}`);
         if (postRes.ok) {
           const data = await postRes.json();
           setComments(data.comments || []);
-          setSelectedPost({ ...selectedPost, comments_count: selectedPost.comments_count + 1 });
+          setSelectedPost({
+            ...selectedPost,
+            comments_count: selectedPost.comments_count + 1,
+          });
         }
-        // Update post in list
         setPosts((prev) =>
           prev.map((p) =>
-            p.id === selectedPost.id ? { ...p, comments_count: p.comments_count + 1 } : p
+            p.id === selectedPost.id
+              ? { ...p, comments_count: p.comments_count + 1 }
+              : p
           )
         );
       }
-    } catch (err) {
+    } catch (_err) {
       toast.showError("Erro ao comentar");
     } finally {
       setSubmitting(false);
@@ -245,7 +248,6 @@ export default function Forum() {
           return newSet;
         });
 
-        // Update post count
         setPosts((prev) =>
           prev.map((p) =>
             p.id === postId
@@ -277,9 +279,9 @@ export default function Forum() {
       if (res.ok) {
         toast.showSuccess("Post excluído");
         setSelectedPost(null);
-        fetchPosts();
+        await fetchPosts();
       }
-    } catch (err) {
+    } catch (_err) {
       toast.showError("Erro ao excluir");
     }
   }
@@ -303,12 +305,12 @@ export default function Forum() {
         setEditingPost(null);
         setShowNewPost(false);
         setNewPostForm({ category: "casos", title: "", content: "" });
-        fetchPosts();
+        await fetchPosts();
         if (selectedPost?.id === editingPost.id) {
           setSelectedPost({ ...selectedPost, ...newPostForm });
         }
       }
-    } catch (err) {
+    } catch (_err) {
       toast.showError("Erro ao atualizar");
     } finally {
       setSubmitting(false);
@@ -330,7 +332,6 @@ export default function Forum() {
         toast.showSuccess("Comentário atualizado!");
         setEditingComment(null);
         setEditCommentContent("");
-        // Refresh comments
         if (selectedPost) {
           const postRes = await fetch(`/api/forum/posts/${selectedPost.id}`);
           if (postRes.ok) {
@@ -339,7 +340,7 @@ export default function Forum() {
           }
         }
       }
-    } catch (err) {
+    } catch (_err) {
       toast.showError("Erro ao atualizar");
     } finally {
       setSubmitting(false);
@@ -535,17 +536,24 @@ export default function Forum() {
         </div>
 
         {/* New/Edit Post Dialog */}
-        <Dialog open={showNewPost} onOpenChange={(open) => {
-          setShowNewPost(open);
-          if (!open) {
-            setEditingPost(null);
-            setNewPostForm({ category: "casos", title: "", content: "" });
-          }
-        }}>
+        <Dialog
+          open={showNewPost}
+          onOpenChange={(open) => {
+            setShowNewPost(open);
+            if (!open) {
+              setEditingPost(null);
+              setNewPostForm({ category: "casos", title: "", content: "" });
+            }
+          }}
+        >
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                {editingPost ? <Pencil className="h-5 w-5 text-violet-500" /> : <Plus className="h-5 w-5 text-violet-500" />}
+                {editingPost ? (
+                  <Pencil className="h-5 w-5 text-violet-500" />
+                ) : (
+                  <Plus className="h-5 w-5 text-violet-500" />
+                )}
                 {editingPost ? "Editar Discussão" : "Nova Discussão"}
               </DialogTitle>
             </DialogHeader>
@@ -594,11 +602,14 @@ export default function Forum() {
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => {
-                  setShowNewPost(false);
-                  setEditingPost(null);
-                  setNewPostForm({ category: "casos", title: "", content: "" });
-                }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowNewPost(false);
+                    setEditingPost(null);
+                    setNewPostForm({ category: "casos", title: "", content: "" });
+                  }}
+                >
                   Cancelar
                 </Button>
                 <Button
@@ -628,7 +639,9 @@ export default function Forum() {
                   </button>
                   <DialogTitle className="text-xl">{selectedPost.title}</DialogTitle>
                   <div className="flex items-center gap-3 mt-2">
-                    <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getCategoryInfo(selectedPost.category).color} flex items-center justify-center text-white text-xs font-bold`}>
+                    <div
+                      className={`w-8 h-8 rounded-full bg-gradient-to-br ${getCategoryInfo(selectedPost.category).color} flex items-center justify-center text-white text-xs font-bold`}
+                    >
                       {getInitials(selectedPost.user_name)}
                     </div>
                     <div>
@@ -734,7 +747,11 @@ export default function Forum() {
                                     <Button size="sm" onClick={handleEditComment} disabled={submitting}>
                                       {submitting ? <Spinner size="sm" /> : "Salvar"}
                                     </Button>
-                                    <Button size="sm" variant="outline" onClick={() => setEditingComment(null)}>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setEditingComment(null)}
+                                    >
                                       Cancelar
                                     </Button>
                                   </div>
@@ -760,12 +777,12 @@ export default function Forum() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
-                          handleAddComment();
+                          void handleAddComment();
                         }
                       }}
                     />
                     <Button
-                      onClick={handleAddComment}
+                      onClick={() => void handleAddComment()}
                       disabled={submitting || !newComment.trim()}
                       className="bg-gradient-to-r from-violet-600 to-purple-600"
                     >
