@@ -1,22 +1,37 @@
 import { useState } from "react";
-import { Gift, Mail, Link2, Copy, MessageCircle, Check, Users, Share2, ArrowLeft, GraduationCap } from "lucide-react";
+import {
+  Gift,
+  Mail,
+  Link2,
+  Copy,
+  MessageCircle,
+  Check,
+  Users,
+  Share2,
+  ArrowLeft,
+  GraduationCap,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Input } from "@/react-app/components/ui/input";
 import { Label } from "@/react-app/components/ui/label";
+import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
 interface Props {
   onBack: () => void;
 }
 
 export default function StudentReferral({ onBack }: Props) {
+  const { user, isPending, loginWithGoogle } = useAppAuth();
+
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const referralLink = "https://rehabroad.com.br/estudante?ref=indicacao";
-  
+
   const defaultMessage = `Ei! Achei uma plataforma incrível pra estudar fisioterapia 🎓
 
 O RehabRoad Estudante tem:
@@ -29,7 +44,22 @@ O RehabRoad Estudante tem:
 É gratuito! Acessa: ${referralLink}`;
 
   const handleSendEmail = async () => {
+    setEmailError(null);
+    setEmailSent(false);
+
     if (!email || !email.includes("@")) {
+      setEmailError("Digite um e-mail válido.");
+      return;
+    }
+
+    if (!user) {
+      try {
+        localStorage.setItem("loginMode", "student");
+        await loginWithGoogle();
+      } catch (error) {
+        console.error("Error starting student login from referral:", error);
+        setEmailError("Não foi possível iniciar o login agora.");
+      }
       return;
     }
 
@@ -45,10 +75,19 @@ O RehabRoad Estudante tem:
       if (res.ok) {
         setEmailSent(true);
         setEmail("");
-        setTimeout(() => setEmailSent(false), 3000);
+        window.setTimeout(() => setEmailSent(false), 3000);
+        return;
       }
-    } catch {
-      // Silent fail
+
+      if (res.status === 401 || res.status === 403) {
+        setEmailError("Faça login para enviar convites por e-mail.");
+        return;
+      }
+
+      setEmailError("Não foi possível enviar o convite agora.");
+    } catch (error) {
+      console.error("Error sending referral email:", error);
+      setEmailError("Não foi possível enviar o convite agora.");
     } finally {
       setSending(false);
     }
@@ -57,7 +96,7 @@ O RehabRoad Estudante tem:
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink);
     setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2000);
+    window.setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const handleShareWhatsApp = () => {
@@ -162,6 +201,12 @@ O RehabRoad Estudante tem:
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {!user && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Faça login como estudante para enviar convites por e-mail.
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-700">E-mail do amigo</Label>
               <Input
@@ -171,19 +216,28 @@ O RehabRoad Estudante tem:
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 bg-white border-slate-200"
+                disabled={isPending || sending}
               />
             </div>
+
             <Button
               onClick={handleSendEmail}
-              disabled={sending || !email}
+              disabled={sending || !email || isPending}
               className="w-full h-11 bg-blue-600 hover:bg-blue-700"
             >
-              {sending ? (
+              {isPending ? (
+                "Carregando..."
+              ) : sending ? (
                 "Enviando..."
               ) : emailSent ? (
                 <>
                   <Check className="w-5 h-5 mr-2" />
                   Convite Enviado!
+                </>
+              ) : !user ? (
+                <>
+                  <Mail className="w-5 h-5 mr-2" />
+                  Entrar para Enviar
                 </>
               ) : (
                 <>
@@ -192,6 +246,10 @@ O RehabRoad Estudante tem:
                 </>
               )}
             </Button>
+
+            {emailError ? (
+              <p className="text-sm text-red-500">{emailError}</p>
+            ) : null}
           </CardContent>
         </Card>
 
