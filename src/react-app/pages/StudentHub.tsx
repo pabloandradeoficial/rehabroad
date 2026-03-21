@@ -91,6 +91,122 @@ interface StudentProgress {
   avatar_url: string | null;
 }
 
+interface StoredCaseProgress {
+  caseId: string;
+  correct?: boolean;
+  selectedOption?: string;
+  completedAt?: string;
+}
+
+const GUEST_PROGRESS_KEY = "rehabroad_student_progress_guest";
+const GUEST_STREAK_KEY = "rehabroad_student_streak_guest";
+
+function parseStoredCaseProgress(raw: string | null): StoredCaseProgress[] {
+  if (!raw) return [];
+
+  try {
+    const data = JSON.parse(raw);
+
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data.filter(
+      (item): item is StoredCaseProgress =>
+        Boolean(item) &&
+        typeof item === "object" &&
+        typeof item.caseId === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+
+function summarizeStoredCaseProgress(items: StoredCaseProgress[]) {
+  return {
+    casesCompleted: items.length,
+    casesCorrect: items.filter((item) => item.correct).length,
+  };
+}
+
+function readStoredStreak(key: string): number {
+  const value = parseInt(localStorage.getItem(key) || "0", 10);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function mergeStoredCaseProgress(
+  existingItems: StoredCaseProgress[],
+  incomingItems: StoredCaseProgress[]
+): StoredCaseProgress[] {
+  const merged = new Map<string, StoredCaseProgress>();
+
+  const toTimestamp = (value?: string) => {
+    const timestamp = Date.parse(value ?? "");
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  };
+
+  for (const item of [...existingItems, ...incomingItems]) {
+    const current = merged.get(item.caseId);
+
+    if (!current) {
+      merged.set(item.caseId, item);
+      continue;
+    }
+
+    const currentTime = toTimestamp(current.completedAt);
+    const itemTime = toTimestamp(item.completedAt);
+
+    if (itemTime > currentTime) {
+      merged.set(item.caseId, { ...current, ...item });
+      continue;
+    }
+
+    if (item.correct && !current.correct) {
+      merged.set(item.caseId, { ...current, ...item, correct: true });
+    }
+  }
+
+  return Array.from(merged.values()).sort(
+    (a, b) => toTimestamp(a.completedAt) - toTimestamp(b.completedAt)
+  );
+}
+
+function migrateGuestProgressToUser(userId: string) {
+  try {
+    const guestProgress = parseStoredCaseProgress(
+      localStorage.getItem(GUEST_PROGRESS_KEY)
+    );
+    const guestStreak = readStoredStreak(GUEST_STREAK_KEY);
+
+    if (guestProgress.length === 0 && guestStreak === 0) {
+      return;
+    }
+
+    const userProgressKey = `rehabroad_student_progress_${userId}`;
+    const userStreakKey = `rehabroad_student_streak_${userId}`;
+
+    const existingUserProgress = parseStoredCaseProgress(
+      localStorage.getItem(userProgressKey)
+    );
+
+    const mergedProgress = mergeStoredCaseProgress(
+      existingUserProgress,
+      guestProgress
+    );
+
+    localStorage.setItem(userProgressKey, JSON.stringify(mergedProgress));
+    localStorage.setItem(
+      userStreakKey,
+      String(Math.max(readStoredStreak(userStreakKey), guestStreak))
+    );
+
+    localStorage.removeItem(GUEST_PROGRESS_KEY);
+    localStorage.removeItem(GUEST_STREAK_KEY);
+  } catch (error) {
+    console.error("Error migrating guest student progress:", error);
+  }
+}
+
 // LEVEL 2: Main clinical modules
 const mainModules: ModuleCard[] = [
   {
@@ -197,9 +313,7 @@ export default function StudentHub() {
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
 
   const displayName =
-    user?.user_metadata?.name ||
-    user?.email?.split("@")[0] ||
-    "Estudante";
+    user?.user_metadata?.name || user?.email?.split("@")[0] || "Estudante";
 
   // Module progress tracking from localStorage
   const moduleProgress = useMemo(() => {
@@ -212,7 +326,7 @@ export default function StudentHub() {
           const data = JSON.parse(saved);
           const completed = Array.isArray(data)
             ? data.length
-            : (data.completed || 0);
+            : data.completed || 0;
           return Math.min(100, Math.round((completed / totalItems) * 100));
         }
       } catch {
@@ -277,32 +391,38 @@ export default function StudentHub() {
     const userId = user?.id;
     const localProgressKey = userId
       ? `rehabroad_student_progress_${userId}`
-      : "rehabroad_student_progress_guest";
+      : GUEST_PROGRESS_KEY;
+    const localStreakKey = userId
+      ? `rehabroad_student_streak_${userId}`
+      : GUEST_STREAK_KEY;
 
-    const readLocalProgress = () => {
+    const readLocalProgress = (progressKey: string, streakKey: string) => {
       let localCases = 0;
       let localCorrect = 0;
-      let localStreak = 0;
+      let localStreak = readStoredStreak(streakKey);
 
       try {
-        const raw = localStorage.getItem(localProgressKey);
-        if (raw) {
-          const data = JSON.parse(raw);
-          if (Array.isArray(data)) {
-            localCases = data.length;
-            localCorrect = data.filter((p: { correct?: boolean }) => p.correct)
-              .length;
-          } else if (typeof data === "object") {
-            localCases = data.cases_completed || 0;
-            localCorrect = data.cases_correct || 0;
-            localStreak = data.streak || 0;
+        const caseProgress = parseStoredCaseProgress(
+          localStorage.getItem(progressKey)
+        );
+
+        if (caseProgress.length > 0) {
+          const summary = summarizeStoredCaseProgress(caseProgress);
+          localCases = summary.casesCompleted;
+          localCorrect = summary.casesCorrect;
+        } else {
+          const raw = localStorage.getItem(progressKey);
+
+          if (raw) {
+            const data = JSON.parse(raw);
+
+            if (!Array.isArray(data) && typeof data === "object" && data) {
+              localCases = Number(data.cases_completed || 0);
+              localCorrect = Number(data.cases_correct || 0);
+              localStreak = Math.max(localStreak, Number(data.streak || 0));
+            }
           }
         }
-        const streakKey = userId
-          ? `rehabroad_student_streak_${userId}`
-          : "rehabroad_student_streak_guest";
-        const savedStreak = parseInt(localStorage.getItem(streakKey) || "0", 10);
-        localStreak = Math.max(localStreak, savedStreak);
       } catch {
         // ignore
       }
@@ -311,31 +431,42 @@ export default function StudentHub() {
     };
 
     if (userId) {
+      migrateGuestProgressToUser(userId);
+    }
+
+    if (userId) {
       try {
         const res = await fetch("/api/student/progress", {
           credentials: "include",
         });
+
         if (res.ok) {
           const data = await res.json();
           const serverData = data.progress || {};
-          const { localCases, localCorrect, localStreak } = readLocalProgress();
-
-          const finalCases = Math.max(serverData.cases_completed || 0, localCases);
-          const finalCorrect = Math.max(
-            serverData.cases_correct || 0,
-            localCorrect
+          const { localCases, localCorrect, localStreak } = readLocalProgress(
+            localProgressKey,
+            localStreakKey
           );
-          const finalStreak = Math.max(serverData.streak || 0, localStreak);
 
-          if (localCases > (serverData.cases_completed || 0)) {
-            fetch("/api/student/progress", {
+          const serverCases = serverData.cases_completed || 0;
+          const serverCorrect = serverData.cases_correct || 0;
+          const serverStreak = serverData.streak || 0;
+
+          const finalCases = Math.max(serverCases, localCases);
+          const finalCorrect = Math.max(serverCorrect, localCorrect);
+          const finalStreak = Math.max(serverStreak, localStreak);
+
+          const deltaCases = Math.max(0, localCases - serverCases);
+          const deltaCorrect = Math.max(0, localCorrect - serverCorrect);
+
+          if (deltaCases > 0 || deltaCorrect > 0) {
+            void fetch("/api/student/progress", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
               body: JSON.stringify({
-                cases_completed:
-                  localCases - (serverData.cases_completed || 0),
-                cases_correct: localCorrect - (serverData.cases_correct || 0),
+                cases_completed: deltaCases,
+                cases_correct: deltaCorrect,
               }),
             }).catch(console.error);
           }
@@ -354,7 +485,10 @@ export default function StudentHub() {
             avatar_url: serverData.avatar_url || null,
           });
         } else {
-          const { localCases, localCorrect, localStreak } = readLocalProgress();
+          const { localCases, localCorrect, localStreak } = readLocalProgress(
+            localProgressKey,
+            localStreakKey
+          );
           setProgress({
             cases_completed: localCases,
             cases_correct: localCorrect,
@@ -370,7 +504,10 @@ export default function StudentHub() {
         }
       } catch (e) {
         console.error("Error fetching progress:", e);
-        const { localCases, localCorrect, localStreak } = readLocalProgress();
+        const { localCases, localCorrect, localStreak } = readLocalProgress(
+          localProgressKey,
+          localStreakKey
+        );
         setProgress({
           cases_completed: localCases,
           cases_correct: localCorrect,
@@ -385,7 +522,10 @@ export default function StudentHub() {
         });
       }
     } else {
-      const { localCases, localCorrect, localStreak } = readLocalProgress();
+      const { localCases, localCorrect, localStreak } = readLocalProgress(
+        localProgressKey,
+        localStreakKey
+      );
       setProgress({
         cases_completed: localCases,
         cases_correct: localCorrect,
@@ -532,7 +672,9 @@ export default function StudentHub() {
             />
           )}
           {activeModule === "pain-map" && <PainMapModule onBack={handleBack} />}
-          {activeModule === "muscles" && <KeyMusclesModule onBack={handleBack} />}
+          {activeModule === "muscles" && (
+            <KeyMusclesModule onBack={handleBack} />
+          )}
           {activeModule === "tests" && (
             <OrthopedicTestsModule onBack={handleBack} />
           )}
@@ -756,7 +898,9 @@ export default function StudentHub() {
 
               {/* Achievement badge preview */}
               <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 mb-4 border border-emerald-100">
-                <p className="text-xs text-slate-500 mb-2">Seu selo de conquista:</p>
+                <p className="text-xs text-slate-500 mb-2">
+                  Seu selo de conquista:
+                </p>
                 <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm border border-emerald-200">
                   <Trophy className="w-5 h-5 text-amber-500" />
                   <span className="font-bold text-slate-900">
@@ -766,7 +910,9 @@ export default function StudentHub() {
               </div>
 
               {/* Share buttons */}
-              <p className="text-xs text-slate-500 mb-3">Compartilhe sua conquista:</p>
+              <p className="text-xs text-slate-500 mb-3">
+                Compartilhe sua conquista:
+              </p>
               <div className="flex gap-2 justify-center">
                 <button
                   onClick={handleShareWhatsApp}
@@ -805,7 +951,9 @@ export default function StudentHub() {
             <button
               onClick={() => setLanguage(language === "pt" ? "en" : "pt")}
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-all"
-              title={language === "pt" ? "Switch to English" : "Mudar para Português"}
+              title={
+                language === "pt" ? "Switch to English" : "Mudar para Português"
+              }
             >
               <Globe className="w-3.5 h-3.5" />
               <span className="uppercase">{language}</span>
@@ -831,22 +979,21 @@ export default function StudentHub() {
 
       {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 py-4 space-y-4">
-        {/* ALTERAÇÃO 8: Value Reinforcement */}
         <p className="text-center text-xs text-slate-500">
-          Plataforma gratuita para estudantes de fisioterapia treinarem raciocínio clínico.
+          Plataforma gratuita para estudantes de fisioterapia treinarem
+          raciocínio clínico.
         </p>
 
-        {/* ALTERAÇÃO 1: New Headline */}
         <div className="text-center pt-2 pb-4">
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight mb-2">
             Treine seu Raciocínio Clínico como um Fisioterapeuta Especialista
           </h1>
           <p className="text-sm text-slate-600">
-            Resolva casos clínicos, pratique testes ortopédicos e conecte teoria com prática.
+            Resolva casos clínicos, pratique testes ortopédicos e conecte teoria
+            com prática.
           </p>
         </div>
 
-        {/* ALTERAÇÃO 6: Progress Bar */}
         {!isPending && (
           <Card className="border-0 shadow-sm bg-white">
             <CardContent className="p-4">
@@ -900,7 +1047,6 @@ export default function StudentHub() {
           </Card>
         )}
 
-        {/* ALTERAÇÃO 7: Case of the Day */}
         {!dailyChallengeCompleted && (
           <Card className="border-0 shadow-sm bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-l-orange-400">
             <CardContent className="p-4">
@@ -913,7 +1059,8 @@ export default function StudentHub() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-600">
-                    Resolva o desafio clínico de hoje e mantenha sua sequência de estudos.
+                    Resolva o desafio clínico de hoje e mantenha sua sequência
+                    de estudos.
                   </p>
                 </div>
                 <Button
@@ -929,7 +1076,6 @@ export default function StudentHub() {
           </Card>
         )}
 
-        {/* ALTERAÇÃO 2: User Metrics */}
         {!isPending && progress && !loadingProgress && (
           <div className="grid grid-cols-3 gap-2">
             <CircularStatCard
@@ -957,35 +1103,36 @@ export default function StudentHub() {
           </div>
         )}
 
-        {/* Streak highlight */}
         {currentStreak > 0 && (
           <div className="flex items-center justify-center gap-2 py-2">
             <Flame className="w-4 h-4 text-orange-500" />
             <span className="text-sm font-semibold text-slate-900">
-              {currentStreak} {currentStreak === 1 ? "dia" : "dias"} seguidos estudando
+              {currentStreak} {currentStreak === 1 ? "dia" : "dias"} seguidos
+              estudando
             </span>
             <Flame className="w-4 h-4 text-orange-500" />
           </div>
         )}
 
-        {/* ALTERAÇÃO 3: Weekly Progress with Legend */}
         {!isPending && progress && !loadingProgress && (
           <div className="space-y-1">
             <WeeklyProgressChart data={weeklyData} />
             <p className="text-[10px] text-slate-400 text-center px-2">
-              Cada barra representa um dia de estudo. Quanto mais escura, maior a atividade.
+              Cada barra representa um dia de estudo. Quanto mais escura, maior
+              a atividade.
             </p>
           </div>
         )}
 
-        {/* Desktop: Streak Calendar */}
         {!isPending && progress && !loadingProgress && (
           <div className="hidden sm:block">
-            <StreakCalendar activityData={activityData} streak={progress.streak || 0} />
+            <StreakCalendar
+              activityData={activityData}
+              streak={progress.streak || 0}
+            />
           </div>
         )}
 
-        {/* Login/User Card */}
         {!isPending && (
           <Card className="border-0 shadow-sm bg-white">
             <CardContent className="p-4">
@@ -1028,7 +1175,9 @@ export default function StudentHub() {
                       <p className="font-semibold text-slate-900 text-sm">
                         Salve seu progresso
                       </p>
-                      <p className="text-xs text-slate-500">Entre com Google</p>
+                      <p className="text-xs text-slate-500">
+                        Entre com Google
+                      </p>
                     </div>
                   </div>
                   <Button
@@ -1045,7 +1194,6 @@ export default function StudentHub() {
           </Card>
         )}
 
-        {/* ALTERAÇÃO 4 - NÍVEL 1: Daily Training (Highlighted) */}
         <section>
           <motion.div
             whileTap={{ scale: 0.98 }}
@@ -1073,7 +1221,8 @@ export default function StudentHub() {
               </div>
 
               <p className="text-white/90 text-sm mb-4">
-                Resolva 5 casos clínicos por dia e desenvolva seu raciocínio clínico.
+                Resolva 5 casos clínicos por dia e desenvolva seu raciocínio
+                clínico.
               </p>
 
               <Button className="bg-white text-orange-600 hover:bg-white/90 font-semibold gap-2">
@@ -1085,7 +1234,6 @@ export default function StudentHub() {
           </motion.div>
         </section>
 
-        {/* ALTERAÇÃO 4 - NÍVEL 2: Main Clinical Modules */}
         <section>
           <h2 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
             <Stethoscope className="w-4 h-4 text-teal-600" />
@@ -1098,7 +1246,6 @@ export default function StudentHub() {
           </div>
         </section>
 
-        {/* ALTERAÇÃO 4 - NÍVEL 3: Support Modules */}
         <section>
           <h2 className="text-sm font-bold text-slate-500 mb-3 flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
@@ -1106,31 +1253,37 @@ export default function StudentHub() {
           </h2>
           <div className="grid grid-cols-3 gap-2">
             {supportModules.map((module) => (
-              <ModuleCardComponent key={module.id} module={module} size="small" />
+              <ModuleCardComponent
+                key={module.id}
+                module={module}
+                size="small"
+              />
             ))}
           </div>
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 px-4 mt-6">
         <div className="max-w-2xl mx-auto text-center">
           <p className="text-xs text-slate-500 mb-3">
-            Conteúdo educacional para apoio ao estudo. Não substitui supervisão clínica.
+            Conteúdo educacional para apoio ao estudo. Não substitui supervisão
+            clínica.
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link to="/" className="text-xs text-slate-600 hover:text-slate-900">
               Voltar ao Site
             </Link>
             <span className="text-slate-300">•</span>
-            <Link to="/login" className="text-xs text-teal-600 hover:text-teal-700 font-medium">
+            <Link
+              to="/login"
+              className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+            >
               Área Profissional →
             </Link>
           </div>
         </div>
       </footer>
 
-      {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 py-1.5 px-1 md:hidden z-50 safe-area-inset-bottom shadow-lg">
         <div className="flex items-center justify-around max-w-md mx-auto">
           <button
