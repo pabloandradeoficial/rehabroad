@@ -26,17 +26,27 @@ const LEGACY_AUTH_COOKIE_NAMES = [
 ];
 
 function getEnvString(env: Record<string, unknown> | undefined, key: string): string | null {
-  if (!env) {
+  if (!env || !(key in env)) {
     return null;
   }
 
-  const value = env[key];
-  if (typeof value !== "string") {
+  const raw = env[key];
+
+  if (raw === null || raw === undefined) {
     return null;
   }
 
-  const normalized = value.trim();
-  return normalized || null;
+  if (typeof raw === "string") {
+    const normalized = raw.trim();
+    return normalized || null;
+  }
+
+  if (raw instanceof String) {
+    const normalized = raw.toString().trim();
+    return normalized || null;
+  }
+
+  return null;
 }
 
 function getSupabaseConfig(env: Record<string, unknown> | undefined) {
