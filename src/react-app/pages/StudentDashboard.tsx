@@ -57,6 +57,30 @@ interface StudentDashboardProps {
   onProgressUpdate?: () => void;
 }
 
+function parseStoredProgress(raw: string | null): CaseProgress[] {
+  if (!raw) return [];
+
+  try {
+    const data = JSON.parse(raw);
+
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data.filter(
+      (item): item is CaseProgress =>
+        Boolean(item) &&
+        typeof item === "object" &&
+        typeof item.caseId === "string" &&
+        typeof item.correct === "boolean" &&
+        typeof item.selectedOption === "string" &&
+        typeof item.completedAt === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+
 export default function StudentDashboard({
   onProgressUpdate,
 }: StudentDashboardProps = {}) {
@@ -79,21 +103,52 @@ export default function StudentDashboard({
     const progressKey = user?.id
       ? `rehabroad_student_progress_${user.id}`
       : "rehabroad_student_progress_guest";
-    const savedProgress = localStorage.getItem(progressKey);
-    if (savedProgress) setProgress(JSON.parse(savedProgress));
+
+    const parsed = parseStoredProgress(localStorage.getItem(progressKey));
+    setProgress(parsed);
   }, [user?.id]);
 
   useEffect(() => {
-    if (viewMode === "ranking" && ranking.length === 0) {
-      setLoadingRanking(true);
-      fetch("/api/student/ranking", { credentials: "include" })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.ranking) setRanking(data.ranking);
-        })
-        .catch(console.error)
-        .finally(() => setLoadingRanking(false));
+    if (viewMode !== "ranking" || ranking.length > 0) {
+      return;
     }
+
+    let isMounted = true;
+
+    const loadRanking = async () => {
+      setLoadingRanking(true);
+
+      try {
+        const res = await fetch("/api/student/ranking", {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          throw new Error(`Ranking request failed: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (!isMounted) return;
+
+        setRanking(Array.isArray(data?.ranking) ? data.ranking : []);
+      } catch (error) {
+        console.error("Error loading student ranking:", error);
+
+        if (!isMounted) return;
+        setRanking([]);
+      } finally {
+        if (isMounted) {
+          setLoadingRanking(false);
+        }
+      }
+    };
+
+    void loadRanking();
+
+    return () => {
+      isMounted = false;
+    };
   }, [viewMode, ranking.length]);
 
   const stats = useMemo(() => {
@@ -180,9 +235,10 @@ export default function StudentDashboard({
             if (retries > 0) setTimeout(() => postProgress(retries - 1), 1000);
           }
         };
-        postProgress();
+        void postProgress();
       }
     }
+
     setViewMode("result");
   };
 
@@ -638,7 +694,6 @@ export default function StudentDashboard({
     return (
       <div className="min-h-screen bg-slate-50 py-6 px-4 pb-24">
         <div className="max-w-3xl mx-auto">
-          {/* Success Animation Overlay */}
           <SuccessAnimation
             show={showSuccessAnimation}
             onComplete={() => setShowSuccessAnimation(false)}
