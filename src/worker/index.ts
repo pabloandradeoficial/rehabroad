@@ -13,6 +13,71 @@ import { getSEOForRoute, injectSEOTags } from "./seo";
 
 const app = new Hono<{ Bindings: Env }>();
 
+
+type D1InsertResult = {
+  meta?: {
+    last_row_id?: number | string | null;
+  } | null;
+};
+
+function getInsertedId(result: unknown): number | string | null {
+  if (!result || typeof result !== "object") {
+    return null;
+  }
+
+  const meta = (result as D1InsertResult).meta;
+  if (!meta || typeof meta !== "object") {
+    return null;
+  }
+
+  return meta.last_row_id ?? null;
+}
+
+function normalizeDelimitedTextValue(value: unknown): string | null {
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+      .join(", ");
+    return normalized || null;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    return normalized || null;
+  }
+
+  return null;
+}
+
+function splitDelimitedText(value: unknown): string[] {
+  const normalized = normalizeDelimitedTextValue(value);
+  if (!normalized) {
+    return [];
+  }
+
+  return normalized
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function normalizeCaminhoRecord<T extends Record<string, any> | null>(record: T) {
+  if (!record) {
+    return null;
+  }
+
+  const painPattern = normalizeDelimitedTextValue(
+    record.pain_pattern ?? record.pain_patterns
+  );
+
+  return {
+    ...record,
+    pain_pattern: painPattern,
+    pain_patterns: painPattern,
+  };
+}
+
 // HTTPS Redirect Middleware: Force HTTPS on custom domains
 app.use("*", async (c, next) => {
   const url = new URL(c.req.url);
@@ -279,7 +344,10 @@ app.post("/api/student/progress", optionalAuthMiddleware, async (c) => {
 app.get("/api/student/ranking", async (c) => {
   const { results } = await c.env.DB.prepare(`
     SELECT 
+      user_id,
       user_name,
+      avatar_url,
+      xp,
       cases_completed,
       cases_correct,
       streak,
@@ -290,11 +358,23 @@ app.get("/api/student/ranking", async (c) => {
       END as accuracy
     FROM student_progress
     WHERE cases_completed > 0
-    ORDER BY accuracy DESC, cases_completed DESC, streak DESC
+    ORDER BY accuracy DESC, cases_completed DESC, cases_correct DESC, xp DESC, streak DESC, user_name ASC
     LIMIT 50
   `).all();
 
-  return c.json({ ranking: results }, 200);
+  const ranking = (results || []).map((row: any, index: number) => ({
+    rank: index + 1,
+    user_id: row.user_id ?? null,
+    user_name: row.user_name ?? null,
+    avatar_url: row.avatar_url ?? null,
+    xp: Number(row.xp ?? 0),
+    cases_completed: Number(row.cases_completed ?? 0),
+    cases_correct: Number(row.cases_correct ?? 0),
+    streak: Number(row.streak ?? 0),
+    accuracy: Number(row.accuracy ?? 0),
+  }));
+
+  return c.json({ ranking }, 200);
 });
 
 // ============ STUDENT AVATAR ENDPOINTS ============
@@ -450,7 +530,7 @@ app.post("/api/student/community/posts", optionalAuthMiddleware, async (c) => {
     VALUES (?, ?, ?, ?, ?, ?)
   `).bind(user.id, userName, user.email, category, title, content).run();
   
-  return c.json({ success: true, postId: result.meta?.last_row_id ?? null }, 201);
+  return c.json({ success: true, postId: getInsertedId(result) }, 201);
 });
 
 // Create comment (requires auth)
@@ -2441,14 +2521,14 @@ app.get("/api/patients/:patientId/caminho", authMiddleware, async (c) => {
     `SELECT * FROM caminho WHERE patient_id = ?`
   ).bind(patientId).first();
 
-  return c.json(caminho || null);
+  return c.json(normalizeCaminhoRecord(caminho as Record<string, any> | null));
 });
 
 // Create or update caminho
 app.post("/api/patients/:patientId/caminho", authMiddleware, async (c) => {
   const user = c.get("user");
   const patientId = c.req.param("patientId");
-  const body = await c.req.json();
+  const body = await c.req.json<Record<string, unknown>>();
 
   const patient = await c.env.DB.prepare(
     `SELECT id FROM patients WHERE id = ? AND user_id = ?`
@@ -2457,6 +2537,10 @@ app.post("/api/patients/:patientId/caminho", authMiddleware, async (c) => {
   if (!patient) {
     return c.json({ error: "Patient not found" }, 404);
   }
+
+  const normalizedPainPattern = normalizeDelimitedTextValue(
+    body.pain_pattern ?? body.pain_patterns
+  );
 
   // Check if caminho exists
   const existing = await c.env.DB.prepare(
@@ -2473,12 +2557,12 @@ app.post("/api/patients/:patientId/caminho", authMiddleware, async (c) => {
        WHERE patient_id = ?
        RETURNING *`
     ).bind(
-      body.pain_pattern || null,
-      body.aggravating_factors || null,
-      body.relieving_factors || null,
-      body.functional_limitations || null,
-      body.treatment_goals || null,
-      body.red_flags || null,
+      normalizedPainPattern,
+      normalizeDelimitedTextValue(body.aggravating_factors),
+      normalizeDelimitedTextValue(body.relieving_factors),
+      normalizeDelimitedTextValue(body.functional_limitations),
+      normalizeDelimitedTextValue(body.treatment_goals),
+      normalizeDelimitedTextValue(body.red_flags),
       patientId
     ).first();
   } else {
@@ -2488,16 +2572,16 @@ app.post("/api/patients/:patientId/caminho", authMiddleware, async (c) => {
        RETURNING *`
     ).bind(
       patientId,
-      body.pain_pattern || null,
-      body.aggravating_factors || null,
-      body.relieving_factors || null,
-      body.functional_limitations || null,
-      body.treatment_goals || null,
-      body.red_flags || null
+      normalizedPainPattern,
+      normalizeDelimitedTextValue(body.aggravating_factors),
+      normalizeDelimitedTextValue(body.relieving_factors),
+      normalizeDelimitedTextValue(body.functional_limitations),
+      normalizeDelimitedTextValue(body.treatment_goals),
+      normalizeDelimitedTextValue(body.red_flags)
     ).first();
   }
 
-  return c.json(result, existing ? 200 : 201);
+  return c.json(normalizeCaminhoRecord(result as Record<string, any> | null), existing ? 200 : 201);
 });
 
 // ============================================
@@ -2772,11 +2856,11 @@ function generateDiagnosticHypotheses(evaluation: any, caminho: any, _evolution:
   const chiefComplaint = (evaluation.chief_complaint || "").toLowerCase();
   
   // Parse caminho data
-  const painPatterns = caminho?.pain_patterns ? caminho.pain_patterns.split(",").map((s: string) => s.trim().toLowerCase()) : [];
-  const aggravatingFactors = caminho?.aggravating_factors ? caminho.aggravating_factors.split(",").map((s: string) => s.trim().toLowerCase()) : [];
-  const relievingFactors = caminho?.relieving_factors ? caminho.relieving_factors.split(",").map((s: string) => s.trim().toLowerCase()) : [];
-  const functionalLimitations = caminho?.functional_limitations ? caminho.functional_limitations.split(",").map((s: string) => s.trim().toLowerCase()) : [];
-  const redFlags = caminho?.red_flags ? caminho.red_flags.split(",").map((s: string) => s.trim().toLowerCase()) : [];
+  const painPatterns = splitDelimitedText(caminho?.pain_pattern ?? caminho?.pain_patterns);
+  const aggravatingFactors = splitDelimitedText(caminho?.aggravating_factors);
+  const relievingFactors = splitDelimitedText(caminho?.relieving_factors);
+  const functionalLimitations = splitDelimitedText(caminho?.functional_limitations);
+  const redFlags = splitDelimitedText(caminho?.red_flags);
 
   // ========== SHOULDER CONDITIONS ==========
   if (painLocation.includes("ombro") || painLocation.includes("shoulder") || painLocation.includes("deltóide") || painLocation.includes("deltoide")) {
@@ -4180,7 +4264,7 @@ app.post("/api/leads", async (c) => {
     "INSERT INTO leads (name, email, source, created_at, updated_at) VALUES (?, ?, ?, datetime('now'), datetime('now'))"
   ).bind(body.name, body.email, body.source || 'website').run();
 
-  return c.json({ success: true, id: result.meta?.last_row_id ?? null }, 201);
+  return c.json({ success: true, id: getInsertedId(result) }, 201);
 });
 
 // Track page views (public - no auth required)
@@ -4535,7 +4619,7 @@ app.post("/api/appointments", authMiddleware, async (c) => {
     body.is_paid ? 1 : 0
   ).run();
 
-  return c.json({ success: true, id: result.meta?.last_row_id });
+  return c.json({ success: true, id: getInsertedId(result) });
 });
 
 // Update appointment
@@ -4673,7 +4757,7 @@ app.post("/api/transactions", authMiddleware, async (c) => {
     notes || null
   ).run();
 
-  return c.json({ id: result.meta?.last_row_id ?? null, success: true });
+  return c.json({ id: getInsertedId(result), success: true });
 });
 
 // Update transaction
@@ -4768,7 +4852,7 @@ app.post("/api/forum/posts", authMiddleware, async (c) => {
     VALUES (?, ?, ?, ?, ?)
   `).bind(user.id, userName, category, title, content).run();
   
-  return c.json({ id: result.meta?.last_row_id ?? null, success: true });
+  return c.json({ id: getInsertedId(result), success: true });
 });
 
 // Get single post with comments
