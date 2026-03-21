@@ -1,15 +1,50 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
-import { Plus, Search, MoreVertical, User, Calendar, FileText, Pencil, Trash2, Loader2, Sparkles, Activity, ClipboardList, ArrowRight, CheckCircle, BarChart3, Clock, TrendingUp, Crown, Stethoscope, Users, ChevronRight, Zap } from "lucide-react";
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  User,
+  Calendar,
+  FileText,
+  Pencil,
+  Trash2,
+  Loader2,
+  Sparkles,
+  Activity,
+  ClipboardList,
+  ArrowRight,
+  CheckCircle,
+  BarChart3,
+  Clock,
+  TrendingUp,
+  Crown,
+  Stethoscope,
+  Users,
+  ChevronRight,
+  Zap,
+} from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
 import { Badge } from "@/react-app/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/react-app/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/react-app/components/ui/dialog";
 import { Label } from "@/react-app/components/ui/label";
 import { Textarea } from "@/react-app/components/ui/textarea";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/react-app/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/react-app/components/ui/dropdown-menu";
 import { usePatients, type PatientFormData } from "@/react-app/hooks/usePatients";
 import { useAlertasOverview, type AlertOverviewItem } from "@/react-app/hooks/useAlertas";
 import { useDashboardStats, getMotivationalMessage } from "@/react-app/hooks/useDashboardStats";
@@ -17,49 +52,48 @@ import { useOnboarding } from "@/react-app/hooks/useOnboarding";
 import { OnboardingChecklist } from "@/react-app/components/OnboardingChecklist";
 import { useSmartAlerts } from "@/react-app/hooks/useSmartAlerts";
 import { SmartAlerts } from "@/react-app/components/SmartAlerts";
-
 import { PageTransition, useToast } from "@/react-app/components/ui/microinteractions";
 import { PatientAvatar } from "@/react-app/components/PatientAvatar";
 import { WelcomeWizard } from "@/react-app/components/WelcomeWizard";
 import { PainelSkeleton } from "@/react-app/components/DashboardSkeletons";
-import { useAuth } from "@getmocha/users-service/react";
+import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.08 }
-  }
+    transition: { staggerChildren: 0.08 },
+  },
 };
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
 export default function PainelPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAppAuth();
   const { patients, loading, createPatient, updatePatient, deletePatient } = usePatients();
   const [showWelcome, setShowWelcome] = useState(() => {
     return !localStorage.getItem("rehabroad_welcomed");
   });
   const { overview } = useAlertasOverview();
   const { stats: dashboardStats, recentActivities } = useDashboardStats();
-  const { 
-    progress: onboardingProgress, 
-    shouldShowOnboarding, 
+  const {
+    progress: onboardingProgress,
+    shouldShowOnboarding,
     dismissOnboarding,
     showReportPrompt,
     dismissReportPrompt,
     firstEvaluationPatientId,
-    refetch: refetchOnboarding 
+    refetch: refetchOnboarding,
   } = useOnboarding();
-  const { 
-    alerts: smartAlerts, 
-    weeklyPriorities, 
+  const {
+    alerts: smartAlerts,
+    weeklyPriorities,
     stats: alertStats,
-    loading: alertsLoading 
+    loading: alertsLoading,
   } = useSmartAlerts();
 
   const toast = useToast();
@@ -69,7 +103,7 @@ export default function PainelPage() {
       refetchOnboarding();
     }
   }, [patients.length, refetchOnboarding]);
-  
+
   const motivationalMessage = useMemo(() => getMotivationalMessage(), []);
   const [busca, setBusca] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -79,13 +113,14 @@ export default function PainelPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const pacientesFiltrados = patients.filter(p =>
-    p.name.toLowerCase().includes(busca.toLowerCase()) ||
-    (p.notes && p.notes.toLowerCase().includes(busca.toLowerCase()))
+  const pacientesFiltrados = patients.filter(
+    (p) =>
+      p.name.toLowerCase().includes(busca.toLowerCase()) ||
+      (p.notes && p.notes.toLowerCase().includes(busca.toLowerCase()))
   );
 
   const getAlertInfo = (patientId: number): AlertOverviewItem | undefined => {
-    return overview.find(o => o.id === patientId);
+    return overview.find((o) => o.id === patientId);
   };
 
   const openNewPatientDialog = () => {
@@ -94,7 +129,7 @@ export default function PainelPage() {
     setDialogOpen(true);
   };
 
-  const openEditDialog = (patient: typeof patients[0]) => {
+  const openEditDialog = (patient: (typeof patients)[0]) => {
     setEditingPatient(patient.id);
     setFormData({
       name: patient.name,
@@ -154,38 +189,42 @@ export default function PainelPage() {
   };
 
   const handleCreateExample = async () => {
-    // Create example patient
     const examplePatient = await createPatient({
       name: "Maria Silva (Exemplo)",
       birth_date: "1985-03-15",
       phone: "(11) 99999-0000",
       email: "exemplo@rehabroad.com.br",
-      notes: "Paciente exemplo para demonstração do sistema. Você pode editá-lo ou removê-lo a qualquer momento.",
+      notes:
+        "Paciente exemplo para demonstração do sistema. Você pode editá-lo ou removê-lo a qualquer momento.",
     });
 
-    // Create example evaluation
     await fetch(`/api/patients/${examplePatient.id}/evaluations`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chief_complaint: "Dor lombar crônica com irradiação para membro inferior esquerdo há 6 meses",
-        history: "Paciente relata início insidioso de dor lombar há 6 meses, com piora progressiva. Trabalha em escritório, passa 8h sentada. Nega trauma. Refere formigamento em face posterior da coxa esquerda.",
+        chief_complaint:
+          "Dor lombar crônica com irradiação para membro inferior esquerdo há 6 meses",
+        history:
+          "Paciente relata início insidioso de dor lombar há 6 meses, com piora progressiva. Trabalha em escritório, passa 8h sentada. Nega trauma. Refere formigamento em face posterior da coxa esquerda.",
         pain_level: 7,
         pain_location: "Lombar com irradiação para MIE",
-        functional_status: "Dificuldade para sentar por tempo prolongado, subir escadas e carregar objetos",
+        functional_status:
+          "Dificuldade para sentar por tempo prolongado, subir escadas e carregar objetos",
         orthopedic_tests: "Lasègue positivo 45° à esquerda, Slump positivo, SLR positivo",
-        observations: "Hipótese: Radiculopatia L5-S1 à esquerda. Sugere-se eletroterapia analgésica e exercícios de estabilização lombar.",
+        observations:
+          "Hipótese: Radiculopatia L5-S1 à esquerda. Sugere-se eletroterapia analgésica e exercícios de estabilização lombar.",
       }),
     });
 
-    // Create example evolution
     await fetch(`/api/patients/${examplePatient.id}/evolutions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         pain_level: 5,
-        procedures: "TENS modo convencional 20min região lombar, Mobilização neural MIE, Exercícios de estabilização segmentar",
-        observations: "Paciente relata melhora de 30% da dor após 3ª sessão. Formigamento menos intenso. Mantido protocolo.",
+        procedures:
+          "TENS modo convencional 20min região lombar, Mobilização neural MIE, Exercícios de estabilização segmentar",
+        observations:
+          "Paciente relata melhora de 30% da dor após 3ª sessão. Formigamento menos intenso. Mantido protocolo.",
         next_session_plan: "Progredir exercícios de core, iniciar treino funcional",
       }),
     });
@@ -201,19 +240,18 @@ export default function PainelPage() {
 
   const stats = {
     total: patients.length,
-    green: overview.filter(o => o.status === "green").length,
-    yellow: overview.filter(o => o.status === "yellow").length,
-    red: overview.filter(o => o.status === "red").length,
+    green: overview.filter((o) => o.status === "green").length,
+    yellow: overview.filter((o) => o.status === "yellow").length,
+    red: overview.filter((o) => o.status === "red").length,
   };
 
   if (loading) {
     return <PainelSkeleton />;
   }
 
-  // Show Welcome Wizard for first-time users with no patients
   if (showWelcome && patients.length === 0) {
     return (
-      <WelcomeWizard 
+      <WelcomeWizard
         userName={user?.email?.split("@")[0]}
         onComplete={handleDismissWelcome}
         onCreateExample={handleCreateExample}
@@ -221,7 +259,6 @@ export default function PainelPage() {
     );
   }
 
-  // Welcome Screen for First-Time Users
   if (patients.length === 0) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-4">
@@ -231,19 +268,15 @@ export default function PainelPage() {
           transition={{ duration: 0.6 }}
           className="max-w-2xl w-full"
         >
-          {/* Premium Welcome Card */}
           <div className="relative">
-            {/* Background Glow */}
             <div className="absolute -inset-4 bg-gradient-to-r from-primary/30 via-amber-500/20 to-emerald-500/30 rounded-[2rem] blur-3xl opacity-40" />
-            
+
             <Card className="relative border-0 shadow-2xl bg-gradient-to-b from-card via-card to-card/95 overflow-hidden">
-              {/* Decorative Elements */}
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-amber-500 to-emerald-500" />
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-primary/10 to-transparent rounded-full blur-3xl" />
-              
+
               <CardContent className="p-10 md:p-14 relative">
-                {/* Crown Icon */}
                 <motion.div
                   initial={{ y: -20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -258,7 +291,6 @@ export default function PainelPage() {
                   </div>
                 </motion.div>
 
-                {/* Title */}
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -276,7 +308,6 @@ export default function PainelPage() {
                   </p>
                 </motion.div>
 
-                {/* Features Grid */}
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -284,26 +315,36 @@ export default function PainelPage() {
                   className="grid grid-cols-3 gap-4 mb-10"
                 >
                   {[
-                    { icon: Stethoscope, label: "Prontuário Digital", color: "text-primary" },
+                    {
+                      icon: Stethoscope,
+                      label: "Prontuário Digital",
+                      color: "text-primary",
+                    },
                     { icon: Zap, label: "NeuroFlux IA", color: "text-amber-500" },
-                    { icon: FileText, label: "Laudos em PDF", color: "text-emerald-500" },
+                    {
+                      icon: FileText,
+                      label: "Laudos em PDF",
+                      color: "text-emerald-500",
+                    },
                   ].map((feature, i) => (
-                    <div key={i} className="text-center p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                    <div
+                      key={i}
+                      className="text-center p-4 rounded-xl bg-white/[0.03] border border-white/5"
+                    >
                       <feature.icon className={`w-6 h-6 ${feature.color} mx-auto mb-2`} />
                       <p className="text-xs text-muted-foreground">{feature.label}</p>
                     </div>
                   ))}
                 </motion.div>
 
-                {/* Action Buttons */}
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.5 }}
                   className="flex flex-col sm:flex-row items-center justify-center gap-4"
                 >
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     onClick={openNewPatientDialog}
                     className="w-full sm:w-auto h-14 px-8 bg-gradient-to-r from-primary via-primary to-emerald-600 hover:opacity-90 shadow-xl shadow-primary/30 transition-all duration-300 hover:scale-[1.02] font-semibold"
                   >
@@ -321,7 +362,6 @@ export default function PainelPage() {
           </div>
         </motion.div>
 
-        {/* New Patient Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-md border-primary/20">
             <DialogHeader>
@@ -352,7 +392,9 @@ export default function PainelPage() {
                   id="birth_date"
                   type="date"
                   value={formData.birth_date || ""}
-                  onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, birth_date: e.target.value })
+                  }
                   className="h-11"
                 />
               </div>
@@ -391,8 +433,14 @@ export default function PainelPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSave} disabled={saving || !formData.name.trim()} className="bg-gradient-to-r from-primary to-emerald-600">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={saving || !formData.name.trim()}
+                className="bg-gradient-to-r from-primary to-emerald-600"
+              >
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Cadastrar
               </Button>
@@ -411,14 +459,11 @@ export default function PainelPage() {
         animate="visible"
         className="space-y-8"
       >
-        {/* === SECTION 1: Header === */}
         <motion.div variants={itemVariants} className="relative">
           <div className="relative p-6 md:p-8 rounded-2xl bg-white border border-border shadow-sm overflow-hidden">
-            {/* Top Accent Line */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-teal-500" />
-            
+
             <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              {/* Left: Title & Message */}
               <div className="flex items-start gap-5">
                 <div className="relative hidden sm:block">
                   <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-primary via-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
@@ -436,9 +481,8 @@ export default function PainelPage() {
                 </div>
               </div>
 
-              {/* Right: Action Button */}
-              <Button 
-                onClick={openNewPatientDialog} 
+              <Button
+                onClick={openNewPatientDialog}
                 size="lg"
                 className="h-12 px-6 bg-gradient-to-r from-primary to-emerald-500 hover:opacity-90 shadow-lg font-semibold text-white border-0"
               >
@@ -449,7 +493,6 @@ export default function PainelPage() {
           </div>
         </motion.div>
 
-        {/* === SECTION 2: Onboarding === */}
         {shouldShowOnboarding && (
           <motion.div variants={itemVariants}>
             <OnboardingChecklist
@@ -462,7 +505,6 @@ export default function PainelPage() {
           </motion.div>
         )}
 
-        {/* === SECTION 3: Smart Alerts === */}
         {!alertsLoading && (smartAlerts.length > 0 || weeklyPriorities.length > 0) && (
           <motion.div variants={itemVariants}>
             <SmartAlerts
@@ -473,41 +515,40 @@ export default function PainelPage() {
           </motion.div>
         )}
 
-        {/* === SECTION 4: KPI Cards === */}
         <motion.div variants={itemVariants}>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { 
-                value: dashboardStats.totalPatients, 
-                label: "Total Pacientes", 
-                icon: Users, 
+              {
+                value: dashboardStats.totalPatients,
+                label: "Total Pacientes",
+                icon: Users,
                 gradient: "from-primary to-emerald-500",
                 bg: "bg-primary/10",
-                text: "text-primary"
+                text: "text-primary",
               },
-              { 
-                value: dashboardStats.totalEvaluations, 
-                label: "Avaliações", 
-                icon: ClipboardList, 
+              {
+                value: dashboardStats.totalEvaluations,
+                label: "Avaliações",
+                icon: ClipboardList,
                 gradient: "from-violet-500 to-purple-500",
                 bg: "bg-violet-50",
-                text: "text-violet-600"
+                text: "text-violet-600",
               },
-              { 
-                value: dashboardStats.totalEvolutions, 
-                label: "Evoluções", 
-                icon: TrendingUp, 
+              {
+                value: dashboardStats.totalEvolutions,
+                label: "Evoluções",
+                icon: TrendingUp,
                 gradient: "from-emerald-400 to-teal-500",
                 bg: "bg-emerald-50",
-                text: "text-emerald-600"
+                text: "text-emerald-600",
               },
-              { 
-                value: stats.red, 
-                label: "Alertas Ativos", 
-                icon: Activity, 
+              {
+                value: stats.red,
+                label: "Alertas Ativos",
+                icon: Activity,
                 gradient: "from-rose-500 to-orange-500",
                 bg: "bg-rose-50",
-                text: "text-rose-600"
+                text: "text-rose-600",
               },
             ].map((kpi, index) => (
               <motion.div
@@ -519,10 +560,16 @@ export default function PainelPage() {
                   <CardContent className="p-5 relative">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className={`text-3xl md:text-4xl font-bold tracking-tight ${kpi.text}`}>{kpi.value}</p>
-                        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium">{kpi.label}</p>
+                        <p className={`text-3xl md:text-4xl font-bold tracking-tight ${kpi.text}`}>
+                          {kpi.value}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium">
+                          {kpi.label}
+                        </p>
                       </div>
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${kpi.gradient} flex items-center justify-center shadow-md`}>
+                      <div
+                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${kpi.gradient} flex items-center justify-center shadow-md`}
+                      >
                         <kpi.icon className="w-6 h-6 text-white" />
                       </div>
                     </div>
@@ -533,7 +580,6 @@ export default function PainelPage() {
           </div>
         </motion.div>
 
-        {/* === SECTION 5: Status Overview === */}
         <motion.div variants={itemVariants}>
           <Card className="border border-border shadow-sm bg-white overflow-hidden">
             <CardHeader className="pb-4 border-b border-border">
@@ -547,19 +593,41 @@ export default function PainelPage() {
             <CardContent className="p-5">
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { value: stats.green, label: "Evolução Adequada", gradient: "from-emerald-500 to-teal-500", bg: "bg-emerald-50", border: "border-emerald-200" },
-                  { value: stats.yellow, label: "Atenção Necessária", gradient: "from-amber-500 to-orange-500", bg: "bg-amber-50", border: "border-amber-200" },
-                  { value: stats.red, label: "Alerta Crítico", gradient: "from-rose-500 to-red-500", bg: "bg-rose-50", border: "border-rose-200" },
+                  {
+                    value: stats.green,
+                    label: "Evolução Adequada",
+                    gradient: "from-emerald-500 to-teal-500",
+                    bg: "bg-emerald-50",
+                    border: "border-emerald-200",
+                  },
+                  {
+                    value: stats.yellow,
+                    label: "Atenção Necessária",
+                    gradient: "from-amber-500 to-orange-500",
+                    bg: "bg-amber-50",
+                    border: "border-amber-200",
+                  },
+                  {
+                    value: stats.red,
+                    label: "Alerta Crítico",
+                    gradient: "from-rose-500 to-red-500",
+                    bg: "bg-rose-50",
+                    border: "border-rose-200",
+                  },
                 ].map((status, i) => (
                   <motion.div
                     key={i}
                     whileHover={{ scale: 1.02 }}
                     className={`relative p-4 rounded-xl ${status.bg} border ${status.border} text-center cursor-default`}
                   >
-                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${status.gradient} mx-auto mb-3 flex items-center justify-center text-white font-bold text-lg shadow-md`}>
+                    <div
+                      className={`w-10 h-10 rounded-full bg-gradient-to-br ${status.gradient} mx-auto mb-3 flex items-center justify-center text-white font-bold text-lg shadow-md`}
+                    >
                       {status.value}
                     </div>
-                    <p className="text-xs text-muted-foreground font-medium">{status.label}</p>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      {status.label}
+                    </p>
                   </motion.div>
                 ))}
               </div>
@@ -567,55 +635,86 @@ export default function PainelPage() {
           </Card>
         </motion.div>
 
-        {/* === SECTION 6: Resumo Narrativo === */}
         <motion.div variants={itemVariants}>
           <Card className="border border-border shadow-sm bg-white overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-start gap-5">
-                {/* Icon */}
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Activity className="w-6 h-6 text-primary" />
                 </div>
-                
-                {/* Narrative Content */}
+
                 <div className="flex-1 space-y-3">
-                  <h3 className="font-bold text-lg text-foreground">Resumo da Sua Prática</h3>
-                  
+                  <h3 className="font-bold text-lg text-foreground">
+                    Resumo da Sua Prática
+                  </h3>
+
                   <p className="text-muted-foreground leading-relaxed">
                     {dashboardStats.totalPatients === 0 ? (
                       "Você ainda não cadastrou nenhum paciente. Comece cadastrando seu primeiro paciente para acompanhar sua prática clínica."
                     ) : (
                       <>
-                        Você tem <span className="text-foreground font-semibold">{dashboardStats.totalPatients} paciente{dashboardStats.totalPatients !== 1 ? "s" : ""}</span> cadastrado{dashboardStats.totalPatients !== 1 ? "s" : ""}, 
-                        com <span className="text-foreground font-semibold">{dashboardStats.totalEvaluations} avaliação{dashboardStats.totalEvaluations !== 1 ? "ões" : ""}</span> e{" "}
-                        <span className="text-foreground font-semibold">{dashboardStats.totalEvolutions} evolução{dashboardStats.totalEvolutions !== 1 ? "ões" : ""}</span> registrada{dashboardStats.totalEvolutions !== 1 ? "s" : ""}.
+                        Você tem{" "}
+                        <span className="text-foreground font-semibold">
+                          {dashboardStats.totalPatients} paciente
+                          {dashboardStats.totalPatients !== 1 ? "s" : ""}
+                        </span>{" "}
+                        cadastrado
+                        {dashboardStats.totalPatients !== 1 ? "s" : ""}, com{" "}
+                        <span className="text-foreground font-semibold">
+                          {dashboardStats.totalEvaluations} avaliação
+                          {dashboardStats.totalEvaluations !== 1 ? "ões" : ""}
+                        </span>{" "}
+                        e{" "}
+                        <span className="text-foreground font-semibold">
+                          {dashboardStats.totalEvolutions} evolução
+                          {dashboardStats.totalEvolutions !== 1 ? "ões" : ""}
+                        </span>{" "}
+                        registrada
+                        {dashboardStats.totalEvolutions !== 1 ? "s" : ""}.
                         {stats.red > 0 && (
-                          <> <span className="text-rose-600 font-semibold">{stats.red} paciente{stats.red !== 1 ? "s" : ""}</span> precisa{stats.red !== 1 ? "m" : ""} de atenção.</>
+                          <>
+                            {" "}
+                            <span className="text-rose-600 font-semibold">
+                              {stats.red} paciente{stats.red !== 1 ? "s" : ""}
+                            </span>{" "}
+                            precisa{stats.red !== 1 ? "m" : ""} de atenção.
+                          </>
                         )}
                         {stats.green > 0 && stats.red === 0 && (
-                          <> <span className="text-emerald-600 font-semibold">{stats.green} paciente{stats.green !== 1 ? "s" : ""}</span> está{stats.green !== 1 ? "ão" : ""} evoluindo bem.</>
+                          <>
+                            {" "}
+                            <span className="text-emerald-600 font-semibold">
+                              {stats.green} paciente{stats.green !== 1 ? "s" : ""}
+                            </span>{" "}
+                            está{stats.green !== 1 ? "ão" : ""} evoluindo bem.
+                          </>
                         )}
                       </>
                     )}
                   </p>
 
-                  {/* Mini Stats Row */}
                   {dashboardStats.totalPatients > 0 && (
                     <div className="flex flex-wrap gap-3 pt-2">
                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-xs font-medium text-emerald-700">{stats.green} evoluindo bem</span>
+                        <span className="text-xs font-medium text-emerald-700">
+                          {stats.green} evoluindo bem
+                        </span>
                       </div>
                       {stats.yellow > 0 && (
                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200">
                           <div className="w-2 h-2 rounded-full bg-amber-500" />
-                          <span className="text-xs font-medium text-amber-700">{stats.yellow} em acompanhamento</span>
+                          <span className="text-xs font-medium text-amber-700">
+                            {stats.yellow} em acompanhamento
+                          </span>
                         </div>
                       )}
                       {stats.red > 0 && (
                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200">
                           <div className="w-2 h-2 rounded-full bg-rose-500" />
-                          <span className="text-xs font-medium text-rose-700">{stats.red} precisa{stats.red !== 1 ? "m" : ""} de atenção</span>
+                          <span className="text-xs font-medium text-rose-700">
+                            {stats.red} precisa{stats.red !== 1 ? "m" : ""} de atenção
+                          </span>
                         </div>
                       )}
                     </div>
@@ -626,10 +725,8 @@ export default function PainelPage() {
           </Card>
         </motion.div>
 
-        {/* === SECTION 7: Recent Activity & Quick Stats === */}
         <motion.div variants={itemVariants}>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            {/* Recent Activity - Takes 3 columns */}
             <Card className="lg:col-span-3 border border-border shadow-sm bg-white overflow-hidden">
               <CardHeader className="pb-4 border-b border-border">
                 <CardTitle className="text-base font-semibold flex items-center gap-3 text-foreground">
@@ -648,7 +745,7 @@ export default function PainelPage() {
                 ) : (
                   <div className="space-y-3">
                     {recentActivities.slice(0, 5).map((activity, index) => (
-                      <motion.div 
+                      <motion.div
                         key={`${activity.type}-${activity.id}`}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -660,12 +757,20 @@ export default function PainelPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm">
-                            <span className="text-muted-foreground">{activity.description}</span>
-                            <span className="font-semibold text-foreground"> — {activity.patientName}</span>
+                            <span className="text-muted-foreground">
+                              {activity.description}
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              {" "}
+                              — {activity.patientName}
+                            </span>
                           </p>
                         </div>
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(activity.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                          {new Date(activity.date).toLocaleDateString("pt-BR", {
+                            day: "2-digit",
+                            month: "short",
+                          })}
                         </span>
                       </motion.div>
                     ))}
@@ -674,7 +779,6 @@ export default function PainelPage() {
               </CardContent>
             </Card>
 
-            {/* Quick Actions - Takes 2 columns */}
             <Card className="lg:col-span-2 border border-border shadow-sm bg-white overflow-hidden">
               <CardHeader className="pb-4 border-b border-border">
                 <CardTitle className="text-base font-semibold flex items-center gap-3 text-foreground">
@@ -686,9 +790,33 @@ export default function PainelPage() {
               </CardHeader>
               <CardContent className="p-5 space-y-3">
                 {[
-                  { label: "NeuroFlux IA", desc: "Suporte à decisão clínica", href: "/dashboard/neuroflux", icon: Zap, gradient: "from-amber-500 to-orange-500", bg: "bg-amber-50", border: "border-amber-200" },
-                  { label: "Exportar Laudo", desc: "Gerar relatório PDF", href: "/dashboard/exportacao", icon: FileText, gradient: "from-violet-500 to-purple-500", bg: "bg-violet-50", border: "border-violet-200" },
-                  { label: "Biblioteca", desc: "Exercícios terapêuticos", href: "/dashboard/exercicios", icon: ClipboardList, gradient: "from-emerald-500 to-teal-500", bg: "bg-emerald-50", border: "border-emerald-200" },
+                  {
+                    label: "NeuroFlux IA",
+                    desc: "Suporte à decisão clínica",
+                    href: "/dashboard/neuroflux",
+                    icon: Zap,
+                    gradient: "from-amber-500 to-orange-500",
+                    bg: "bg-amber-50",
+                    border: "border-amber-200",
+                  },
+                  {
+                    label: "Exportar Laudo",
+                    desc: "Gerar relatório PDF",
+                    href: "/dashboard/exportacao",
+                    icon: FileText,
+                    gradient: "from-violet-500 to-purple-500",
+                    bg: "bg-violet-50",
+                    border: "border-violet-200",
+                  },
+                  {
+                    label: "Biblioteca",
+                    desc: "Exercícios terapêuticos",
+                    href: "/dashboard/exercicios",
+                    icon: ClipboardList,
+                    gradient: "from-emerald-500 to-teal-500",
+                    bg: "bg-emerald-50",
+                    border: "border-emerald-200",
+                  },
                 ].map((action, i) => (
                   <motion.button
                     key={i}
@@ -696,7 +824,9 @@ export default function PainelPage() {
                     onClick={() => navigate(action.href)}
                     className={`w-full flex items-center gap-4 p-4 rounded-xl ${action.bg} border ${action.border} hover:shadow-sm transition-all text-left group`}
                   >
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center shadow-md`}>
+                    <div
+                      className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center shadow-md`}
+                    >
                       <action.icon className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
@@ -711,12 +841,10 @@ export default function PainelPage() {
           </div>
         </motion.div>
 
-        {/* === SECTION 8: Patient List === */}
         <motion.div variants={itemVariants}>
           <Card className="border border-border shadow-sm bg-white overflow-hidden">
-            {/* Decorative Top Border */}
             <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-teal-500" />
-            
+
             <CardHeader className="pb-4 border-b border-border">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle className="text-lg font-bold flex items-center gap-3 text-foreground">
@@ -725,11 +853,12 @@ export default function PainelPage() {
                   </div>
                   <div>
                     <span>Prontuários Ativos</span>
-                    <p className="text-xs text-muted-foreground font-normal mt-0.5">{pacientesFiltrados.length} paciente(s) cadastrado(s)</p>
+                    <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                      {pacientesFiltrados.length} paciente(s) cadastrado(s)
+                    </p>
                   </div>
                 </CardTitle>
-                
-                {/* Search */}
+
                 <div className="relative w-full sm:w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -741,7 +870,7 @@ export default function PainelPage() {
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent className="p-5">
               <div className="space-y-3">
                 {pacientesFiltrados.map((paciente, index) => {
@@ -749,9 +878,21 @@ export default function PainelPage() {
                   const status = alertInfo?.status || "yellow";
                   const statusLabel = alertInfo?.message || "Aguardando avaliação";
                   const statusColors = {
-                    green: { bg: "bg-emerald-500", ring: "ring-emerald-500/30", badge: "border-emerald-200 text-emerald-700 bg-emerald-50" },
-                    yellow: { bg: "bg-amber-500", ring: "ring-amber-500/30", badge: "border-amber-200 text-amber-700 bg-amber-50" },
-                    red: { bg: "bg-rose-500", ring: "ring-rose-500/30", badge: "border-rose-200 text-rose-700 bg-rose-50" },
+                    green: {
+                      bg: "bg-emerald-500",
+                      ring: "ring-emerald-500/30",
+                      badge: "border-emerald-200 text-emerald-700 bg-emerald-50",
+                    },
+                    yellow: {
+                      bg: "bg-amber-500",
+                      ring: "ring-amber-500/30",
+                      badge: "border-amber-200 text-amber-700 bg-amber-50",
+                    },
+                    red: {
+                      bg: "bg-rose-500",
+                      ring: "ring-rose-500/30",
+                      badge: "border-rose-200 text-rose-700 bg-rose-50",
+                    },
                   };
                   const colors = statusColors[status];
 
@@ -765,16 +906,18 @@ export default function PainelPage() {
                       onClick={() => navigate(`/dashboard/paciente/${paciente.id}`)}
                       className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-border hover:border-primary/30 transition-all cursor-pointer group"
                     >
-                      {/* Avatar with Status */}
                       <div className="relative">
                         <PatientAvatar name={paciente.name} size="md" />
-                        <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full ${colors.bg} border-2 border-white ring-2 ${colors.ring}`} />
+                        <div
+                          className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full ${colors.bg} border-2 border-white ring-2 ${colors.ring}`}
+                        />
                       </div>
-                      
-                      {/* Patient Info */}
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-foreground truncate">{paciente.name}</h3>
+                          <h3 className="font-bold text-foreground truncate">
+                            {paciente.name}
+                          </h3>
                           {paciente.birth_date && (
                             <Badge variant="secondary" className="text-xs shrink-0">
                               {calculateAge(paciente.birth_date)} anos
@@ -786,31 +929,42 @@ export default function PainelPage() {
                         </p>
                       </div>
 
-                      {/* Last Visit */}
                       <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-4 h-4" />
-                        {new Date(paciente.created_at.replace(' ', 'T') + 'Z').toLocaleDateString('pt-BR')}
+                        {new Date(
+                          paciente.created_at.replace(" ", "T") + "Z"
+                        ).toLocaleDateString("pt-BR")}
                       </div>
 
-                      {/* Status Badge */}
                       <Badge variant="outline" className={`hidden lg:flex ${colors.badge}`}>
                         {statusLabel}
                       </Badge>
 
-                      {/* Actions */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(paciente); }}>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditDialog(paciente);
+                            }}
+                          >
                             <Pencil className="w-4 h-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={(e) => { e.stopPropagation(); confirmDelete(paciente.id); }}
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmDelete(paciente.id);
+                            }}
                             className="text-destructive"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
@@ -822,7 +976,6 @@ export default function PainelPage() {
                   );
                 })}
 
-                {/* Empty Search State */}
                 {pacientesFiltrados.length === 0 && patients.length > 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Search className="w-12 h-12 mx-auto mb-3 opacity-30" />
@@ -837,22 +990,23 @@ export default function PainelPage() {
           </Card>
         </motion.div>
 
-        {/* === DIALOGS === */}
-        {/* New/Edit Patient Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-lg border-primary/20">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
-                  {editingPatient ? <Pencil className="w-5 h-5 text-white" /> : <User className="w-5 h-5 text-white" />}
+                  {editingPatient ? (
+                    <Pencil className="w-5 h-5 text-white" />
+                  ) : (
+                    <User className="w-5 h-5 text-white" />
+                  )}
                 </div>
                 {editingPatient ? "Editar Paciente" : "Novo Paciente"}
               </DialogTitle>
               <DialogDescription>
-                {editingPatient 
-                  ? "Atualize as informações do prontuário." 
-                  : "Preencha os dados principais do paciente."
-                }
+                {editingPatient
+                  ? "Atualize as informações do prontuário."
+                  : "Preencha os dados principais do paciente."}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -872,7 +1026,9 @@ export default function PainelPage() {
                   id="birth_date"
                   type="date"
                   value={formData.birth_date || ""}
-                  onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, birth_date: e.target.value })
+                  }
                   className="h-11"
                 />
               </div>
@@ -911,10 +1067,12 @@ export default function PainelPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-              <Button 
-                onClick={handleSave} 
-                disabled={saving || !formData.name.trim()} 
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={saving || !formData.name.trim()}
                 className="bg-gradient-to-r from-primary to-emerald-600"
               >
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -924,7 +1082,6 @@ export default function PainelPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <DialogContent className="sm:max-w-md border-destructive/20">
             <DialogHeader>
@@ -936,10 +1093,13 @@ export default function PainelPage() {
               </DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground py-4">
-              Tem certeza que deseja excluir este prontuário? Esta ação é permanente e não pode ser desfeita.
+              Tem certeza que deseja excluir este prontuário? Esta ação é permanente
+              e não pode ser desfeita.
             </p>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                Cancelar
+              </Button>
               <Button variant="destructive" onClick={handleDelete} disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Excluir Prontuário
@@ -957,7 +1117,10 @@ function calculateAge(birthDate: string): number {
   const birth = new Date(birthDate);
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birth.getDate())
+  ) {
     age--;
   }
   return age;
