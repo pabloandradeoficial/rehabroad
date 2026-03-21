@@ -1,17 +1,246 @@
 import { Hono } from "hono";
 import Stripe from "stripe";
 import { Resend } from "resend";
-import {
-  exchangeCodeForSessionToken,
-  getOAuthRedirectUrl,
-  authMiddleware,
-  deleteSession,
-  MOCHA_SESSION_TOKEN_COOKIE_NAME,
-} from "@getmocha/users-service/backend";
 import { getCookie, setCookie } from "hono/cookie";
 import { getSEOForRoute, injectSEOTags } from "./seo";
 
 const app = new Hono<{ Bindings: Env }>();
+
+type AppUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  google_user_data: {
+    name: string | null;
+    avatar_url: string | null;
+  };
+  user_metadata?: Record<string, any> | null;
+  app_metadata?: Record<string, any> | null;
+};
+
+const LEGACY_AUTH_COOKIE_NAMES = [
+  "mocha_session_token",
+  "MOCHA_SESSION_TOKEN",
+  "sb-access-token",
+  "supabase-access-token",
+];
+
+function getEnvString(env: Record<string, unknown> | undefined, key: string): string | null {
+  if (!env) {
+    return null;
+  }
+
+  const value = env[key];
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized || null;
+}
+
+function getSupabaseConfig(env: Record<string, unknown> | undefined) {
+  const apiUrl =
+    getEnvString(env, "SUPABASE_URL") ??
+    getEnvString(env, "VITE_SUPABASE_URL");
+
+  const anonKey =
+    getEnvString(env, "SUPABASE_ANON_KEY") ??
+    getEnvString(env, "VITE_SUPABASE_ANON_KEY");
+
+  return { apiUrl, anonKey };
+}
+
+function sanitizeBaseUrl(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return null;
+  }
+}
+
+function getAppBaseUrl(c: any): string {
+  const env = c.env as Record<string, unknown> | undefined;
+
+  const configuredBaseUrl = sanitizeBaseUrl(
+    getEnvString(env, "PUBLIC_APP_URL") ??
+      getEnvString(env, "SITE_URL") ??
+      getEnvString(env, "APP_URL")
+  );
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
+  }
+
+  const requestUrl = new URL(c.req.url);
+  if (!requestUrl.hostname.includes("workers.dev")) {
+    return `${requestUrl.protocol}//${requestUrl.host}`;
+  }
+
+  return "https://rehabroad.com.br";
+}
+
+function getAuthCallbackUrl(c: any): string {
+  const env = c.env as Record<string, unknown> | undefined;
+  const queryRedirect = c.req.query("redirectTo") || c.req.query("redirect_to");
+
+  if (typeof queryRedirect === "string" && queryRedirect.trim()) {
+    try {
+      const redirectUrl = new URL(queryRedirect.trim());
+      if (redirectUrl.protocol === "https:" || redirectUrl.protocol === "http:") {
+        return redirectUrl.toString();
+      }
+    } catch {
+      // Ignore invalid redirect URL from querystring
+    }
+  }
+
+  const configuredCallbackUrl = getEnvString(env, "SUPABASE_AUTH_CALLBACK_URL") ??
+    getEnvString(env, "AUTH_CALLBACK_URL");
+
+  if (configuredCallbackUrl) {
+    return configuredCallbackUrl;
+  }
+
+  return `${getAppBaseUrl(c)}/auth/callback`;
+}
+
+function extractAccessToken(c: any): string | null {
+  const authorizationHeader = c.req.header("authorization") || c.req.header("Authorization");
+
+  if (authorizationHeader && /^Bearer\s+/i.test(authorizationHeader)) {
+    const token = authorizationHeader.replace(/^Bearer\s+/i, "").trim();
+    if (token) {
+      return token;
+    }
+  }
+
+  for (const cookieName of LEGACY_AUTH_COOKIE_NAMES) {
+    const cookieValue = getCookie(c, cookieName);
+    if (typeof cookieValue !== "string" || !cookieValue.trim()) {
+      continue;
+    }
+
+    let parsedValue = cookieValue.trim();
+
+    if (parsedValue.startsWith("base64-")) {
+      try {
+        parsedValue = atob(parsedValue.slice(7));
+      } catch {
+        // Ignore invalid base64 cookie values
+      }
+    }
+
+    try {
+      const jsonValue = JSON.parse(parsedValue);
+
+      if (Array.isArray(jsonValue) && typeof jsonValue[0] === "string" && jsonValue[0]) {
+        return jsonValue[0];
+      }
+
+      if (jsonValue && typeof jsonValue.access_token === "string" && jsonValue.access_token) {
+        return jsonValue.access_token;
+      }
+    } catch {
+      // Ignore non-JSON cookie values
+    }
+
+    if (parsedValue.split(".").length === 3) {
+      return parsedValue;
+    }
+  }
+
+  return null;
+}
+
+async function getSupabaseUserFromAccessToken(
+  accessToken: string,
+  env: Record<string, unknown> | undefined
+): Promise<AppUser | null> {
+  const { apiUrl, anonKey } = getSupabaseConfig(env);
+
+  if (!apiUrl || !anonKey) {
+    throw new Error("SUPABASE_URL/VITE_SUPABASE_URL e SUPABASE_ANON_KEY/VITE_SUPABASE_ANON_KEY não estão configurados no worker.");
+  }
+
+  const response = await fetch(`${apiUrl.replace(/\/+$/, "")}/auth/v1/user`, {
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Supabase user lookup failed (${response.status}): ${errorText || response.statusText}`
+    );
+  }
+
+  const rawUser = (await response.json()) as Record<string, any>;
+  const metadata = (rawUser.user_metadata ?? rawUser.raw_user_meta_data ?? {}) as Record<string, any>;
+
+  const resolvedName =
+    (typeof metadata.full_name === "string" && metadata.full_name.trim()) ||
+    (typeof metadata.name === "string" && metadata.name.trim()) ||
+    (typeof rawUser.email === "string" && rawUser.email.includes("@")
+      ? rawUser.email.split("@")[0]
+      : null);
+
+  const email = typeof rawUser.email === "string" ? rawUser.email : "";
+  const id = typeof rawUser.id === "string" ? rawUser.id : "";
+
+  if (!id || !email) {
+    return null;
+  }
+
+  return {
+    id,
+    email,
+    name: resolvedName,
+    google_user_data: {
+      name: resolvedName,
+      avatar_url: typeof metadata.avatar_url === "string" ? metadata.avatar_url : null,
+    },
+    user_metadata: metadata,
+    app_metadata: (rawUser.app_metadata ?? null) as Record<string, any> | null,
+  };
+}
+
+const authMiddleware = async (c: any, next: any) => {
+  try {
+    const accessToken = extractAccessToken(c);
+
+    if (!accessToken) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const user = await getSupabaseUserFromAccessToken(
+      accessToken,
+      c.env as Record<string, unknown> | undefined
+    );
+
+    if (!user) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    c.set("user", user);
+    c.set("accessToken", accessToken);
+    await next();
+  } catch (error) {
+    console.error("Auth middleware error:", error);
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+};
 
 
 type D1InsertResult = {
@@ -151,20 +380,23 @@ app.use("*", async (c, next) => {
 // Optional auth middleware for students (doesn't throw, just sets user if logged in)
 const optionalAuthMiddleware = async (c: any, next: any) => {
   try {
-    const sessionToken = getCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME);
-    if (sessionToken) {
-      const { getCurrentUser } = await import("@getmocha/users-service/backend");
-      const user = await getCurrentUser(sessionToken, {
-        apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
-        apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY,
-      });
+    const accessToken = extractAccessToken(c);
+
+    if (accessToken) {
+      const user = await getSupabaseUserFromAccessToken(
+        accessToken,
+        c.env as Record<string, unknown> | undefined
+      );
+
       if (user) {
         c.set("user", user);
+        c.set("accessToken", accessToken);
       }
     }
-  } catch (e) {
-    // Ignore auth errors for optional auth
+  } catch (error) {
+    console.error("Optional auth middleware error:", error);
   }
+
   await next();
 };
 
@@ -1632,38 +1864,43 @@ app.get("/api/downloads/guia-tens.pdf", async () => {
   });
 });
 
-// Obtain redirect URL from the Mocha Users Service
+// Build Google OAuth redirect URL via Supabase Auth
 app.get("/api/oauth/google/redirect_url", async (c) => {
-  const redirectUrl = await getOAuthRedirectUrl("google", {
-    apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
-    apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY,
-  });
+  try {
+    const { apiUrl } = getSupabaseConfig(c.env as Record<string, unknown> | undefined);
 
-  return c.json({ redirectUrl }, 200);
+    if (!apiUrl) {
+      return c.json({ error: "Supabase auth is not configured on the worker" }, 500);
+    }
+
+    const params = new URLSearchParams({
+      provider: "google",
+      redirect_to: getAuthCallbackUrl(c),
+    });
+
+    const redirectUrl = `${apiUrl.replace(/\/+$/, "")}/auth/v1/authorize?${params.toString()}`;
+    return c.json({ redirectUrl }, 200);
+  } catch (error) {
+    console.error("Failed to build Supabase redirect URL:", error);
+    return c.json({ error: "Failed to build redirect URL" }, 500);
+  }
 });
 
-// Exchange the code for a session token
+// Legacy session exchange endpoint kept for compatibility while frontend migrates fully to Supabase callback
 app.post("/api/sessions", async (c) => {
-  const body = await c.req.json();
+  const body = await c.req.json().catch(() => ({}));
+  const accessToken = body?.access_token || body?.accessToken || null;
 
-  if (!body.code) {
-    return c.json({ error: "No authorization code provided" }, 400);
+  if (typeof accessToken === "string" && accessToken.trim()) {
+    return c.json({ success: true }, 200);
   }
 
-  const sessionToken = await exchangeCodeForSessionToken(body.code, {
-    apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
-    apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY,
-  });
-
-  setCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME, sessionToken, {
-    httpOnly: true,
-    path: "/",
-    sameSite: "none",
-    secure: true,
-    maxAge: 60 * 24 * 60 * 60, // 60 days
-  });
-
-  return c.json({ success: true }, 200);
+  return c.json(
+    {
+      error: "This endpoint no longer exchanges MOCA auth codes. Complete the Google callback with Supabase on the frontend.",
+    },
+    400
+  );
 });
 
 // Get the current user object for the frontend
@@ -1673,22 +1910,15 @@ app.get("/api/users/me", authMiddleware, async (c) => {
 
 // Logout
 app.get("/api/logout", async (c) => {
-  const sessionToken = getCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME);
-
-  if (typeof sessionToken === "string") {
-    await deleteSession(sessionToken, {
-      apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
-      apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY,
+  for (const cookieName of LEGACY_AUTH_COOKIE_NAMES) {
+    setCookie(c, cookieName, "", {
+      httpOnly: false,
+      path: "/",
+      sameSite: "lax",
+      secure: true,
+      maxAge: 0,
     });
   }
-
-  setCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME, "", {
-    httpOnly: true,
-    path: "/",
-    sameSite: "none",
-    secure: true,
-    maxAge: 0,
-  });
 
   return c.json({ success: true }, 200);
 });
