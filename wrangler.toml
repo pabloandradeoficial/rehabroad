@@ -1,0 +1,13 @@
+name = "rehabroad-api"
+main = "src/worker/index.ts"
+compatibility_date = "2026-03-21"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rehabroad-db"
+database_id = "7dbc4d24-0ca8-48e0-9883-ab93ab28d6af"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "rehabroad-files"
