@@ -275,22 +275,22 @@ app.post("/api/student/progress", optionalAuthMiddleware, async (c) => {
   return c.json({ success: true }, 200);
 });
 
-// Student Ranking - Top students by XP
+// Student Ranking - Top students by clinical performance
 app.get("/api/student/ranking", async (c) => {
   const { results } = await c.env.DB.prepare(`
     SELECT 
       user_name,
-      xp,
       cases_completed,
       cases_correct,
       streak,
-      CASE WHEN cases_completed > 0 
+      CASE 
+        WHEN cases_completed > 0 
         THEN ROUND((cases_correct * 100.0 / cases_completed), 0) 
         ELSE 0 
       END as accuracy
-    FROM student_progress 
-    WHERE xp > 0
-    ORDER BY xp DESC, cases_correct DESC, streak DESC
+    FROM student_progress
+    WHERE cases_completed > 0
+    ORDER BY accuracy DESC, cases_completed DESC, streak DESC
     LIMIT 50
   `).all();
 
@@ -450,7 +450,7 @@ app.post("/api/student/community/posts", optionalAuthMiddleware, async (c) => {
     VALUES (?, ?, ?, ?, ?, ?)
   `).bind(user.id, userName, user.email, category, title, content).run();
   
-  return c.json({ success: true, postId: result.meta.last_row_id }, 201);
+  return c.json({ success: true, postId: result.meta?.last_row_id ?? null }, 201);
 });
 
 // Create comment (requires auth)
@@ -4180,7 +4180,7 @@ app.post("/api/leads", async (c) => {
     "INSERT INTO leads (name, email, source, created_at, updated_at) VALUES (?, ?, ?, datetime('now'), datetime('now'))"
   ).bind(body.name, body.email, body.source || 'website').run();
 
-  return c.json({ success: true, id: result.meta.last_row_id }, 201);
+  return c.json({ success: true, id: result.meta?.last_row_id ?? null }, 201);
 });
 
 // Track page views (public - no auth required)
@@ -4673,7 +4673,7 @@ app.post("/api/transactions", authMiddleware, async (c) => {
     notes || null
   ).run();
 
-  return c.json({ id: result.meta.last_row_id, success: true });
+  return c.json({ id: result.meta?.last_row_id ?? null, success: true });
 });
 
 // Update transaction
@@ -4768,7 +4768,7 @@ app.post("/api/forum/posts", authMiddleware, async (c) => {
     VALUES (?, ?, ?, ?, ?)
   `).bind(user.id, userName, category, title, content).run();
   
-  return c.json({ id: result.meta.last_row_id, success: true });
+  return c.json({ id: result.meta?.last_row_id ?? null, success: true });
 });
 
 // Get single post with comments
