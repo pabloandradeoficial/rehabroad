@@ -6,8 +6,7 @@ import { Label } from "@/react-app/components/ui/label";
 import { Textarea } from "@/react-app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
 import { MessageSquare, Mail, Clock, CheckCircle2, Send, Phone, AlertCircle } from "lucide-react";
-import { useAuth } from "@getmocha/users-service/react";
-
+import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
 const SUBJECTS = [
   { value: "suporte_tecnico", label: "Suporte Técnico" },
@@ -18,16 +17,32 @@ const SUBJECTS = [
 ];
 
 export default function ContatoSuportePage() {
-  const { user } = useAuth();
+  const { user } = useAppAuth();
+
+  const userName =
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "";
+
   const [formData, setFormData] = useState({
-    name: user?.google_user_data?.name || "",
+    name: userName,
     email: user?.email || "",
     subject: "",
     message: "",
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resetFormWithUser = () => {
+    setFormData({
+      name: userName,
+      email: user?.email || "",
+      subject: "",
+      message: "",
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,13 +67,8 @@ export default function ContatoSuportePage() {
       }
 
       setIsSubmitted(true);
-      setFormData({
-        name: user?.google_user_data?.name || "",
-        email: user?.email || "",
-        subject: "",
-        message: "",
-      });
-    } catch (err) {
+      resetFormWithUser();
+    } catch (_err) {
       setError("Ocorreu um erro ao enviar sua mensagem. Tente novamente.");
     } finally {
       setIsSubmitting(false);
@@ -204,8 +214,8 @@ export default function ContatoSuportePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <a 
-                href="mailto:pabloandradeoficial@gmail.com" 
+              <a
+                href="mailto:pabloandradeoficial@gmail.com"
                 className="text-primary hover:underline font-medium"
               >
                 pabloandradeoficial@gmail.com
@@ -247,7 +257,7 @@ export default function ContatoSuportePage() {
       <Card className="bg-muted/50 border-muted">
         <CardContent className="py-4">
           <p className="text-xs text-muted-foreground text-center">
-            As informações enviadas por meio deste formulário serão utilizadas exclusivamente para fins de 
+            As informações enviadas por meio deste formulário serão utilizadas exclusivamente para fins de
             atendimento e suporte ao usuário, conforme{" "}
             <a href="/politica-de-privacidade" className="text-primary hover:underline">
               Política de Privacidade
