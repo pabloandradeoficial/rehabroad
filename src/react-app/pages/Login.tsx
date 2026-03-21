@@ -16,7 +16,7 @@ import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { user, isPending, loginWithGoogle, isConfigured } = useAppAuth();
+  const { user, isPending } = useAppAuth();
   const { language, setLanguage } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -37,13 +37,40 @@ export default function LoginPage() {
       setLoginError(null);
       localStorage.setItem("loginMode", mode);
       setIsSubmitting(true);
-      await loginWithGoogle();
+
+      const res = await fetch("/api/oauth/google/redirect_url", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error("Não foi possível obter a URL de login.");
+      }
+
+      const data: unknown = await res.json();
+
+      const redirectUrl =
+        data &&
+        typeof data === "object" &&
+        typeof (data as { redirectUrl?: unknown }).redirectUrl === "string"
+          ? (data as { redirectUrl: string }).redirectUrl
+          : null;
+
+      if (!redirectUrl) {
+        throw new Error("URL de login inválida.");
+      }
+
+      window.location.assign(redirectUrl);
     } catch (error) {
       console.error("[login] Falha ao iniciar login com Google:", error);
 
       setLoginError(
-        !isConfigured
-          ? "Login ainda não configurado. Falta adicionar as variáveis do Supabase."
+        error instanceof Error
+          ? error.message
           : "Não foi possível iniciar o login com Google. Tente novamente."
       );
 
@@ -74,16 +101,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden">
-      {/* Premium Background - Static for performance */}
       <div className="fixed inset-0 pointer-events-none">
-        {/* Main gradient glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-primary/20 via-primary/5 to-transparent rounded-full blur-[100px]" />
-
-        {/* Static orbs */}
         <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-gradient-to-br from-violet-500/15 to-purple-600/10 rounded-full blur-[80px]" />
         <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] bg-gradient-to-br from-emerald-500/10 to-teal-600/10 rounded-full blur-[60px]" />
-
-        {/* Subtle dot pattern */}
         <div
           className="absolute inset-0 opacity-[0.02]"
           style={{
@@ -93,7 +114,6 @@ export default function LoginPage() {
         />
       </div>
 
-      {/* Language Toggle - Top Right */}
       <button
         onClick={() => setLanguage(language === "pt" ? "en" : "pt")}
         className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold text-white/80 hover:text-white transition-all"
@@ -105,7 +125,6 @@ export default function LoginPage() {
       </button>
 
       <div className="relative w-full max-w-md">
-        {/* Logo and Title */}
         <div className="text-center mb-10">
           <div className="relative inline-block mb-6">
             <div className="absolute inset-0 w-24 h-24 bg-primary/40 rounded-3xl blur-xl" />
@@ -122,7 +141,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Login Card - Premium Glass Design */}
         <div>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 via-transparent to-emerald-500/20 rounded-[2rem] blur-xl opacity-70" />
@@ -140,10 +158,9 @@ export default function LoginPage() {
                   </p>
                 </div>
 
-                {/* Mode Selection */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <button
-                    onClick={() => handleLogin("professional")}
+                    onClick={() => void handleLogin("professional")}
                     disabled={isSubmitting}
                     className="group p-4 rounded-xl border-2 border-primary/50 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed"
                     type="button"
@@ -160,7 +177,7 @@ export default function LoginPage() {
                   </button>
 
                   <button
-                    onClick={() => handleLogin("student")}
+                    onClick={() => void handleLogin("student")}
                     disabled={isSubmitting}
                     className="group p-4 rounded-xl border-2 border-violet-500/50 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500 transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed"
                     type="button"
@@ -177,7 +194,6 @@ export default function LoginPage() {
                   </button>
                 </div>
 
-                {/* Divider */}
                 <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-white/10" />
@@ -190,7 +206,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button
-                  onClick={() => handleLogin("professional")}
+                  onClick={() => void handleLogin("professional")}
                   disabled={isSubmitting}
                   className="w-full h-12 text-base font-semibold gap-3 bg-gradient-to-r from-white to-gray-100 hover:from-gray-100 hover:to-white text-gray-800 shadow-lg hover:shadow-xl hover:shadow-black/10 transition-all duration-300 rounded-xl border border-gray-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
@@ -221,7 +237,6 @@ export default function LoginPage() {
                   </p>
                 ) : null}
 
-                {/* Divider */}
                 <div className="relative my-8">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-white/10" />
@@ -233,7 +248,6 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Security Features */}
                 <div className="grid grid-cols-3 gap-3 mb-6">
                   {[
                     { icon: Shield, label: "LGPD" },
@@ -273,7 +287,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <p className="text-center text-xs text-muted-foreground mt-10">
           © 2026 REHABROAD • Todos os direitos reservados
         </p>
