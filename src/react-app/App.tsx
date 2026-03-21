@@ -17,6 +17,15 @@ import {
   useAppAuth,
 } from "@/react-app/contexts/AuthContext";
 
+// Intercepta OAuth return na raiz ANTES de qualquer render do React
+if (
+  typeof window !== "undefined" &&
+  window.location.pathname === "/" &&
+  new URLSearchParams(window.location.search).has("code")
+) {
+  window.location.replace(`/auth/callback${window.location.search}`);
+}
+
 // Light pages - load immediately
 import LoginPage from "@/react-app/pages/Login";
 
@@ -102,15 +111,6 @@ function PageLoader() {
   );
 }
 
-function RootOAuthCodeRedirect() {
-  useEffect(() => {
-    const targetUrl = `/auth/callback${window.location.search}`;
-    window.location.replace(targetUrl);
-  }, []);
-
-  return <PageLoader />;
-}
-
 function OAuthReturnBridge() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -121,7 +121,6 @@ function OAuthReturnBridge() {
       window.location.hash.includes("access_token=") ||
       window.location.hash.includes("refresh_token=");
 
-    // Compatibilidade se o Supabase ainda voltar com hash na raiz
     if (!isPending && user && hasSupabaseHash && location.pathname === "/") {
       const loginMode = localStorage.getItem("loginMode");
       navigate(loginMode === "student" ? "/estudante" : "/dashboard", {
@@ -134,15 +133,6 @@ function OAuthReturnBridge() {
 }
 
 export default function App() {
-  const isRootOAuthCodeReturn =
-    typeof window !== "undefined" &&
-    window.location.pathname === "/" &&
-    new URLSearchParams(window.location.search).has("code");
-
-  if (isRootOAuthCodeReturn) {
-    return <RootOAuthCodeRedirect />;
-  }
-
   return (
     <AppAuthProvider>
       <LanguageProvider>
@@ -155,7 +145,6 @@ export default function App() {
 
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
-                      {/* Public */}
                       <Route path="/" element={<HomePage />} />
                       <Route path="/comparacao" element={<ComparacaoPage />} />
                       <Route
@@ -186,14 +175,12 @@ export default function App() {
                         element={<CasoSemanaPage />}
                       />
 
-                      {/* Auth */}
                       <Route path="/login" element={<LoginPage />} />
                       <Route
                         path="/auth/callback"
                         element={<AuthCallbackPage />}
                       />
 
-                      {/* Dashboard - Área Interna */}
                       <Route path="/dashboard" element={<ProtectedDashboard />}>
                         <Route index element={<PainelPage />} />
                         <Route
@@ -235,7 +222,6 @@ export default function App() {
                         <Route path="indicacao" element={<IndicacaoPage />} />
                       </Route>
 
-                      {/* Páginas Legais */}
                       <Route
                         path="/termos-de-uso"
                         element={<TermosDeUsoPage />}
@@ -249,7 +235,6 @@ export default function App() {
                         element={<PoliticaCancelamentoPage />}
                       />
 
-                      {/* Fallback */}
                       <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                   </Suspense>
