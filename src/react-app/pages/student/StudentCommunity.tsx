@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@getmocha/users-service/react";
+import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import {
   MessageCircle,
   Heart,
@@ -18,7 +18,7 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
-  Users
+  Users,
 } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 
@@ -54,10 +54,30 @@ interface Category {
 }
 
 const categories: Category[] = [
-  { id: "duvidas", name: "Dúvidas Clínicas", icon: <Stethoscope className="w-4 h-4" />, gradient: "from-teal-500 to-emerald-500" },
-  { id: "casos", name: "Discussão de Casos", icon: <FileText className="w-4 h-4" />, gradient: "from-violet-500 to-purple-500" },
-  { id: "sugestoes", name: "Sugestões", icon: <Lightbulb className="w-4 h-4" />, gradient: "from-amber-500 to-orange-500" },
-  { id: "estagio", name: "Vida de Estágio", icon: <Coffee className="w-4 h-4" />, gradient: "from-rose-500 to-pink-500" }
+  {
+    id: "duvidas",
+    name: "Dúvidas Clínicas",
+    icon: <Stethoscope className="w-4 h-4" />,
+    gradient: "from-teal-500 to-emerald-500",
+  },
+  {
+    id: "casos",
+    name: "Discussão de Casos",
+    icon: <FileText className="w-4 h-4" />,
+    gradient: "from-violet-500 to-purple-500",
+  },
+  {
+    id: "sugestoes",
+    name: "Sugestões",
+    icon: <Lightbulb className="w-4 h-4" />,
+    gradient: "from-amber-500 to-orange-500",
+  },
+  {
+    id: "estagio",
+    name: "Vida de Estágio",
+    icon: <Coffee className="w-4 h-4" />,
+    gradient: "from-rose-500 to-pink-500",
+  },
 ];
 
 interface Props {
@@ -65,7 +85,7 @@ interface Props {
 }
 
 export default function StudentCommunity({ onBack }: Props) {
-  const { user, redirectToLogin } = useAuth();
+  const { user, loginWithGoogle } = useAppAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -80,7 +100,10 @@ export default function StudentCommunity({ onBack }: Props) {
   // Edit/Delete state
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const [editContent, setEditContent] = useState("");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{type: 'post' | 'comment', id: number} | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{
+    type: "post" | "comment";
+    id: number;
+  } | null>(null);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
 
   // New post form
@@ -89,16 +112,26 @@ export default function StudentCommunity({ onBack }: Props) {
   const [newPostContent, setNewPostContent] = useState("");
 
   useEffect(() => {
-    fetchPosts();
-    fetchLikes();
+    void fetchPosts();
+    void fetchLikes();
   }, [selectedCategory]);
+
+  const startStudentLogin = async () => {
+    try {
+      localStorage.setItem("loginMode", "student");
+      await loginWithGoogle();
+    } catch (e) {
+      console.error("Error starting student login:", e);
+    }
+  };
 
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const url = selectedCategory === "all" 
-        ? "/api/student/community/posts"
-        : `/api/student/community/posts?category=${selectedCategory}`;
+      const url =
+        selectedCategory === "all"
+          ? "/api/student/community/posts"
+          : `/api/student/community/posts?category=${selectedCategory}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -113,14 +146,16 @@ export default function StudentCommunity({ onBack }: Props) {
 
   const fetchLikes = async () => {
     try {
-      const res = await fetch("/api/student/community/likes", { credentials: "include" });
+      const res = await fetch("/api/student/community/likes", {
+        credentials: "include",
+      });
       if (res.ok) {
         const data = await res.json();
         setLikedPosts(data.post_ids || []);
         setLikedComments(data.comment_ids || []);
       }
-    } catch (e) {
-      // Ignore
+    } catch (_e) {
+      // ignore
     }
   };
 
@@ -139,12 +174,11 @@ export default function StudentCommunity({ onBack }: Props) {
 
   const handleCreatePost = async () => {
     if (!user) {
-      localStorage.setItem("loginMode", "student");
-      redirectToLogin();
+      await startStudentLogin();
       return;
     }
     if (!newPostTitle.trim() || !newPostContent.trim()) return;
-    
+
     setSubmitting(true);
     try {
       const res = await fetch("/api/student/community/posts", {
@@ -154,14 +188,14 @@ export default function StudentCommunity({ onBack }: Props) {
         body: JSON.stringify({
           category: newPostCategory,
           title: newPostTitle.trim(),
-          content: newPostContent.trim()
-        })
+          content: newPostContent.trim(),
+        }),
       });
       if (res.ok) {
         setShowNewPost(false);
         setNewPostTitle("");
         setNewPostContent("");
-        fetchPosts();
+        await fetchPosts();
       }
     } catch (e) {
       console.error("Error creating post:", e);
@@ -172,23 +206,25 @@ export default function StudentCommunity({ onBack }: Props) {
 
   const handleAddComment = async () => {
     if (!user) {
-      localStorage.setItem("loginMode", "student");
-      redirectToLogin();
+      await startStudentLogin();
       return;
     }
     if (!selectedPost || !newComment.trim()) return;
-    
+
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/student/community/posts/${selectedPost.id}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ content: newComment.trim() })
-      });
+      const res = await fetch(
+        `/api/student/community/posts/${selectedPost.id}/comments`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ content: newComment.trim() }),
+        }
+      );
       if (res.ok) {
         setNewComment("");
-        fetchPostDetails(selectedPost.id);
+        await fetchPostDetails(selectedPost.id);
       }
     } catch (e) {
       console.error("Error adding comment:", e);
@@ -199,19 +235,22 @@ export default function StudentCommunity({ onBack }: Props) {
 
   const handleEditComment = async () => {
     if (!editingComment || !editContent.trim()) return;
-    
+
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/student/community/comments/${editingComment.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ content: editContent.trim() })
-      });
+      const res = await fetch(
+        `/api/student/community/comments/${editingComment.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ content: editContent.trim() }),
+        }
+      );
       if (res.ok && selectedPost) {
         setEditingComment(null);
         setEditContent("");
-        fetchPostDetails(selectedPost.id);
+        await fetchPostDetails(selectedPost.id);
       }
     } catch (e) {
       console.error("Error editing comment:", e);
@@ -219,16 +258,20 @@ export default function StudentCommunity({ onBack }: Props) {
       setSubmitting(false);
     }
   };
+  function startEditComment(comment: Comment) {
+  setEditingComment(comment);
+  setEditContent(comment.content);
+}
 
   const handleDeleteComment = async (commentId: number) => {
     try {
       const res = await fetch(`/api/student/community/comments/${commentId}`, {
         method: "DELETE",
-        credentials: "include"
+        credentials: "include",
       });
       if (res.ok && selectedPost) {
         setShowDeleteConfirm(null);
-        fetchPostDetails(selectedPost.id);
+        await fetchPostDetails(selectedPost.id);
       }
     } catch (e) {
       console.error("Error deleting comment:", e);
@@ -239,12 +282,12 @@ export default function StudentCommunity({ onBack }: Props) {
     try {
       const res = await fetch(`/api/student/community/posts/${postId}`, {
         method: "DELETE",
-        credentials: "include"
+        credentials: "include",
       });
       if (res.ok) {
         setShowDeleteConfirm(null);
         setSelectedPost(null);
-        fetchPosts();
+        await fetchPosts();
       }
     } catch (e) {
       console.error("Error deleting post:", e);
@@ -253,25 +296,24 @@ export default function StudentCommunity({ onBack }: Props) {
 
   const handleLikePost = async (postId: number) => {
     if (!user) {
-      localStorage.setItem("loginMode", "student");
-      redirectToLogin();
+      await startStudentLogin();
       return;
     }
     try {
       const res = await fetch(`/api/student/community/posts/${postId}/like`, {
         method: "POST",
-        credentials: "include"
+        credentials: "include",
       });
       if (res.ok) {
         const data = await res.json();
         if (data.liked) {
           setLikedPosts([...likedPosts, postId]);
         } else {
-          setLikedPosts(likedPosts.filter(id => id !== postId));
+          setLikedPosts(likedPosts.filter((id) => id !== postId));
         }
-        fetchPosts();
+        await fetchPosts();
         if (selectedPost?.id === postId) {
-          fetchPostDetails(postId);
+          await fetchPostDetails(postId);
         }
       }
     } catch (e) {
@@ -281,24 +323,26 @@ export default function StudentCommunity({ onBack }: Props) {
 
   const handleLikeComment = async (commentId: number) => {
     if (!user) {
-      localStorage.setItem("loginMode", "student");
-      redirectToLogin();
+      await startStudentLogin();
       return;
     }
     try {
-      const res = await fetch(`/api/student/community/comments/${commentId}/like`, {
-        method: "POST",
-        credentials: "include"
-      });
+      const res = await fetch(
+        `/api/student/community/comments/${commentId}/like`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.liked) {
           setLikedComments([...likedComments, commentId]);
         } else {
-          setLikedComments(likedComments.filter(id => id !== commentId));
+          setLikedComments(likedComments.filter((id) => id !== commentId));
         }
         if (selectedPost) {
-          fetchPostDetails(selectedPost.id);
+          await fetchPostDetails(selectedPost.id);
         }
       }
     } catch (e) {
@@ -308,14 +352,17 @@ export default function StudentCommunity({ onBack }: Props) {
 
   const handleMarkSolution = async (commentId: number) => {
     if (!user || !selectedPost || selectedPost.user_id !== user.id) return;
-    
+
     try {
-      const res = await fetch(`/api/student/community/comments/${commentId}/solution`, {
-        method: "POST",
-        credentials: "include"
-      });
+      const res = await fetch(
+        `/api/student/community/comments/${commentId}/solution`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
       if (res.ok) {
-        fetchPostDetails(selectedPost.id);
+        await fetchPostDetails(selectedPost.id);
       }
     } catch (e) {
       console.error("Error marking solution:", e);
@@ -323,7 +370,7 @@ export default function StudentCommunity({ onBack }: Props) {
   };
 
   const getCategoryInfo = (catId: string) => {
-    return categories.find(c => c.id === catId) || categories[0];
+    return categories.find((c) => c.id === catId) || categories[0];
   };
 
   const formatDate = (dateStr: string) => {
@@ -348,11 +395,17 @@ export default function StudentCommunity({ onBack }: Props) {
       "from-rose-400 to-pink-500",
       "from-amber-400 to-orange-500",
       "from-blue-400 to-indigo-500",
-      "from-cyan-400 to-teal-500"
+      "from-cyan-400 to-teal-500",
     ];
-    const index = name.charCodeAt(0) % gradients.length;
+    const safeName = name || "A";
+    const index = safeName.charCodeAt(0) % gradients.length;
     return gradients[index];
   };
+
+  const displayName =
+    user?.user_metadata?.name ||
+    user?.email ||
+    "Estudante";
 
   // Post Detail View
   if (selectedPost) {
@@ -362,19 +415,23 @@ export default function StudentCommunity({ onBack }: Props) {
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-10">
           <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setSelectedPost(null)}
               className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${cat.gradient} text-white text-sm font-medium flex items-center gap-1.5`}>
+            <div
+              className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${cat.gradient} text-white text-sm font-medium flex items-center gap-1.5`}
+            >
               {cat.icon}
               {cat.name}
             </div>
             {user && selectedPost.user_id === user.id && (
               <button
-                onClick={() => setShowDeleteConfirm({ type: 'post', id: selectedPost.id })}
+                onClick={() =>
+                  setShowDeleteConfirm({ type: "post", id: selectedPost.id })
+                }
                 className="ml-auto w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-rose-500 hover:bg-rose-100 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
@@ -391,12 +448,20 @@ export default function StudentCommunity({ onBack }: Props) {
             className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm"
           >
             <div className="flex items-start gap-3 mb-4">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getAvatarGradient(selectedPost.user_name)} flex items-center justify-center text-white font-semibold text-lg shadow-lg`}>
+              <div
+                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getAvatarGradient(
+                  selectedPost.user_name
+                )} flex items-center justify-center text-white font-semibold text-lg shadow-lg`}
+              >
                 {selectedPost.user_name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-slate-900">{selectedPost.user_name}</p>
-                <p className="text-sm text-slate-500">{formatDate(selectedPost.created_at)}</p>
+                <p className="font-semibold text-slate-900">
+                  {selectedPost.user_name}
+                </p>
+                <p className="text-sm text-slate-500">
+                  {formatDate(selectedPost.created_at)}
+                </p>
               </div>
               {selectedPost.solution_comment_id && (
                 <div className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-600 text-sm font-medium flex items-center gap-1.5">
@@ -405,20 +470,28 @@ export default function StudentCommunity({ onBack }: Props) {
                 </div>
               )}
             </div>
-            
-            <h2 className="text-xl font-bold text-slate-900 mb-3">{selectedPost.title}</h2>
-            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{selectedPost.content}</p>
-            
+
+            <h2 className="text-xl font-bold text-slate-900 mb-3">
+              {selectedPost.title}
+            </h2>
+            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+              {selectedPost.content}
+            </p>
+
             <div className="flex items-center gap-4 mt-5 pt-4 border-t border-slate-200">
               <button
-                onClick={() => handleLikePost(selectedPost.id)}
+                onClick={() => void handleLikePost(selectedPost.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-                  likedPosts.includes(selectedPost.id) 
-                    ? "bg-rose-100 text-rose-500" 
+                  likedPosts.includes(selectedPost.id)
+                    ? "bg-rose-100 text-rose-500"
                     : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                 }`}
               >
-                <Heart className={`w-5 h-5 ${likedPosts.includes(selectedPost.id) ? "fill-current" : ""}`} />
+                <Heart
+                  className={`w-5 h-5 ${
+                    likedPosts.includes(selectedPost.id) ? "fill-current" : ""
+                  }`}
+                />
                 <span className="font-medium">{selectedPost.likes_count}</span>
               </button>
               <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-500">
@@ -443,8 +516,8 @@ export default function StudentCommunity({ onBack }: Props) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className={`bg-white rounded-xl border p-4 relative shadow-sm ${
-                  comment.is_solution 
-                    ? "border-emerald-300 ring-1 ring-emerald-200" 
+                  comment.is_solution
+                    ? "border-emerald-300 ring-1 ring-emerald-200"
                     : "border-slate-200"
                 }`}
               >
@@ -454,7 +527,7 @@ export default function StudentCommunity({ onBack }: Props) {
                     Solução
                   </div>
                 )}
-                
+
                 {editingComment?.id === comment.id ? (
                   <div className="space-y-3">
                     <textarea
@@ -465,7 +538,7 @@ export default function StudentCommunity({ onBack }: Props) {
                     />
                     <div className="flex gap-2">
                       <Button
-                        onClick={handleEditComment}
+                        onClick={() => void handleEditComment()}
                         disabled={submitting || !editContent.trim()}
                         className="bg-teal-500 hover:bg-teal-600"
                       >
@@ -473,7 +546,10 @@ export default function StudentCommunity({ onBack }: Props) {
                       </Button>
                       <Button
                         variant="ghost"
-                        onClick={() => { setEditingComment(null); setEditContent(""); }}
+                        onClick={() => {
+                          setEditingComment(null);
+                          setEditContent("");
+                        }}
                         className="text-slate-500 hover:text-slate-700"
                       >
                         Cancelar
@@ -483,49 +559,80 @@ export default function StudentCommunity({ onBack }: Props) {
                 ) : (
                   <>
                     <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${getAvatarGradient(comment.user_name)} flex items-center justify-center text-white font-medium text-sm shadow-lg shrink-0`}>
+                      <div
+                        className={`w-10 h-10 rounded-lg bg-gradient-to-br ${getAvatarGradient(
+                          comment.user_name
+                        )} flex items-center justify-center text-white font-medium text-sm shadow-lg shrink-0`}
+                      >
                         {comment.user_name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-slate-900">{comment.user_name}</span>
-                          <span className="text-xs text-slate-400">{formatDate(comment.created_at)}</span>
-                        </div>
-                        <p className="text-slate-600 mt-2 whitespace-pre-wrap">{comment.content}</p>
-                        
-                        <div className="flex items-center gap-3 mt-3">
-                          <button
-                            onClick={() => handleLikeComment(comment.id)}
-                            className={`flex items-center gap-1.5 text-sm transition-colors ${
-                              likedComments.includes(comment.id) 
-                                ? "text-rose-500" 
-                                : "text-slate-400 hover:text-rose-500"
-                            }`}
-                          >
-                            <Heart className={`w-4 h-4 ${likedComments.includes(comment.id) ? "fill-current" : ""}`} />
-                            {comment.likes_count}
-                          </button>
-                          {user && selectedPost.user_id === user.id && !comment.is_solution && (
+                          <span className="font-medium text-slate-900">
+                            {comment.user_name}andleEditCom
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {formatDate(comment.created_at)}
+                          </span>
+                          {comment.user_id === user?.id && (
                             <button
-                              onClick={() => handleMarkSolution(comment.id)}
-                              className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-emerald-500 transition-colors"
+                              onClick={() => startEditComment(comment)}
+                              className="text-muted-foreground hover:text-violet-500 transition-colors ml-auto"
+                              title="Editar"
                             >
-                              <CheckCircle2 className="w-4 h-4" />
-                              Marcar solução
+                              <Pencil className="h-3 w-3" />
                             </button>
                           )}
                         </div>
+                        <p className="text-slate-600 mt-2 whitespace-pre-wrap">
+                          {comment.content}
+                        </p>
+
+                        <div className="flex items-center gap-3 mt-3">
+                          <button
+                            onClick={() => void handleLikeComment(comment.id)}
+                            className={`flex items-center gap-1.5 text-sm transition-colors ${
+                              likedComments.includes(comment.id)
+                                ? "text-rose-500"
+                                : "text-slate-400 hover:text-rose-500"
+                            }`}
+                          >
+                            <Heart
+                              className={`w-4 h-4 ${
+                                likedComments.includes(comment.id)
+                                  ? "fill-current"
+                                  : ""
+                              }`}
+                            />
+                            {comment.likes_count}
+                          </button>
+                          {user &&
+                            selectedPost.user_id === user.id &&
+                            !comment.is_solution && (
+                              <button
+                                onClick={() => void handleMarkSolution(comment.id)}
+                                className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-emerald-500 transition-colors"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                                Marcar solução
+                              </button>
+                            )}
+                        </div>
                       </div>
-                      
+
                       {user && comment.user_id === user.id && (
                         <div className="relative">
                           <button
-                            onClick={() => setActiveMenu(activeMenu === comment.id ? null : comment.id)}
+                            onClick={() =>
+                              setActiveMenu(
+                                activeMenu === comment.id ? null : comment.id
+                              )
+                            }
                             className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
                           >
                             <MoreVertical className="w-4 h-4" />
                           </button>
-                          
+
                           <AnimatePresence>
                             {activeMenu === comment.id && (
                               <motion.div
@@ -547,7 +654,10 @@ export default function StudentCommunity({ onBack }: Props) {
                                 </button>
                                 <button
                                   onClick={() => {
-                                    setShowDeleteConfirm({ type: 'comment', id: comment.id });
+                                    setShowDeleteConfirm({
+                                      type: "comment",
+                                      id: comment.id,
+                                    });
                                     setActiveMenu(null);
                                   }}
                                   className="w-full px-4 py-2.5 flex items-center gap-2 text-sm text-rose-500 hover:bg-rose-50 transition-colors"
@@ -565,14 +675,18 @@ export default function StudentCommunity({ onBack }: Props) {
                 )}
               </motion.div>
             ))}
-            
+
             {comments.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
                   <MessageCircle className="w-8 h-8 text-slate-400" />
                 </div>
-                <p className="text-slate-600 font-medium">Nenhuma resposta ainda</p>
-                <p className="text-slate-400 text-sm mt-1">Seja o primeiro a responder!</p>
+                <p className="text-slate-600 font-medium">
+                  Nenhuma resposta ainda
+                </p>
+                <p className="text-slate-400 text-sm mt-1">
+                  Seja o primeiro a responder!
+                </p>
               </div>
             )}
           </div>
@@ -588,10 +702,14 @@ export default function StudentCommunity({ onBack }: Props) {
               placeholder={user ? "Escreva sua resposta..." : "Faça login para responder"}
               disabled={!user}
               className="flex-1 px-5 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  void handleAddComment();
+                }
+              }}
             />
             <Button
-              onClick={handleAddComment}
+              onClick={() => void handleAddComment()}
               disabled={submitting || !newComment.trim() || !user}
               className="px-5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 rounded-xl"
             >
@@ -621,7 +739,7 @@ export default function StudentCommunity({ onBack }: Props) {
                   <Trash2 className="w-6 h-6 text-rose-500" />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 text-center mb-2">
-                  Excluir {showDeleteConfirm.type === 'post' ? 'publicação' : 'comentário'}?
+                  Excluir {showDeleteConfirm.type === "post" ? "publicação" : "comentário"}?
                 </h3>
                 <p className="text-slate-500 text-center text-sm mb-6">
                   Esta ação não pode ser desfeita.
@@ -637,10 +755,10 @@ export default function StudentCommunity({ onBack }: Props) {
                   <Button
                     className="flex-1 bg-rose-500 hover:bg-rose-600"
                     onClick={() => {
-                      if (showDeleteConfirm.type === 'post') {
-                        handleDeletePost(showDeleteConfirm.id);
+                      if (showDeleteConfirm.type === "post") {
+                        void handleDeletePost(showDeleteConfirm.id);
                       } else {
-                        handleDeleteComment(showDeleteConfirm.id);
+                        void handleDeleteComment(showDeleteConfirm.id);
                       }
                     }}
                   >
@@ -662,7 +780,7 @@ export default function StudentCommunity({ onBack }: Props) {
       <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={onBack}
               className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition-colors"
             >
@@ -670,21 +788,24 @@ export default function StudentCommunity({ onBack }: Props) {
             </button>
             <div>
               <h1 className="text-lg font-bold text-slate-900">Comunidade</h1>
-              <p className="text-xs text-slate-500">Conecte-se com outros estudantes</p>
+              <p className="text-xs text-slate-500">
+                Conecte-se com outros estudantes
+              </p>
             </div>
           </div>
-          
+
           {user ? (
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarGradient(user.google_user_data?.name || user.email)} flex items-center justify-center text-white font-medium shadow-lg`}>
-              {(user.google_user_data?.name || user.email).charAt(0).toUpperCase()}
+            <div
+              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarGradient(
+                displayName
+              )} flex items-center justify-center text-white font-medium shadow-lg`}
+            >
+              {displayName.charAt(0).toUpperCase()}
             </div>
           ) : (
             <Button
               size="sm"
-              onClick={() => {
-                localStorage.setItem("loginMode", "student");
-                redirectToLogin();
-              }}
+              onClick={() => void startStudentLogin()}
               className="bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl"
             >
               <User className="w-4 h-4 mr-1.5" />
@@ -706,7 +827,9 @@ export default function StudentCommunity({ onBack }: Props) {
               <h2 className="text-lg font-bold text-white">
                 Comunidade RehabRoad
               </h2>
-              <p className="text-sm text-white/80">Discussões clínicas entre estudantes e profissionais</p>
+              <p className="text-sm text-white/80">
+                Discussões clínicas entre estudantes e profissionais
+              </p>
             </div>
           </div>
         </div>
@@ -747,7 +870,10 @@ export default function StudentCommunity({ onBack }: Props) {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 animate-pulse shadow-sm">
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-slate-200 p-5 animate-pulse shadow-sm"
+              >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-slate-100" />
                   <div className="flex-1">
@@ -765,8 +891,12 @@ export default function StudentCommunity({ onBack }: Props) {
             <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
               <MessageCircle className="w-10 h-10 text-slate-400" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">Nenhuma publicação ainda</h3>
-            <p className="text-slate-500">Seja o primeiro a iniciar uma discussão!</p>
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">
+              Nenhuma publicação ainda
+            </h3>
+            <p className="text-slate-500">
+              Seja o primeiro a iniciar uma discussão!
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -778,38 +908,56 @@ export default function StudentCommunity({ onBack }: Props) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  onClick={() => fetchPostDetails(post.id)}
+                  onClick={() => void fetchPostDetails(post.id)}
                   className="bg-white rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-slate-300 hover:shadow-md transition-all group shadow-sm"
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getAvatarGradient(post.user_name)} flex items-center justify-center text-white font-semibold shadow-lg shrink-0`}>
+                    <div
+                      className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getAvatarGradient(
+                        post.user_name
+                      )} flex items-center justify-center text-white font-semibold shadow-lg shrink-0`}
+                    >
                       {post.user_name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-medium text-slate-900">{post.user_name}</span>
-                        <span className="text-xs text-slate-400">· {formatDate(post.created_at)}</span>
+                        <span className="font-medium text-slate-900">
+                          {post.user_name}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          · {formatDate(post.created_at)}
+                        </span>
                       </div>
-                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r ${cat.gradient} text-white text-xs font-medium mb-2`}>
+                      <div
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r ${cat.gradient} text-white text-xs font-medium mb-2`}
+                      >
                         {cat.icon}
                         {cat.name}
                       </div>
-                      <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">{post.title}</h3>
-                      <p className="text-sm text-slate-500 line-clamp-2">{post.content}</p>
-                      
+                      <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
+                        {post.title}
+                      </h3>
+                      <p className="text-sm text-slate-500 line-clamp-2">
+                        {post.content}
+                      </p>
+
                       <div className="flex items-center gap-4 mt-4">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleLikePost(post.id);
+                            void handleLikePost(post.id);
                           }}
                           className={`flex items-center gap-1.5 text-sm transition-colors ${
-                            likedPosts.includes(post.id) 
-                              ? "text-rose-500" 
+                            likedPosts.includes(post.id)
+                              ? "text-rose-500"
                               : "text-slate-400 hover:text-rose-500"
                           }`}
                         >
-                          <Heart className={`w-4 h-4 ${likedPosts.includes(post.id) ? "fill-current" : ""}`} />
+                          <Heart
+                            className={`w-4 h-4 ${
+                              likedPosts.includes(post.id) ? "fill-current" : ""
+                            }`}
+                          />
                           {post.likes_count}
                         </button>
                         <span className="flex items-center gap-1.5 text-sm text-slate-400">
@@ -859,16 +1007,23 @@ export default function StudentCommunity({ onBack }: Props) {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 bg-white/95 backdrop-blur-xl border-b border-slate-200 px-5 py-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-900">Nova Publicação</h2>
-                <button onClick={() => setShowNewPost(false)} className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200">
+                <h2 className="text-lg font-bold text-slate-900">
+                  Nova Publicação
+                </h2>
+                <button
+                  onClick={() => setShowNewPost(false)}
+                  className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <div className="p-5 space-y-5">
                 {/* Category Select */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-3">Categoria</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    Categoria
+                  </label>
                   <div className="grid grid-cols-2 gap-3">
                     {categories.map((cat) => (
                       <button
@@ -880,10 +1035,14 @@ export default function StudentCommunity({ onBack }: Props) {
                             : "border-slate-200 hover:border-slate-300 bg-slate-50"
                         }`}
                       >
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center text-white mb-2 shadow-lg`}>
+                        <div
+                          className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center text-white mb-2 shadow-lg`}
+                        >
                           {cat.icon}
                         </div>
-                        <p className="text-sm font-medium text-slate-900">{cat.name}</p>
+                        <p className="text-sm font-medium text-slate-900">
+                          {cat.name}
+                        </p>
                       </button>
                     ))}
                   </div>
@@ -891,7 +1050,9 @@ export default function StudentCommunity({ onBack }: Props) {
 
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Título</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Título
+                  </label>
                   <input
                     type="text"
                     value={newPostTitle}
@@ -900,12 +1061,16 @@ export default function StudentCommunity({ onBack }: Props) {
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
                     maxLength={150}
                   />
-                  <p className="text-xs text-slate-400 mt-1.5 text-right">{newPostTitle.length}/150</p>
+                  <p className="text-xs text-slate-400 mt-1.5 text-right">
+                    {newPostTitle.length}/150
+                  </p>
                 </div>
 
                 {/* Content */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Descrição</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Descrição
+                  </label>
                   <textarea
                     value={newPostContent}
                     onChange={(e) => setNewPostContent(e.target.value)}
@@ -914,13 +1079,17 @@ export default function StudentCommunity({ onBack }: Props) {
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
                     maxLength={2000}
                   />
-                  <p className="text-xs text-slate-400 mt-1.5 text-right">{newPostContent.length}/2000</p>
+                  <p className="text-xs text-slate-400 mt-1.5 text-right">
+                    {newPostContent.length}/2000
+                  </p>
                 </div>
 
                 {/* Submit */}
                 <Button
-                  onClick={handleCreatePost}
-                  disabled={submitting || !newPostTitle.trim() || !newPostContent.trim()}
+                  onClick={() => void handleCreatePost()}
+                  disabled={
+                    submitting || !newPostTitle.trim() || !newPostContent.trim()
+                  }
                   className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 rounded-xl"
                 >
                   {submitting ? "Publicando..." : "Publicar"}
