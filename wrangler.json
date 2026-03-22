@@ -24,15 +24,5 @@
       "binding": "R2_BUCKET",
       "bucket_name": "rehabroad-files"
     }
-  ],
-  "services": [
-    {
-      "binding": "EMAILS",
-      "service": "emails-service",
-      "entrypoint": "EmailService",
-      "props": {
-        "appId": "019c2fbd-8a66-73a6-aa9f-663d3e6c8af7"
-      }
-    }
   ]
 }
