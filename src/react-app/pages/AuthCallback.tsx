@@ -14,17 +14,12 @@ export default function AuthCallbackPage() {
     const wait = (ms: number) =>
       new Promise((resolve) => window.setTimeout(resolve, ms));
 
-    const waitForSession = async (attempts = 12, interval = 250) => {
+    const waitForSession = async (attempts = 20, interval = 300) => {
       for (let attempt = 0; attempt < attempts; attempt++) {
         const { data, error } = await supabase.auth.getSession();
 
-        if (error) {
-          throw error;
-        }
-
-        if (data.session) {
-          return data.session;
-        }
+        if (error) throw error;
+        if (data.session) return data.session;
 
         await wait(interval);
       }
@@ -32,87 +27,49 @@ export default function AuthCallbackPage() {
       return null;
     };
 
-    const finishLogin = async () => {
-      const { data: userData, error: userError } =
-        await supabase.auth.getUser();
-
-      if (userError) {
-        throw userError;
-      }
-
-      if (!userData.user) {
-        throw new Error("Sessão criada, mas o usuário não foi identificado.");
-      }
-
-      await refreshSession();
-      await wait(150);
-
-      if (!isMounted) return;
-
-      const loginMode = localStorage.getItem("loginMode");
-      const destination =
-        loginMode === "student" ? "/estudante" : "/dashboard";
-
-      window.history.replaceState({}, document.title, window.location.pathname);
-      window.location.replace(destination);
-    };
-
     const handleAuthCallback = async () => {
       try {
-        const searchParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(
           window.location.hash.replace(/^#/, "")
         );
+        const searchParams = new URLSearchParams(window.location.search);
 
-        const rawProviderError =
+        const providerError =
           searchParams.get("error_description") ||
           hashParams.get("error_description") ||
           searchParams.get("error") ||
           hashParams.get("error");
 
-        if (rawProviderError) {
-          throw new Error(decodeURIComponent(rawProviderError));
+        if (providerError) {
+          throw new Error(decodeURIComponent(providerError));
         }
 
-        const code = searchParams.get("code");
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
+        const hasAuthReturn =
+          hashParams.has("access_token") ||
+          hashParams.has("refresh_token") ||
+          searchParams.has("code");
 
-        if (!code && !accessToken) {
+        if (!hasAuthReturn) {
           throw new Error("Retorno de autenticação inválido.");
         }
 
-        let session = await waitForSession(4, 250);
-
-        if (!session && code) {
-          const { data, error } =
-            await supabase.auth.exchangeCodeForSession(code);
-
-          if (error) {
-            throw error;
-          }
-
-          session = data.session ?? (await waitForSession());
-        }
-
-        if (!session && accessToken && refreshToken) {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (error) {
-            throw error;
-          }
-
-          session = data.session ?? (await waitForSession());
-        }
+        // detectSessionInUrl=true deve processar automaticamente a hash/code
+        const session = await waitForSession();
 
         if (!session) {
           throw new Error("A sessão não foi concluída a tempo.");
         }
 
-        await finishLogin();
+        await refreshSession();
+
+        if (!isMounted) return;
+
+        const loginMode = localStorage.getItem("loginMode");
+        const destination =
+          loginMode === "student" ? "/estudante" : "/dashboard";
+
+        window.history.replaceState({}, document.title, window.location.pathname);
+        window.location.replace(destination);
       } catch (error) {
         console.error("[auth-callback] Falha ao concluir login:", error);
 
