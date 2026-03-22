@@ -85,7 +85,7 @@ const BibliotecaClinicaPage = lazy(
 );
 const StudentHubPage = lazy(() => import("@/react-app/pages/StudentHub"));
 const CasoSemanaPage = lazy(() => import("@/react-app/pages/CasoSemana"));
-const NotFoundPage = lazy(() => import("@/react-app/pages/NotFound"));
+const NotFoundPage = lazy(() => import("./pages/NotFound"));
 
 function PageLoader() {
   return (
