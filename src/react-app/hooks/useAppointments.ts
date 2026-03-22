@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/react-app/lib/api";
 
 export interface Appointment {
   id: number;
@@ -71,12 +72,8 @@ export function useAppointments(startDate?: string, endDate?: string) {
       const query = params.toString();
       const url = query ? `/api/appointments?${query}` : "/api/appointments";
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: "GET",
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
         cache: "no-store",
       });
 
@@ -104,13 +101,8 @@ export function useAppointments(startDate?: string, endDate?: string) {
   ) => {
     setError(null);
 
-    const response = await fetch("/api/appointments", {
+    const response = await apiFetch("/api/appointments", {
       method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
       body: JSON.stringify(input),
     });
 
@@ -136,13 +128,8 @@ export function useAppointments(startDate?: string, endDate?: string) {
   ) => {
     setError(null);
 
-    const response = await fetch(`/api/appointments/${id}`, {
+    const response = await apiFetch(`/api/appointments/${id}`, {
       method: "PUT",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
       body: JSON.stringify(input),
     });
 
@@ -160,12 +147,8 @@ export function useAppointments(startDate?: string, endDate?: string) {
   const deleteAppointment = async (id: number, options?: MutationOptions) => {
     setError(null);
 
-    const response = await fetch(`/api/appointments/${id}`, {
+    const response = await apiFetch(`/api/appointments/${id}`, {
       method: "DELETE",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-      },
     });
 
     if (!response.ok) {
