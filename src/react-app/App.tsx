@@ -1,10 +1,5 @@
 import { lazy, Suspense } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router";
+import { BrowserRouter as Router, Routes, Route } from "react-router";
 import { SubscriptionProvider } from "@/react-app/contexts/SubscriptionContext";
 import { ToastProvider } from "@/react-app/components/ui/microinteractions";
 import { ThemeProvider } from "@/react-app/hooks/useTheme";
@@ -20,15 +15,13 @@ if (
   window.location.replace(`/auth/callback${window.location.search}`);
 }
 
-// Light pages - load immediately
+// Páginas leves
 import LoginPage from "@/react-app/pages/Login";
-
-// Lazy load landing page for faster initial mobile load
-const HomePage = lazy(() => import("@/react-app/pages/Home"));
 import AuthCallbackPage from "@/react-app/pages/AuthCallback";
 import ProtectedDashboard from "@/react-app/components/ProtectedDashboard";
 
-// Lazy load heavy pages
+// Lazy pages
+const HomePage = lazy(() => import("@/react-app/pages/Home"));
 const PainelPage = lazy(() => import("@/react-app/pages/dashboard/Painel"));
 const PatientDetailPage = lazy(
   () => import("@/react-app/pages/dashboard/PatientDetail")
@@ -65,7 +58,6 @@ const IndicacaoPage = lazy(
   () => import("@/react-app/pages/dashboard/Indicacao")
 );
 
-// Lazy load secondary pages
 const TermosDeUsoPage = lazy(
   () => import("@/react-app/pages/legal/TermosDeUso")
 );
@@ -75,6 +67,7 @@ const PoliticaPrivacidadePage = lazy(
 const PoliticaCancelamentoPage = lazy(
   () => import("@/react-app/pages/legal/PoliticaCancelamento")
 );
+
 const ComparacaoPage = lazy(() => import("@/react-app/pages/Comparacao"));
 const BlogPage = lazy(() => import("@/react-app/pages/Blog"));
 const BlogPostPage = lazy(() => import("@/react-app/pages/BlogPost"));
@@ -92,13 +85,13 @@ const BibliotecaClinicaPage = lazy(
 );
 const StudentHubPage = lazy(() => import("@/react-app/pages/StudentHub"));
 const CasoSemanaPage = lazy(() => import("@/react-app/pages/CasoSemana"));
+const NotFoundPage = lazy(() => import("@/react-app/pages/NotFound"));
 
-// Loading fallback
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         <p className="text-slate-400 text-sm">Carregando...</p>
       </div>
     </div>
@@ -139,6 +132,7 @@ export default function App() {
                       path="/biblioteca/:slug"
                       element={<BibliotecaClinicaPage />}
                     />
+
                     <Route path="/estudante" element={<StudentHubPage />} />
                     <Route
                       path="/caso-da-semana"
@@ -202,7 +196,7 @@ export default function App() {
                       element={<PoliticaCancelamentoPage />}
                     />
 
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </Suspense>
               </Router>
