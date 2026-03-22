@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/react-app/lib/api";
 
 export interface Evaluation {
   id: number;
@@ -26,6 +27,31 @@ export interface EvaluationFormData {
   observations?: string;
 }
 
+async function parseErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.reason === "string" && data.reason.trim()) {
+      return data.reason;
+    }
+
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function useEvaluations(patientId: number | string) {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,45 +60,85 @@ export function useEvaluations(patientId: number | string) {
   const fetchEvaluations = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/patients/${patientId}/evaluations`);
-      if (!res.ok) throw new Error("Failed to fetch evaluations");
+
+      const res = await apiFetch(`/api/patients/${patientId}/evaluations`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error(
+          await parseErrorMessage(res, "Erro ao carregar avaliações")
+        );
+      }
+
       const data = await res.json();
-      setEvaluations(data);
+      setEvaluations(Array.isArray(data) ? data : []);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setEvaluations([]);
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setLoading(false);
     }
   }, [patientId]);
 
-  const createEvaluation = useCallback(async (data: EvaluationFormData) => {
-    const res = await fetch(`/api/patients/${patientId}/evaluations`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("Failed to create evaluation");
-    const newEval = await res.json();
-    setEvaluations((prev) => [newEval, ...prev]);
-    return newEval;
-  }, [patientId]);
+  const createEvaluation = useCallback(
+    async (data: EvaluationFormData) => {
+      const res = await apiFetch(`/api/patients/${patientId}/evaluations`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
 
-  const updateEvaluation = useCallback(async (evaluationId: number, data: EvaluationFormData) => {
-    const res = await fetch(`/api/evaluations/${evaluationId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("Failed to update evaluation");
-    const updatedEval = await res.json();
-    setEvaluations((prev) => prev.map(e => e.id === evaluationId ? updatedEval : e));
-    return updatedEval;
-  }, []);
+      if (!res.ok) {
+        throw new Error(
+          await parseErrorMessage(res, "Erro ao criar avaliação")
+        );
+      }
+
+      const newEval = await res.json();
+      setEvaluations((prev) => [newEval, ...prev]);
+      setError(null);
+      return newEval;
+    },
+    [patientId]
+  );
+
+  const updateEvaluation = useCallback(
+    async (evaluationId: number, data: EvaluationFormData) => {
+      const res = await apiFetch(`/api/evaluations/${evaluationId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        throw new Error(
+          await parseErrorMessage(res, "Erro ao atualizar avaliação")
+        );
+      }
+
+      const updatedEval = await res.json();
+      setEvaluations((prev) =>
+        prev.map((e) => (e.id === evaluationId ? updatedEval : e))
+      );
+      setError(null);
+      return updatedEval;
+    },
+    []
+  );
 
   useEffect(() => {
-    if (patientId) fetchEvaluations();
+    if (patientId) {
+      void fetchEvaluations();
+    }
   }, [patientId, fetchEvaluations]);
 
-  return { evaluations, loading, error, fetchEvaluations, createEvaluation, updateEvaluation };
+  return {
+    evaluations,
+    loading,
+    error,
+    fetchEvaluations,
+    createEvaluation,
+    updateEvaluation,
+  };
 }
