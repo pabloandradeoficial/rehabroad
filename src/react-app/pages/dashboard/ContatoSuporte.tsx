@@ -7,6 +7,7 @@ import { Textarea } from "@/react-app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
 import { MessageSquare, Mail, Clock, CheckCircle2, Send, Phone, AlertCircle } from "lucide-react";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
+import { apiFetch } from "@/react-app/lib/api";
 
 const SUBJECTS = [
   { value: "suporte_tecnico", label: "Suporte Técnico" },
@@ -15,6 +16,31 @@ const SUBJECTS = [
   { value: "sugestao_melhoria", label: "Sugestão de Melhoria" },
   { value: "outro", label: "Outro" },
 ];
+
+async function parseErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.reason === "string" && data.reason.trim()) {
+      return data.reason;
+    }
+
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export default function ContatoSuportePage() {
   const { user } = useAppAuth();
@@ -56,14 +82,15 @@ export default function ContatoSuportePage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/contato", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const response = await apiFetch("/api/contato", {
+  method: "POST",
+  body: JSON.stringify(formData),
+    });
 
       if (!response.ok) {
-        throw new Error("Erro ao enviar mensagem");
+        throw new Error(
+          await parseErrorMessage(response, "Erro ao enviar mensagem")
+        );
       }
 
       setIsSubmitted(true);
@@ -77,7 +104,6 @@ export default function ContatoSuportePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <MessageSquare className="h-7 w-7 text-primary" />
@@ -89,7 +115,6 @@ export default function ContatoSuportePage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Form Card */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
@@ -204,7 +229,6 @@ export default function ContatoSuportePage() {
           </Card>
         </div>
 
-        {/* Contact Info Sidebar */}
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
@@ -253,7 +277,6 @@ export default function ContatoSuportePage() {
         </div>
       </div>
 
-      {/* Legal Notice */}
       <Card className="bg-muted/50 border-muted">
         <CardContent className="py-4">
           <p className="text-xs text-muted-foreground text-center">
