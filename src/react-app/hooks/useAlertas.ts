@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/react-app/lib/api";
 
 export interface AlertStatus {
   status: "green" | "yellow" | "red";
@@ -17,6 +18,31 @@ export interface AlertOverviewItem {
   evolutionCount: number;
 }
 
+async function parseErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.reason === "string" && data.reason.trim()) {
+      return data.reason;
+    }
+
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function useAlertStatus(patientId: number | string | null) {
   const [alertStatus, setAlertStatus] = useState<AlertStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,25 +50,39 @@ export function useAlertStatus(patientId: number | string | null) {
 
   const fetchAlertStatus = useCallback(async () => {
     if (!patientId) {
+      setAlertStatus(null);
+      setError(null);
       setLoading(false);
       return;
     }
+
     try {
       setLoading(true);
-      const res = await fetch(`/api/patients/${patientId}/alertas`);
-      if (!res.ok) throw new Error("Failed to fetch alert status");
+
+      const res = await apiFetch(`/api/patients/${patientId}/alertas`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error(
+          await parseErrorMessage(res, "Erro ao carregar alertas do paciente")
+        );
+      }
+
       const data = await res.json();
       setAlertStatus(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setAlertStatus(null);
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setLoading(false);
     }
   }, [patientId]);
 
   useEffect(() => {
-    fetchAlertStatus();
+    void fetchAlertStatus();
   }, [fetchAlertStatus]);
 
   return { alertStatus, loading, error, refetch: fetchAlertStatus };
@@ -56,20 +96,31 @@ export function useAlertasOverview() {
   const fetchOverview = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/alertas/overview");
-      if (!res.ok) throw new Error("Failed to fetch alerts overview");
+
+      const res = await apiFetch("/api/alertas/overview", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error(
+          await parseErrorMessage(res, "Erro ao carregar visão geral dos alertas")
+        );
+      }
+
       const data = await res.json();
-      setOverview(data);
+      setOverview(Array.isArray(data) ? data : []);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setOverview([]);
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchOverview();
+    void fetchOverview();
   }, [fetchOverview]);
 
   return { overview, loading, error, refetch: fetchOverview };

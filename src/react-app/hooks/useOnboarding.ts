@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/react-app/lib/api";
 
 export interface OnboardingProgress {
   hasPatient: boolean;
@@ -23,6 +24,31 @@ export interface OnboardingStep {
 const ONBOARDING_DISMISSED_KEY = "rehabroad_onboarding_dismissed";
 const REPORT_PROMPT_SHOWN_KEY = "rehabroad_report_prompt_shown";
 
+async function parseErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.reason === "string" && data.reason.trim()) {
+      return data.reason;
+    }
+
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function useOnboarding() {
   const [progress, setProgress] = useState<OnboardingProgress>({
     hasPatient: false,
@@ -36,28 +62,43 @@ export function useOnboarding() {
     isComplete: false,
     loading: true,
   });
+
   const [isDismissed, setIsDismissed] = useState(() => {
     return localStorage.getItem(ONBOARDING_DISMISSED_KEY) === "true";
   });
+
   const [showReportPrompt, setShowReportPrompt] = useState(false);
   const [firstEvaluationPatientId, setFirstEvaluationPatientId] = useState<number | null>(null);
 
   const fetchProgress = useCallback(async () => {
     try {
-      const res = await fetch("/api/onboarding/progress");
-      if (!res.ok) throw new Error("Failed to fetch onboarding progress");
+      const res = await apiFetch("/api/onboarding/progress", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error(
+          await parseErrorMessage(res, "Erro ao carregar progresso inicial")
+        );
+      }
+
       const data = await res.json();
-      
+
       const completed = [
-        data.hasPatient,
-        data.hasEvaluation,
-        data.hasObjectives,
-        data.hasEvolution,
-        data.hasReport,
+        data?.hasPatient,
+        data?.hasEvaluation,
+        data?.hasObjectives,
+        data?.hasEvolution,
+        data?.hasReport,
       ].filter(Boolean).length;
 
       setProgress({
-        ...data,
+        hasPatient: Boolean(data?.hasPatient),
+        hasEvaluation: Boolean(data?.hasEvaluation),
+        hasObjectives: Boolean(data?.hasObjectives),
+        hasEvolution: Boolean(data?.hasEvolution),
+        hasReport: Boolean(data?.hasReport),
         completedCount: completed,
         totalSteps: 5,
         percentComplete: Math.round((completed / 5) * 100),
@@ -65,21 +106,26 @@ export function useOnboarding() {
         loading: false,
       });
 
-      // Check if we should show report prompt (first evaluation just completed)
       const promptShown = localStorage.getItem(REPORT_PROMPT_SHOWN_KEY) === "true";
-      if (data.hasEvaluation && !data.hasReport && !promptShown && data.firstEvaluationPatientId) {
+
+      if (
+        data?.hasEvaluation &&
+        !data?.hasReport &&
+        !promptShown &&
+        data?.firstEvaluationPatientId
+      ) {
         setShowReportPrompt(true);
         setFirstEvaluationPatientId(data.firstEvaluationPatientId);
         localStorage.setItem(REPORT_PROMPT_SHOWN_KEY, "true");
       }
     } catch (err) {
       console.error("Error fetching onboarding progress:", err);
-      setProgress(prev => ({ ...prev, loading: false }));
+      setProgress((prev) => ({ ...prev, loading: false }));
     }
   }, []);
 
   useEffect(() => {
-    fetchProgress();
+    void fetchProgress();
   }, [fetchProgress]);
 
   const dismissOnboarding = useCallback(() => {
@@ -91,7 +137,8 @@ export function useOnboarding() {
     setShowReportPrompt(false);
   }, []);
 
-  const shouldShowOnboarding = !isDismissed && !progress.isComplete && !progress.loading;
+  const shouldShowOnboarding =
+    !isDismissed && !progress.isComplete && !progress.loading;
 
   return {
     progress,
