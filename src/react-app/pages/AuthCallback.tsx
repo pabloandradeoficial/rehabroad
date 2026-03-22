@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
 import { Activity, Loader2 } from "lucide-react";
 import { supabase } from "@/react-app/lib/supabase";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
 export default function AuthCallbackPage() {
-  const navigate = useNavigate();
   const { refreshSession } = useAppAuth();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -16,19 +14,59 @@ export default function AuthCallbackPage() {
     const wait = (ms: number) =>
       new Promise((resolve) => window.setTimeout(resolve, ms));
 
-    const waitForSession = async () => {
-      for (let attempt = 0; attempt < 10; attempt++) {
+    const waitForSession = async (
+      attempts = 12,
+      interval = 250
+    ) => {
+      for (let attempt = 0; attempt < attempts; attempt++) {
         const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
+
+        if (error) {
+          throw error;
+        }
 
         if (data.session) {
           return data.session;
         }
 
-        await wait(300);
+        await wait(interval);
       }
 
       return null;
+    };
+
+    const finishLogin = async () => {
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!userData.user) {
+        throw new Error(
+          "Sessão criada, mas o usuário não foi identificado."
+        );
+      }
+
+      await refreshSession();
+      await wait(150);
+
+      if (!isMounted) return;
+
+      const loginMode = localStorage.getItem("loginMode");
+      const destination =
+        loginMode === "student" ? "/estudante" : "/dashboard";
+
+      // Remove code/hash da URL antes de redirecionar
+      window.history.replaceState(
+        {},
+        document.title,
+        window.location.pathname
+      );
+
+      // Hard redirect para evitar corrida com guard/context
+      window.location.replace(destination);
     };
 
     const handleAuthCallback = async () => {
@@ -38,42 +76,60 @@ export default function AuthCallbackPage() {
           window.location.hash.replace(/^#/, "")
         );
 
-        const providerError =
+        const rawProviderError =
           searchParams.get("error_description") ||
           hashParams.get("error_description") ||
           searchParams.get("error") ||
           hashParams.get("error");
 
-        if (providerError) {
-          throw new Error(decodeURIComponent(providerError));
+        if (rawProviderError) {
+          throw new Error(decodeURIComponent(rawProviderError));
         }
 
-        const hasOAuthReturn =
-          searchParams.has("code") ||
-          hashParams.has("access_token") ||
-          hashParams.has("refresh_token");
+        const code = searchParams.get("code");
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
 
-        if (!hasOAuthReturn) {
+        if (!code && !(accessToken && refreshToken)) {
           throw new Error("Retorno de autenticação inválido.");
         }
 
-        // Com detectSessionInUrl=true no client, o Supabase já trata a troca
-        // automática do code por sessão. Aqui só aguardamos a sessão estabilizar.
-        const session = await waitForSession();
+        // 1) Primeiro tenta pegar a sessão caso o detectSessionInUrl
+        // já tenha processado tudo automaticamente
+        let session = await waitForSession(4, 250);
+
+        // 2) Se voltou com ?code=..., força a troca do code por sessão
+        // apenas se a sessão ainda não apareceu
+        if (!session && code) {
+          const { data, error } =
+            await supabase.auth.exchangeCodeForSession(code);
+
+          if (error) {
+            throw error;
+          }
+
+          session = data.session ?? (await waitForSession());
+        }
+
+        // 3) Fallback para fluxos que retornem tokens na hash
+        if (!session && accessToken && refreshToken) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          session = data.session ?? (await waitForSession());
+        }
 
         if (!session) {
           throw new Error("A sessão não foi concluída a tempo.");
         }
 
-        await refreshSession();
-
-        if (!isMounted) return;
-
-        const loginMode = localStorage.getItem("loginMode");
-        const destination =
-          loginMode === "student" ? "/estudante" : "/dashboard";
-
-        navigate(destination, { replace: true });
+        await finishLogin();
       } catch (error) {
         console.error("[auth-callback] Falha ao concluir login:", error);
 
@@ -86,12 +142,12 @@ export default function AuthCallbackPage() {
         );
 
         redirectTimeout = window.setTimeout(() => {
-          navigate("/login", { replace: true });
+          window.location.replace("/login");
         }, 2500);
       }
     };
 
-    handleAuthCallback();
+    void handleAuthCallback();
 
     return () => {
       isMounted = false;
@@ -100,7 +156,7 @@ export default function AuthCallbackPage() {
         window.clearTimeout(redirectTimeout);
       }
     };
-  }, [navigate, refreshSession]);
+  }, [refreshSession]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
