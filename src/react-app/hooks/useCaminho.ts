@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/react-app/lib/api";
 
 export interface Caminho {
   id: number;
@@ -158,6 +159,31 @@ function buildCaminhoPayload(data: CaminhoFormData): Record<string, unknown> {
   return payload;
 }
 
+async function parseErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.reason === "string" && data.reason.trim()) {
+      return data.reason;
+    }
+
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function useCaminho(patientId: number | string | null) {
   const [caminho, setCaminho] = useState<Caminho | null>(null);
   const [loading, setLoading] = useState(true);
@@ -174,12 +200,8 @@ export function useCaminho(patientId: number | string | null) {
     try {
       setLoading(true);
 
-      const res = await fetch(`/api/patients/${patientId}/caminho`, {
+      const res = await apiFetch(`/api/patients/${patientId}/caminho`, {
         method: "GET",
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
         cache: "no-store",
       });
 
@@ -190,7 +212,7 @@ export function useCaminho(patientId: number | string | null) {
       }
 
       if (!res.ok) {
-        throw new Error("Failed to fetch caminho");
+        throw new Error(await parseErrorMessage(res, "Erro ao carregar caminho"));
       }
 
       const data: unknown = await res.json();
@@ -199,7 +221,7 @@ export function useCaminho(patientId: number | string | null) {
       setCaminho(normalized);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setLoading(false);
     }
@@ -213,18 +235,13 @@ export function useCaminho(patientId: number | string | null) {
 
       const payload = buildCaminhoPayload(data);
 
-      const res = await fetch(`/api/patients/${patientId}/caminho`, {
+      const res = await apiFetch(`/api/patients/${patientId}/caminho`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to save caminho");
+        throw new Error(await parseErrorMessage(res, "Erro ao salvar caminho"));
       }
 
       const responseData: unknown = await res.json();
