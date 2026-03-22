@@ -14,12 +14,19 @@ export default function AuthCallbackPage() {
     const wait = (ms: number) =>
       new Promise((resolve) => window.setTimeout(resolve, ms));
 
-    const waitForSession = async (attempts = 20, interval = 300) => {
+    const waitForSession = async (attempts = 20, interval = 400) => {
       for (let attempt = 0; attempt < attempts; attempt++) {
         const { data, error } = await supabase.auth.getSession();
 
         if (error) throw error;
-        if (data.session) return data.session;
+
+        if (data.session) {
+          console.log("[auth-callback] sessão encontrada no getSession()", {
+            attempt,
+            email: data.session.user?.email,
+          });
+          return data.session;
+        }
 
         await wait(interval);
       }
@@ -29,10 +36,10 @@ export default function AuthCallbackPage() {
 
     const handleAuthCallback = async () => {
       try {
+        const searchParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(
           window.location.hash.replace(/^#/, "")
         );
-        const searchParams = new URLSearchParams(window.location.search);
 
         const providerError =
           searchParams.get("error_description") ||
@@ -44,29 +51,85 @@ export default function AuthCallbackPage() {
           throw new Error(decodeURIComponent(providerError));
         }
 
-        const hasAuthReturn =
-          hashParams.has("access_token") ||
-          hashParams.has("refresh_token") ||
-          searchParams.has("code");
+        const code = searchParams.get("code");
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
 
-        if (!hasAuthReturn) {
+        console.log("[auth-callback] retorno recebido", {
+          hasCode: Boolean(code),
+          hasAccessToken: Boolean(accessToken),
+          hasRefreshToken: Boolean(refreshToken),
+          pathname: window.location.pathname,
+          hashLength: window.location.hash.length,
+        });
+
+        let session = null;
+
+        if (accessToken && refreshToken) {
+          console.log("[auth-callback] tentando setSession() com hash tokens");
+
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            console.error("[auth-callback] erro no setSession()", error);
+            throw error;
+          }
+
+          session = data.session ?? null;
+
+          console.log("[auth-callback] retorno do setSession()", {
+            hasSession: Boolean(session),
+            email: session?.user?.email ?? null,
+          });
+        } else if (code) {
+          console.log("[auth-callback] tentando exchangeCodeForSession()");
+
+          const { data, error } = await supabase.auth.exchangeCodeForSession(
+            code
+          );
+
+          if (error) {
+            console.error(
+              "[auth-callback] erro no exchangeCodeForSession()",
+              error
+            );
+            throw error;
+          }
+
+          session = data.session ?? null;
+
+          console.log("[auth-callback] retorno do exchangeCodeForSession()", {
+            hasSession: Boolean(session),
+            email: session?.user?.email ?? null,
+          });
+        } else {
           throw new Error("Retorno de autenticação inválido.");
         }
 
-        // detectSessionInUrl=true deve processar automaticamente a hash/code
-        const session = await waitForSession();
+        if (!session) {
+          console.log(
+            "[auth-callback] sessão ainda nula, aguardando getSession()"
+          );
+          session = await waitForSession();
+        }
 
         if (!session) {
           throw new Error("A sessão não foi concluída a tempo.");
         }
 
         await refreshSession();
+        await wait(250);
 
         if (!isMounted) return;
 
         const loginMode = localStorage.getItem("loginMode");
         const destination =
           loginMode === "student" ? "/estudante" : "/dashboard";
+
+        console.log("[auth-callback] redirecionando para", destination);
 
         window.history.replaceState({}, document.title, window.location.pathname);
         window.location.replace(destination);
