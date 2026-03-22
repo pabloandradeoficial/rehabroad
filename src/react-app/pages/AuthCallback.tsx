@@ -14,10 +14,7 @@ export default function AuthCallbackPage() {
     const wait = (ms: number) =>
       new Promise((resolve) => window.setTimeout(resolve, ms));
 
-    const waitForSession = async (
-      attempts = 12,
-      interval = 250
-    ) => {
+    const waitForSession = async (attempts = 12, interval = 250) => {
       for (let attempt = 0; attempt < attempts; attempt++) {
         const { data, error } = await supabase.auth.getSession();
 
@@ -44,9 +41,7 @@ export default function AuthCallbackPage() {
       }
 
       if (!userData.user) {
-        throw new Error(
-          "Sessão criada, mas o usuário não foi identificado."
-        );
+        throw new Error("Sessão criada, mas o usuário não foi identificado.");
       }
 
       await refreshSession();
@@ -58,14 +53,7 @@ export default function AuthCallbackPage() {
       const destination =
         loginMode === "student" ? "/estudante" : "/dashboard";
 
-      // Remove code/hash da URL antes de redirecionar
-      window.history.replaceState(
-        {},
-        document.title,
-        window.location.pathname
-      );
-
-      // Hard redirect para evitar corrida com guard/context
+      window.history.replaceState({}, document.title, window.location.pathname);
       window.location.replace(destination);
     };
 
@@ -90,16 +78,12 @@ export default function AuthCallbackPage() {
         const accessToken = hashParams.get("access_token");
         const refreshToken = hashParams.get("refresh_token");
 
-        if (!code && !(accessToken && refreshToken)) {
+        if (!code && !accessToken) {
           throw new Error("Retorno de autenticação inválido.");
         }
 
-        // 1) Primeiro tenta pegar a sessão caso o detectSessionInUrl
-        // já tenha processado tudo automaticamente
         let session = await waitForSession(4, 250);
 
-        // 2) Se voltou com ?code=..., força a troca do code por sessão
-        // apenas se a sessão ainda não apareceu
         if (!session && code) {
           const { data, error } =
             await supabase.auth.exchangeCodeForSession(code);
@@ -111,7 +95,6 @@ export default function AuthCallbackPage() {
           session = data.session ?? (await waitForSession());
         }
 
-        // 3) Fallback para fluxos que retornem tokens na hash
         if (!session && accessToken && refreshToken) {
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
