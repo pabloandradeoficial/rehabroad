@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import DashboardLayout from "@/react-app/components/layout/DashboardLayout";
@@ -44,9 +44,5 @@ export default function ProtectedDashboard() {
     );
   }
 
-  return (
-    <DashboardLayout>
-      <Outlet />
-    </DashboardLayout>
-  );
+  return <DashboardLayout />;
 }
