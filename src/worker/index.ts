@@ -25,6 +25,76 @@ const LEGACY_AUTH_COOKIE_NAMES = [
   "supabase-access-token",
 ];
 
+function extractTokenFromCookieValue(cookieValue: string): string | null {
+  if (typeof cookieValue !== "string" || !cookieValue.trim()) {
+    return null;
+  }
+
+  let parsedValue = cookieValue.trim();
+
+  if (parsedValue.startsWith("base64-")) {
+    try {
+      parsedValue = atob(parsedValue.slice(7));
+    } catch {
+      // Ignore invalid base64 cookie values
+    }
+  }
+
+  try {
+    const jsonValue = JSON.parse(parsedValue);
+
+    if (
+      Array.isArray(jsonValue) &&
+      typeof jsonValue[0] === "string" &&
+      jsonValue[0]
+    ) {
+      return jsonValue[0];
+    }
+
+    if (
+      jsonValue &&
+      typeof jsonValue.access_token === "string" &&
+      jsonValue.access_token
+    ) {
+      return jsonValue.access_token;
+    }
+  } catch {
+    // Ignore non-JSON cookie values
+  }
+
+  if (parsedValue.split(".").length === 3) {
+    return parsedValue;
+  }
+
+  return null;
+}
+
+function getPossibleAuthCookieNames(c: any): string[] {
+  const cookieNames = new Set<string>(LEGACY_AUTH_COOKIE_NAMES);
+
+  const rawCookieHeader =
+    c.req.header("cookie") || c.req.header("Cookie") || "";
+
+  for (const chunk of rawCookieHeader.split(";")) {
+    const separatorIndex = chunk.indexOf("=");
+    if (separatorIndex === -1) continue;
+
+    const cookieName = chunk.slice(0, separatorIndex).trim();
+
+    if (!cookieName) continue;
+
+    if (/^sb-.*-auth-token(?:\.\d+)?$/i.test(cookieName)) {
+      cookieNames.add(cookieName);
+    }
+
+    if (/^supabase-auth-token(?:\.\d+)?$/i.test(cookieName)) {
+      cookieNames.add(cookieName);
+    }
+  }
+
+  return Array.from(cookieNames);
+}
+
 function getEnvString(env: Record<string, unknown> | undefined, key: string): string | null {
   if (!env || !(key in env)) {
     return null;
@@ -121,7 +191,8 @@ function getAuthCallbackUrl(c: any): string {
 }
 
 function extractAccessToken(c: any): string | null {
-  const authorizationHeader = c.req.header("authorization") || c.req.header("Authorization");
+  const authorizationHeader =
+    c.req.header("authorization") || c.req.header("Authorization");
 
   if (authorizationHeader && /^Bearer\s+/i.test(authorizationHeader)) {
     const token = authorizationHeader.replace(/^Bearer\s+/i, "").trim();
@@ -130,38 +201,12 @@ function extractAccessToken(c: any): string | null {
     }
   }
 
-  for (const cookieName of LEGACY_AUTH_COOKIE_NAMES) {
+  for (const cookieName of getPossibleAuthCookieNames(c)) {
     const cookieValue = getCookie(c, cookieName);
-    if (typeof cookieValue !== "string" || !cookieValue.trim()) {
-      continue;
-    }
+    const extractedToken = extractTokenFromCookieValue(cookieValue ?? "");
 
-    let parsedValue = cookieValue.trim();
-
-    if (parsedValue.startsWith("base64-")) {
-      try {
-        parsedValue = atob(parsedValue.slice(7));
-      } catch {
-        // Ignore invalid base64 cookie values
-      }
-    }
-
-    try {
-      const jsonValue = JSON.parse(parsedValue);
-
-      if (Array.isArray(jsonValue) && typeof jsonValue[0] === "string" && jsonValue[0]) {
-        return jsonValue[0];
-      }
-
-      if (jsonValue && typeof jsonValue.access_token === "string" && jsonValue.access_token) {
-        return jsonValue.access_token;
-      }
-    } catch {
-      // Ignore non-JSON cookie values
-    }
-
-    if (parsedValue.split(".").length === 3) {
-      return parsedValue;
+    if (extractedToken) {
+      return extractedToken;
     }
   }
 
@@ -231,7 +276,10 @@ const authMiddleware = async (c: any, next: any) => {
     const accessToken = extractAccessToken(c);
 
     if (!accessToken) {
-      return c.json({ error: "Unauthorized" }, 401);
+      return c.json(
+        { error: "Unauthorized", reason: "missing_access_token" },
+        401
+      );
     }
 
     const user = await getSupabaseUserFromAccessToken(
@@ -240,7 +288,10 @@ const authMiddleware = async (c: any, next: any) => {
     );
 
     if (!user) {
-      return c.json({ error: "Unauthorized" }, 401);
+      return c.json(
+        { error: "Unauthorized", reason: "invalid_or_expired_token" },
+        401
+      );
     }
 
     c.set("user", user);
@@ -248,7 +299,15 @@ const authMiddleware = async (c: any, next: any) => {
     await next();
   } catch (error) {
     console.error("Auth middleware error:", error);
-    return c.json({ error: "Unauthorized" }, 401);
+
+    return c.json(
+      {
+        error: "Unauthorized",
+        reason:
+          error instanceof Error ? error.message : "auth_middleware_failed",
+      },
+      401
+    );
   }
 };
 
