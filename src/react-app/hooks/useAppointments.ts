@@ -36,6 +36,24 @@ type MutationOptions = {
   skipRefetch?: boolean;
 };
 
+async function parseErrorMessage(response: Response, fallback: string) {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function useAppointments(startDate?: string, endDate?: string) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,9 +71,17 @@ export function useAppointments(startDate?: string, endDate?: string) {
       const query = params.toString();
       const url = query ? `/api/appointments?${query}` : "/api/appointments";
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      });
+
       if (!response.ok) {
-        throw new Error("Erro ao carregar agenda");
+        throw new Error(await parseErrorMessage(response, "Erro ao carregar agenda"));
       }
 
       const data = await response.json();
@@ -80,12 +106,18 @@ export function useAppointments(startDate?: string, endDate?: string) {
 
     const response = await fetch("/api/appointments", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
       body: JSON.stringify(input),
     });
 
     if (!response.ok) {
-      throw new Error("Erro ao criar agendamento");
+      throw new Error(
+        await parseErrorMessage(response, "Erro ao criar agendamento")
+      );
     }
 
     const data = await response.json();
@@ -106,12 +138,18 @@ export function useAppointments(startDate?: string, endDate?: string) {
 
     const response = await fetch(`/api/appointments/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
       body: JSON.stringify(input),
     });
 
     if (!response.ok) {
-      throw new Error("Erro ao atualizar agendamento");
+      throw new Error(
+        await parseErrorMessage(response, "Erro ao atualizar agendamento")
+      );
     }
 
     if (!options?.skipRefetch) {
@@ -124,10 +162,16 @@ export function useAppointments(startDate?: string, endDate?: string) {
 
     const response = await fetch(`/api/appointments/${id}`, {
       method: "DELETE",
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+      },
     });
 
     if (!response.ok) {
-      throw new Error("Erro ao excluir agendamento");
+      throw new Error(
+        await parseErrorMessage(response, "Erro ao excluir agendamento")
+      );
     }
 
     if (!options?.skipRefetch) {
