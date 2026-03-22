@@ -27,6 +27,8 @@ import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import { cn } from "@/react-app/lib/utils";
 import { Button } from "@/react-app/components/ui/button";
 
+const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
+
 const navItems = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", premium: false },
   { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", premium: false },
@@ -51,7 +53,10 @@ interface SidebarProps {
 
 export default function Sidebar({ className, collapsed = false }: SidebarProps) {
   const { user, logout } = useAppAuth();
-  const { isPremium, isAdmin } = useSubscription();
+  const { isPremium } = useSubscription();
+
+  const normalizedUserEmail = (user?.email || "").trim().toLowerCase();
+  const canAccessAdmin = normalizedUserEmail === OWNER_EMAIL;
 
   const handleLogout = async () => {
     localStorage.removeItem("loginMode");
@@ -81,7 +86,6 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
         className
       )}
     >
-      {/* Logo Section */}
       <div className={cn("border-b border-white/5", collapsed ? "p-3" : "p-5")}>
         <div className="flex items-center gap-3">
           <div className="relative flex-shrink-0">
@@ -104,7 +108,6 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
         </div>
       </div>
 
-      {/* User Card */}
       <div className={cn(collapsed ? "p-2" : "p-4")}>
         <div
           className={cn(
@@ -149,7 +152,6 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
         </div>
       </div>
 
-      {/* Main Navigation */}
       <nav className={cn("flex-1 overflow-y-auto scrollbar-thin", collapsed ? "px-2" : "px-3")}>
         {!collapsed && (
           <div className="mb-2">
@@ -189,7 +191,6 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
           ))}
         </ul>
 
-        {/* Special Features */}
         {!collapsed && (
           <div className="mt-6 mb-2">
             <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -243,7 +244,6 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
           ))}
         </ul>
 
-        {/* Support & Admin */}
         {!collapsed && (
           <div className="mt-6 mb-2">
             <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -271,6 +271,7 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
               {!collapsed && <span className="flex-1">Contato</span>}
             </NavLink>
           </li>
+
           <li>
             <NavLink
               to="/dashboard/indicacao"
@@ -289,7 +290,8 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
               {!collapsed && <span className="flex-1">Indicar Colega</span>}
             </NavLink>
           </li>
-          {isAdmin && (
+
+          {canAccessAdmin && (
             <>
               <li>
                 <NavLink
@@ -309,6 +311,7 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
                   {!collapsed && <span className="flex-1">Admin</span>}
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/dashboard/admin-estudante"
@@ -332,7 +335,6 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
         </ul>
       </nav>
 
-      {/* Plan CTA */}
       <div className={cn(collapsed ? "p-2" : "p-3")}>
         <NavLink
           to="/dashboard/plano"
@@ -381,7 +383,6 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
         </NavLink>
       </div>
 
-      {/* Bottom Actions */}
       <div className={cn("border-t border-white/5", collapsed ? "p-2" : "p-3")}>
         <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-end")}>
           <Button

@@ -1,10 +1,10 @@
-import { lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { lazy, Suspense, type ReactNode } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
 import { SubscriptionProvider } from "@/react-app/contexts/SubscriptionContext";
 import { ToastProvider } from "@/react-app/components/ui/microinteractions";
 import { ThemeProvider } from "@/react-app/hooks/useTheme";
 import { LanguageProvider } from "@/react-app/contexts/LanguageContext";
-import { AppAuthProvider } from "@/react-app/contexts/AuthContext";
+import { AppAuthProvider, useAppAuth } from "@/react-app/contexts/AuthContext";
 
 // Intercepta OAuth return na raiz ANTES de qualquer render do React
 if (
@@ -15,12 +15,10 @@ if (
   window.location.replace(`/auth/callback${window.location.search}`);
 }
 
-// Páginas leves
 import LoginPage from "@/react-app/pages/Login";
 import AuthCallbackPage from "@/react-app/pages/AuthCallback";
 import ProtectedDashboard from "@/react-app/components/ProtectedDashboard";
 
-// Lazy pages
 const HomePage = lazy(() => import("@/react-app/pages/Home"));
 const PainelPage = lazy(() => import("@/react-app/pages/dashboard/Painel"));
 const PatientDetailPage = lazy(
@@ -87,6 +85,8 @@ const StudentHubPage = lazy(() => import("@/react-app/pages/StudentHub"));
 const CasoSemanaPage = lazy(() => import("@/react-app/pages/CasoSemana"));
 const NotFoundPage = lazy(() => import("./pages/NotFound"));
 
+const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
+
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -96,6 +96,22 @@ function PageLoader() {
       </div>
     </div>
   );
+}
+
+function OwnerOnlyRoute({ children }: { children: ReactNode }) {
+  const { user, isPending } = useAppAuth();
+
+  if (isPending) {
+    return <PageLoader />;
+  }
+
+  const normalizedEmail = (user?.email || "").trim().toLowerCase();
+
+  if (normalizedEmail !== OWNER_EMAIL) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
 }
 
 export default function App() {
@@ -169,10 +185,21 @@ export default function App() {
                       />
                       <Route path="neuroflux" element={<NeuroFluxPage />} />
                       <Route path="exercicios" element={<ExerciciosPage />} />
-                      <Route path="admin" element={<AdminPage />} />
+                      <Route
+                        path="admin"
+                        element={
+                          <OwnerOnlyRoute>
+                            <AdminPage />
+                          </OwnerOnlyRoute>
+                        }
+                      />
                       <Route
                         path="admin-estudante"
-                        element={<AdminEstudantePage />}
+                        element={
+                          <OwnerOnlyRoute>
+                            <AdminEstudantePage />
+                          </OwnerOnlyRoute>
+                        }
                       />
                       <Route path="agenda" element={<AgendaPage />} />
                       <Route path="forum" element={<ForumPage />} />
