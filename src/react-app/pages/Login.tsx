@@ -16,7 +16,7 @@ import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { user, isPending } = useAppAuth();
+  const { user, isPending, loginWithGoogle } = useAppAuth();
   const { language, setLanguage } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -38,33 +38,7 @@ export default function LoginPage() {
       localStorage.setItem("loginMode", mode);
       setIsSubmitting(true);
 
-      const res = await fetch("/api/oauth/google/redirect_url", {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        throw new Error("Não foi possível obter a URL de login.");
-      }
-
-      const data: unknown = await res.json();
-
-      const redirectUrl =
-        data &&
-        typeof data === "object" &&
-        typeof (data as { redirectUrl?: unknown }).redirectUrl === "string"
-          ? (data as { redirectUrl: string }).redirectUrl
-          : null;
-
-      if (!redirectUrl) {
-        throw new Error("URL de login inválida.");
-      }
-
-      window.location.assign(redirectUrl);
+      await loginWithGoogle();
     } catch (error) {
       console.error("[login] Falha ao iniciar login com Google:", error);
 
