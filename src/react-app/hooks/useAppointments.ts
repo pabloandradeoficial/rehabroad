@@ -32,6 +32,10 @@ export interface AppointmentInput {
   is_paid?: boolean;
 }
 
+type MutationOptions = {
+  skipRefetch?: boolean;
+};
+
 export function useAppointments(startDate?: string, endDate?: string) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,16 +44,24 @@ export function useAppointments(startDate?: string, endDate?: string) {
   const fetchAppointments = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
+
       const params = new URLSearchParams();
       if (startDate) params.set("start", startDate);
       if (endDate) params.set("end", endDate);
-      
-      const response = await fetch(`/api/appointments?${params.toString()}`);
-      if (!response.ok) throw new Error("Erro ao carregar agenda");
-      
+
+      const query = params.toString();
+      const url = query ? `/api/appointments?${query}` : "/api/appointments";
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Erro ao carregar agenda");
+      }
+
       const data = await response.json();
-      setAppointments(data.appointments || []);
+      setAppointments(Array.isArray(data.appointments) ? data.appointments : []);
     } catch (err) {
+      setAppointments([]);
       setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setLoading(false);
@@ -57,36 +69,70 @@ export function useAppointments(startDate?: string, endDate?: string) {
   }, [startDate, endDate]);
 
   useEffect(() => {
-    fetchAppointments();
+    void fetchAppointments();
   }, [fetchAppointments]);
 
-  const createAppointment = async (input: AppointmentInput) => {
+  const createAppointment = async (
+    input: AppointmentInput,
+    options?: MutationOptions
+  ) => {
+    setError(null);
+
     const response = await fetch("/api/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
-    if (!response.ok) throw new Error("Erro ao criar agendamento");
-    await fetchAppointments();
-    return response.json();
+
+    if (!response.ok) {
+      throw new Error("Erro ao criar agendamento");
+    }
+
+    const data = await response.json();
+
+    if (!options?.skipRefetch) {
+      await fetchAppointments();
+    }
+
+    return data;
   };
 
-  const updateAppointment = async (id: number, input: AppointmentInput) => {
+  const updateAppointment = async (
+    id: number,
+    input: AppointmentInput,
+    options?: MutationOptions
+  ) => {
+    setError(null);
+
     const response = await fetch(`/api/appointments/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
-    if (!response.ok) throw new Error("Erro ao atualizar agendamento");
-    await fetchAppointments();
+
+    if (!response.ok) {
+      throw new Error("Erro ao atualizar agendamento");
+    }
+
+    if (!options?.skipRefetch) {
+      await fetchAppointments();
+    }
   };
 
-  const deleteAppointment = async (id: number) => {
+  const deleteAppointment = async (id: number, options?: MutationOptions) => {
+    setError(null);
+
     const response = await fetch(`/api/appointments/${id}`, {
       method: "DELETE",
     });
-    if (!response.ok) throw new Error("Erro ao excluir agendamento");
-    await fetchAppointments();
+
+    if (!response.ok) {
+      throw new Error("Erro ao excluir agendamento");
+    }
+
+    if (!options?.skipRefetch) {
+      await fetchAppointments();
+    }
   };
 
   return {
