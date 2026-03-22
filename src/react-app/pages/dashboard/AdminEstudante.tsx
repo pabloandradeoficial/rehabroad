@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
-import { 
-  GraduationCap, Trophy, Target, BookOpen, Activity, TrendingUp
+import {
+  GraduationCap,
+  Trophy,
+  Target,
+  BookOpen,
+  Activity,
+  TrendingUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Badge } from "@/react-app/components/ui/badge";
 import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { apiFetch } from "@/react-app/lib/api";
 
 interface Student {
   id: number;
@@ -28,12 +34,32 @@ interface StudentStats {
 }
 
 const MODULE_NAMES: Record<string, string> = {
-  'pain-map': 'Mapa da Dor',
-  'muscles': 'Músculos-Chave',
-  'tests': 'Testes Ortopédicos',
-  'treatments': 'Condutas Iniciais',
-  'cases': 'Casos Clínicos'
+  "pain-map": "Mapa da Dor",
+  muscles: "Músculos-Chave",
+  tests: "Testes Ortopédicos",
+  treatments: "Condutas Iniciais",
+  cases: "Casos Clínicos",
 };
+
+async function parseErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.reason === "string" && data.reason.trim()) {
+      return data.reason;
+    }
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export default function AdminEstudante() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -42,18 +68,24 @@ export default function AdminEstudante() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStudents();
+    void fetchStudents();
   }, []);
 
   const fetchStudents = async () => {
     try {
-      const res = await fetch("/api/admin/students");
+      const res = await apiFetch("/api/admin/students", {
+        method: "GET",
+        cache: "no-store",
+      });
+
       if (!res.ok) {
-        throw new Error("Acesso não autorizado");
+        throw new Error(await parseErrorMessage(res, "Acesso não autorizado"));
       }
+
       const data = await res.json();
       setStudents(data.students || []);
       setStats(data.stats || null);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar dados");
     } finally {
@@ -68,7 +100,7 @@ export default function AdminEstudante() {
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   };
 
@@ -100,7 +132,6 @@ export default function AdminEstudante() {
   return (
     <PageTransition>
       <div className="p-4 md:p-8 space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
             <GraduationCap className="w-6 h-6 text-white" />
@@ -111,7 +142,6 @@ export default function AdminEstudante() {
           </div>
         </div>
 
-        {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200">
@@ -125,6 +155,7 @@ export default function AdminEstudante() {
                 </div>
               </CardContent>
             </Card>
+
             <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center gap-3">
@@ -136,6 +167,7 @@ export default function AdminEstudante() {
                 </div>
               </CardContent>
             </Card>
+
             <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center gap-3">
@@ -147,6 +179,7 @@ export default function AdminEstudante() {
                 </div>
               </CardContent>
             </Card>
+
             <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center gap-3">
@@ -161,7 +194,6 @@ export default function AdminEstudante() {
           </div>
         )}
 
-        {/* Module Usage */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -172,7 +204,7 @@ export default function AdminEstudante() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {Object.entries(MODULE_NAMES).map(([key, name]) => {
-                const count = students.filter(s => s.modules_visited?.includes(key)).length;
+                const count = students.filter((s) => s.modules_visited?.includes(key)).length;
                 const percentage = students.length > 0 ? Math.round((count / students.length) * 100) : 0;
                 return (
                   <div key={key} className="bg-muted/50 rounded-lg p-3 text-center">
@@ -186,7 +218,6 @@ export default function AdminEstudante() {
           </CardContent>
         </Card>
 
-        {/* Students Table */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -210,9 +241,11 @@ export default function AdminEstudante() {
                 </thead>
                 <tbody>
                   {students.map((student) => {
-                    const accuracy = student.cases_completed > 0 
-                      ? Math.round((student.cases_correct / student.cases_completed) * 100) 
-                      : 0;
+                    const accuracy =
+                      student.cases_completed > 0
+                        ? Math.round((student.cases_correct / student.cases_completed) * 100)
+                        : 0;
+
                     return (
                       <tr key={student.id} className="border-b hover:bg-muted/50">
                         <td className="py-3 px-2 font-medium">{student.user_name || "-"}</td>
@@ -224,9 +257,7 @@ export default function AdminEstudante() {
                           </Badge>
                         </td>
                         <td className="py-3 px-2 text-center">
-                          <Badge 
-                            className={accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : "bg-slate-400"}
-                          >
+                          <Badge className={accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : "bg-slate-400"}>
                             {accuracy}%
                           </Badge>
                         </td>
@@ -244,6 +275,7 @@ export default function AdminEstudante() {
                       </tr>
                     );
                   })}
+
                   {students.length === 0 && (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-muted-foreground">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { 
+import {
   Users, UserCheck, Mail, CreditCard, Calendar, TrendingUp, Clock, Shield, FileText,
   Download, BarChart3, Activity, MessageSquare, ClipboardList, Stethoscope, CalendarDays,
   GraduationCap, Trophy, Target, BookOpen, Eye, AlertTriangle, Timer
@@ -9,6 +9,7 @@ import { Badge } from "@/react-app/components/ui/badge";
 import { Button } from "@/react-app/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components/ui/tabs";
 import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { apiFetch } from "@/react-app/lib/api";
 
 interface AdminStats {
   totalUsers: number;
@@ -118,6 +119,26 @@ interface ExportEmail {
   created_at: string;
 }
 
+async function parseErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.reason === "string" && data.reason.trim()) {
+      return data.reason;
+    }
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function Admin() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [engagement, setEngagement] = useState<EngagementData | null>(null);
@@ -132,41 +153,52 @@ export default function Admin() {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
-      const [statsRes, usersRes, waitlistRes, leadsRes, engagementRes, studentsRes, viewsRes] = await Promise.all([
-        fetch("/api/admin/stats"),
-        fetch("/api/admin/users"),
-        fetch("/api/admin/waitlist"),
-        fetch("/api/admin/leads"),
-        fetch("/api/admin/engagement"),
-        fetch("/api/admin/students"),
-        fetch("/api/admin/views")
+      const [
+        statsRes,
+        usersRes,
+        waitlistRes,
+        leadsRes,
+        engagementRes,
+        studentsRes,
+        viewsRes,
+      ] = await Promise.all([
+        apiFetch("/api/admin/stats", { method: "GET", cache: "no-store" }),
+        apiFetch("/api/admin/users", { method: "GET", cache: "no-store" }),
+        apiFetch("/api/admin/waitlist", { method: "GET", cache: "no-store" }),
+        apiFetch("/api/admin/leads", { method: "GET", cache: "no-store" }),
+        apiFetch("/api/admin/engagement", { method: "GET", cache: "no-store" }),
+        apiFetch("/api/admin/students", { method: "GET", cache: "no-store" }),
+        apiFetch("/api/admin/views", { method: "GET", cache: "no-store" }),
       ]);
 
       if (!statsRes.ok || !usersRes.ok) {
-        throw new Error("Acesso não autorizado");
+        throw new Error(
+          await parseErrorMessage(statsRes.ok ? usersRes : statsRes, "Acesso não autorizado")
+        );
       }
 
       const statsData = await statsRes.json();
       const usersData = await usersRes.json();
-      const waitlistData = await waitlistRes.json();
-      const leadsData = await leadsRes.json();
-      const engagementData = await engagementRes.json();
+      const waitlistData = waitlistRes.ok ? await waitlistRes.json() : { waitlist: [] };
+      const leadsData = leadsRes.ok ? await leadsRes.json() : { leads: [] };
+      const engagementData = engagementRes.ok ? await engagementRes.json() : null;
       const studentsData = studentsRes.ok ? await studentsRes.json() : { students: [], stats: null };
       const viewsData = viewsRes.ok ? await viewsRes.json() : null;
 
       setStats(statsData);
-      setUsers(usersData.users);
-      setWaitlist(waitlistData.waitlist);
-      setLeads(leadsData.leads);
+      setUsers(usersData.users || []);
+      setWaitlist(waitlistData.waitlist || []);
+      setLeads(leadsData.leads || []);
       setEngagement(engagementData);
       setStudents(studentsData.students || []);
       setStudentStats(studentsData.stats || null);
       setViewStats(viewsData);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar dados");
     } finally {
@@ -177,18 +209,24 @@ export default function Admin() {
   const exportEmails = async () => {
     setExporting(true);
     try {
-      const res = await fetch("/api/admin/export-emails");
+      const res = await apiFetch("/api/admin/export-emails", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error(await parseErrorMessage(res, "Erro ao exportar emails"));
+      }
+
       const data = await res.json();
-      
-      // Create CSV
+
       const csv = [
         "Nome,Email,Fonte,Data",
-        ...data.emails.map((e: ExportEmail) => 
+        ...(data.emails || []).map((e: ExportEmail) =>
           `"${e.name || ""}","${e.email}","${e.source}","${e.created_at}"`
-        )
+        ),
       ].join("\n");
 
-      // Download
       const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -212,34 +250,32 @@ export default function Admin() {
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   };
 
-  // Calculate days remaining in trial (30 days from trial_start_date)
   const getDaysRemaining = (trialStartDate: string | null, status: string): number | null => {
     if (!trialStartDate) return null;
-    if (status === "active_paid") return null; // Paid users don't have expiration
-    
+    if (status === "active_paid") return null;
+
     const startDate = new Date(trialStartDate);
     const expirationDate = new Date(startDate);
     expirationDate.setDate(expirationDate.getDate() + 30);
-    
+
     const today = new Date();
     const diffTime = expirationDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   };
 
-  // Get users with expiring trials (sorted by days remaining)
   const getExpiringUsers = () => {
     return users
-      .map(user => ({
+      .map((user) => ({
         ...user,
-        daysRemaining: getDaysRemaining(user.trial_start_date, user.status)
+        daysRemaining: getDaysRemaining(user.trial_start_date, user.status),
       }))
-      .filter(user => user.daysRemaining !== null && user.daysRemaining <= 15)
+      .filter((user) => user.daysRemaining !== null && user.daysRemaining <= 15)
       .sort((a, b) => (a.daysRemaining || 0) - (b.daysRemaining || 0));
   };
 
@@ -291,7 +327,6 @@ export default function Admin() {
   return (
     <PageTransition>
       <div className="p-4 md:p-8 space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -302,8 +337,8 @@ export default function Admin() {
               <p className="text-muted-foreground">Visão geral dos usuários e métricas</p>
             </div>
           </div>
-          <Button 
-            onClick={exportEmails} 
+          <Button
+            onClick={exportEmails}
             disabled={exporting}
             className="bg-emerald-600 hover:bg-emerald-700"
           >
@@ -312,96 +347,18 @@ export default function Admin() {
           </Button>
         </div>
 
-        {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <Users className="w-8 h-8 text-primary" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                    <p className="text-xs text-muted-foreground">Total Usuários</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <UserCheck className="w-8 h-8 text-emerald-500" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.activeUsers}</p>
-                    <p className="text-xs text-muted-foreground">Ativos</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-8 h-8 text-amber-500" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.paidSubscriptions}</p>
-                    <p className="text-xs text-muted-foreground">Pagantes</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-8 h-8 text-blue-500" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.waitlistCount}</p>
-                    <p className="text-xs text-muted-foreground">Waitlist</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-8 h-8 text-violet-500" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.leadsCount}</p>
-                    <p className="text-xs text-muted-foreground">Leads</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-8 h-8 text-rose-500" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.registeredToday}</p>
-                    <p className="text-xs text-muted-foreground">Hoje</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="w-8 h-8 text-cyan-500" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.registeredThisWeek}</p>
-                    <p className="text-xs text-muted-foreground">Semana</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><Users className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{stats.totalUsers}</p><p className="text-xs text-muted-foreground">Total Usuários</p></div></div></CardContent></Card>
+            <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><UserCheck className="w-8 h-8 text-emerald-500" /><div><p className="text-2xl font-bold">{stats.activeUsers}</p><p className="text-xs text-muted-foreground">Ativos</p></div></div></CardContent></Card>
+            <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><CreditCard className="w-8 h-8 text-amber-500" /><div><p className="text-2xl font-bold">{stats.paidSubscriptions}</p><p className="text-xs text-muted-foreground">Pagantes</p></div></div></CardContent></Card>
+            <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><Mail className="w-8 h-8 text-blue-500" /><div><p className="text-2xl font-bold">{stats.waitlistCount}</p><p className="text-xs text-muted-foreground">Waitlist</p></div></div></CardContent></Card>
+            <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><FileText className="w-8 h-8 text-violet-500" /><div><p className="text-2xl font-bold">{stats.leadsCount}</p><p className="text-xs text-muted-foreground">Leads</p></div></div></CardContent></Card>
+            <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><Calendar className="w-8 h-8 text-rose-500" /><div><p className="text-2xl font-bold">{stats.registeredToday}</p><p className="text-xs text-muted-foreground">Hoje</p></div></div></CardContent></Card>
+            <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><TrendingUp className="w-8 h-8 text-cyan-500" /><div><p className="text-2xl font-bold">{stats.registeredThisWeek}</p><p className="text-xs text-muted-foreground">Semana</p></div></div></CardContent></Card>
           </div>
         )}
 
-        {/* Site Views Stats */}
         {viewStats && (
           <Card>
             <CardHeader className="pb-3">
@@ -412,26 +369,11 @@ export default function Admin() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div className="text-center p-3 bg-pink-50 dark:bg-pink-950/20 rounded-lg">
-                  <p className="text-2xl font-bold text-pink-600">{viewStats.total.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Total</p>
-                </div>
-                <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
-                  <p className="text-2xl font-bold text-emerald-600">{viewStats.today.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Hoje</p>
-                </div>
-                <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600">{viewStats.week.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Últimos 7 dias</p>
-                </div>
-                <div className="text-center p-3 bg-violet-50 dark:bg-violet-950/20 rounded-lg">
-                  <p className="text-2xl font-bold text-violet-600">{viewStats.month.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Últimos 30 dias</p>
-                </div>
-                <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
-                  <p className="text-2xl font-bold text-amber-600">{viewStats.uniqueVisitors.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Únicos</p>
-                </div>
+                <div className="text-center p-3 bg-pink-50 dark:bg-pink-950/20 rounded-lg"><p className="text-2xl font-bold text-pink-600">{viewStats.total.toLocaleString()}</p><p className="text-xs text-muted-foreground">Total</p></div>
+                <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg"><p className="text-2xl font-bold text-emerald-600">{viewStats.today.toLocaleString()}</p><p className="text-xs text-muted-foreground">Hoje</p></div>
+                <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg"><p className="text-2xl font-bold text-blue-600">{viewStats.week.toLocaleString()}</p><p className="text-xs text-muted-foreground">Últimos 7 dias</p></div>
+                <div className="text-center p-3 bg-violet-50 dark:bg-violet-950/20 rounded-lg"><p className="text-2xl font-bold text-violet-600">{viewStats.month.toLocaleString()}</p><p className="text-xs text-muted-foreground">Últimos 30 dias</p></div>
+                <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg"><p className="text-2xl font-bold text-amber-600">{viewStats.uniqueVisitors.toLocaleString()}</p><p className="text-xs text-muted-foreground">Únicos</p></div>
               </div>
               {viewStats.dailyViews.length > 0 && (
                 <div className="mt-4 pt-4 border-t">
@@ -441,7 +383,7 @@ export default function Admin() {
                       <div key={day.date} className="text-center min-w-[60px] p-2 bg-muted/50 rounded">
                         <p className="text-sm font-semibold">{day.views}</p>
                         <p className="text-[10px] text-muted-foreground">
-                          {new Date(day.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          {new Date(day.date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
                         </p>
                       </div>
                     ))}
@@ -452,7 +394,6 @@ export default function Admin() {
           </Card>
         )}
 
-        {/* Subscription Expiration Countdown */}
         <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -471,14 +412,13 @@ export default function Admin() {
                     const days = user.daysRemaining || 0;
                     const isUrgent = days <= 3;
                     const isWarning = days <= 7 && days > 3;
-                    
                     return (
-                      <div 
+                      <div
                         key={user.user_id}
                         className={`flex items-center justify-between p-3 rounded-lg border ${
-                          isUrgent 
-                            ? "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800" 
-                            : isWarning 
+                          isUrgent
+                            ? "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800"
+                            : isWarning
                               ? "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800"
                               : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
                         }`}
@@ -497,15 +437,7 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <Badge 
-                            className={
-                              isUrgent 
-                                ? "bg-red-500 text-white" 
-                                : isWarning 
-                                  ? "bg-amber-500 text-white"
-                                  : "bg-slate-500 text-white"
-                            }
-                          >
+                          <Badge className={isUrgent ? "bg-red-500 text-white" : isWarning ? "bg-amber-500 text-white" : "bg-slate-500 text-white"}>
                             {days <= 0 ? "Expirado" : days === 1 ? "1 dia" : `${days} dias`}
                           </Badge>
                           <p className="text-[10px] text-muted-foreground mt-1">
@@ -516,6 +448,20 @@ export default function Admin() {
                     );
                   })}
                 </div>
+                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t">
+                  <div className="text-center p-2 bg-red-100 dark:bg-red-950/40 rounded-lg">
+                    <p className="text-xl font-bold text-red-600">{expiringUsers.filter(u => (u.daysRemaining || 0) <= 3).length}</p>
+                    <p className="text-[10px] text-red-600/70">Crítico (≤3 dias)</p>
+                  </div>
+                  <div className="text-center p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg">
+                    <p className="text-xl font-bold text-amber-600">{expiringUsers.filter(u => (u.daysRemaining || 0) > 3 && (u.daysRemaining || 0) <= 7).length}</p>
+                    <p className="text-[10px] text-amber-600/70">Atenção (4-7 dias)</p>
+                  </div>
+                  <div className="text-center p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <p className="text-xl font-bold text-slate-600 dark:text-slate-300">{expiringUsers.filter(u => (u.daysRemaining || 0) > 7).length}</p>
+                    <p className="text-[10px] text-muted-foreground">Normal (8-15 dias)</p>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-center py-6 text-muted-foreground">
@@ -523,35 +469,11 @@ export default function Admin() {
                 <p className="text-sm">Nenhum usuário com plano expirando nos próximos 15 dias</p>
               </div>
             )}
-            
-            {/* Summary Stats */}
-            <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t">
-              <div className="text-center p-2 bg-red-100 dark:bg-red-950/40 rounded-lg">
-                <p className="text-xl font-bold text-red-600">
-                  {expiringUsers.filter(u => (u.daysRemaining || 0) <= 3).length}
-                </p>
-                <p className="text-[10px] text-red-600/70">Crítico (≤3 dias)</p>
-              </div>
-              <div className="text-center p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg">
-                <p className="text-xl font-bold text-amber-600">
-                  {expiringUsers.filter(u => (u.daysRemaining || 0) > 3 && (u.daysRemaining || 0) <= 7).length}
-                </p>
-                <p className="text-[10px] text-amber-600/70">Atenção (4-7 dias)</p>
-              </div>
-              <div className="text-center p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                <p className="text-xl font-bold text-slate-600 dark:text-slate-300">
-                  {expiringUsers.filter(u => (u.daysRemaining || 0) > 7).length}
-                </p>
-                <p className="text-[10px] text-muted-foreground">Normal (8-15 dias)</p>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
-        {/* Engagement Metrics */}
         {engagement && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Feature Adoption */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -560,45 +482,14 @@ export default function Admin() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FeatureBar 
-                  label="Cadastraram Pacientes" 
-                  count={engagement.featureAdoption.patients} 
-                  total={stats?.totalUsers || 1}
-                  icon={<Users className="w-4 h-4" />}
-                  color="bg-emerald-500"
-                />
-                <FeatureBar 
-                  label="Fizeram Avaliações" 
-                  count={engagement.featureAdoption.evaluations} 
-                  total={stats?.totalUsers || 1}
-                  icon={<Stethoscope className="w-4 h-4" />}
-                  color="bg-blue-500"
-                />
-                <FeatureBar 
-                  label="Registraram Evoluções" 
-                  count={engagement.featureAdoption.evolutions} 
-                  total={stats?.totalUsers || 1}
-                  icon={<ClipboardList className="w-4 h-4" />}
-                  color="bg-violet-500"
-                />
-                <FeatureBar 
-                  label="Usaram Agenda" 
-                  count={engagement.featureAdoption.appointments} 
-                  total={stats?.totalUsers || 1}
-                  icon={<CalendarDays className="w-4 h-4" />}
-                  color="bg-amber-500"
-                />
-                <FeatureBar 
-                  label="Postaram no Fórum" 
-                  count={engagement.featureAdoption.forum} 
-                  total={stats?.totalUsers || 1}
-                  icon={<MessageSquare className="w-4 h-4" />}
-                  color="bg-rose-500"
-                />
+                <FeatureBar label="Cadastraram Pacientes" count={engagement.featureAdoption.patients} total={stats?.totalUsers || 1} icon={<Users className="w-4 h-4" />} color="bg-emerald-500" />
+                <FeatureBar label="Fizeram Avaliações" count={engagement.featureAdoption.evaluations} total={stats?.totalUsers || 1} icon={<Stethoscope className="w-4 h-4" />} color="bg-blue-500" />
+                <FeatureBar label="Registraram Evoluções" count={engagement.featureAdoption.evolutions} total={stats?.totalUsers || 1} icon={<ClipboardList className="w-4 h-4" />} color="bg-violet-500" />
+                <FeatureBar label="Usaram Agenda" count={engagement.featureAdoption.appointments} total={stats?.totalUsers || 1} icon={<CalendarDays className="w-4 h-4" />} color="bg-amber-500" />
+                <FeatureBar label="Postaram no Fórum" count={engagement.featureAdoption.forum} total={stats?.totalUsers || 1} icon={<MessageSquare className="w-4 h-4" />} color="bg-rose-500" />
               </CardContent>
             </Card>
 
-            {/* Averages & Totals */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -608,43 +499,18 @@ export default function Admin() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
-                  <MetricCard 
-                    label="Pacientes/Usuário" 
-                    value={engagement.averages.patientsPerUser}
-                    icon={<Users className="w-5 h-5 text-emerald-500" />}
-                  />
-                  <MetricCard 
-                    label="Avaliações/Paciente" 
-                    value={engagement.averages.evaluationsPerPatient}
-                    icon={<Stethoscope className="w-5 h-5 text-blue-500" />}
-                  />
-                  <MetricCard 
-                    label="Evoluções/Paciente" 
-                    value={engagement.averages.evolutionsPerPatient}
-                    icon={<ClipboardList className="w-5 h-5 text-violet-500" />}
-                  />
-                  <MetricCard 
-                    label="Total Agendamentos" 
-                    value={engagement.totals.appointments}
-                    icon={<CalendarDays className="w-5 h-5 text-amber-500" />}
-                  />
-                  <MetricCard 
-                    label="Posts no Fórum" 
-                    value={engagement.totals.forumPosts}
-                    icon={<MessageSquare className="w-5 h-5 text-rose-500" />}
-                  />
-                  <MetricCard 
-                    label="PDFs Exportados" 
-                    value={engagement.totals.reportExports}
-                    icon={<FileText className="w-5 h-5 text-cyan-500" />}
-                  />
+                  <MetricCard label="Pacientes/Usuário" value={engagement.averages.patientsPerUser} icon={<Users className="w-5 h-5 text-emerald-500" />} />
+                  <MetricCard label="Avaliações/Paciente" value={engagement.averages.evaluationsPerPatient} icon={<Stethoscope className="w-5 h-5 text-blue-500" />} />
+                  <MetricCard label="Evoluções/Paciente" value={engagement.averages.evolutionsPerPatient} icon={<ClipboardList className="w-5 h-5 text-violet-500" />} />
+                  <MetricCard label="Total Agendamentos" value={engagement.totals.appointments} icon={<CalendarDays className="w-5 h-5 text-amber-500" />} />
+                  <MetricCard label="Posts no Fórum" value={engagement.totals.forumPosts} icon={<MessageSquare className="w-5 h-5 text-rose-500" />} />
+                  <MetricCard label="PDFs Exportados" value={engagement.totals.reportExports} icon={<FileText className="w-5 h-5 text-cyan-500" />} />
                 </div>
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Top Users */}
         {engagement && engagement.topUsers.length > 0 && (
           <Card>
             <CardHeader className="pb-2">
@@ -680,9 +546,7 @@ export default function Admin() {
                             </code>
                           </div>
                         </td>
-                        <td className="py-2 px-2">
-                          {getStatusBadge(user.status, 0)}
-                        </td>
+                        <td className="py-2 px-2">{getStatusBadge(user.status, 0)}</td>
                         <td className="py-2 px-2 text-center font-medium">{user.patients}</td>
                         <td className="py-2 px-2 text-center">{user.evaluations}</td>
                         <td className="py-2 px-2 text-center">{user.evolutions}</td>
@@ -697,33 +561,17 @@ export default function Admin() {
           </Card>
         )}
 
-        {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="users" className="gap-2">
-              <Users className="w-4 h-4" />
-              Usuários ({users.length})
-            </TabsTrigger>
-            <TabsTrigger value="waitlist" className="gap-2">
-              <Clock className="w-4 h-4" />
-              Waitlist ({waitlist.length})
-            </TabsTrigger>
-            <TabsTrigger value="leads" className="gap-2">
-              <FileText className="w-4 h-4" />
-              Leads ({leads.length})
-            </TabsTrigger>
-            <TabsTrigger value="students" className="gap-2">
-              <GraduationCap className="w-4 h-4" />
-              Estudantes ({students.length})
-            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" />Usuários ({users.length})</TabsTrigger>
+            <TabsTrigger value="waitlist" className="gap-2"><Clock className="w-4 h-4" />Waitlist ({waitlist.length})</TabsTrigger>
+            <TabsTrigger value="leads" className="gap-2"><FileText className="w-4 h-4" />Leads ({leads.length})</TabsTrigger>
+            <TabsTrigger value="students" className="gap-2"><GraduationCap className="w-4 h-4" />Estudantes ({students.length})</TabsTrigger>
           </TabsList>
 
-          {/* Users Tab */}
           <TabsContent value="users">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Usuários Registrados</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Usuários Registrados</CardTitle></CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -742,14 +590,8 @@ export default function Admin() {
                     <tbody>
                       {users.map((user) => (
                         <tr key={user.user_id} className="border-b hover:bg-muted/50">
-                          <td className="py-3 px-2">
-                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                              {user.user_id.slice(0, 8)}...
-                            </code>
-                          </td>
-                          <td className="py-3 px-2">
-                            {getStatusBadge(user.status, user.is_admin)}
-                          </td>
+                          <td className="py-3 px-2"><code className="text-xs bg-muted px-1.5 py-0.5 rounded">{user.user_id.slice(0, 8)}...</code></td>
+                          <td className="py-3 px-2">{getStatusBadge(user.status, user.is_admin)}</td>
                           <td className="py-3 px-2 capitalize">{user.plan_type}</td>
                           <td className="py-3 px-2 text-center">
                             {(() => {
@@ -761,26 +603,14 @@ export default function Admin() {
                               return <Badge variant="outline">{days}d</Badge>;
                             })()}
                           </td>
-                          <td className="py-3 px-2 text-center">
-                            <Badge variant="outline">{user.patients_count}</Badge>
-                          </td>
-                          <td className="py-3 px-2 text-center">
-                            <Badge variant="outline">{user.evaluations_count}</Badge>
-                          </td>
-                          <td className="py-3 px-2 text-muted-foreground text-xs">
-                            {formatDate(user.created_at)}
-                          </td>
-                          <td className="py-3 px-2 text-muted-foreground text-xs">
-                            {formatDate(user.last_activity)}
-                          </td>
+                          <td className="py-3 px-2 text-center"><Badge variant="outline">{user.patients_count}</Badge></td>
+                          <td className="py-3 px-2 text-center"><Badge variant="outline">{user.evaluations_count}</Badge></td>
+                          <td className="py-3 px-2 text-muted-foreground text-xs">{formatDate(user.created_at)}</td>
+                          <td className="py-3 px-2 text-muted-foreground text-xs">{formatDate(user.last_activity)}</td>
                         </tr>
                       ))}
                       {users.length === 0 && (
-                        <tr>
-                          <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                            Nenhum usuário registrado
-                          </td>
-                        </tr>
+                        <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">Nenhum usuário registrado</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -789,12 +619,9 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
-          {/* Waitlist Tab */}
           <TabsContent value="waitlist">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Lista de Espera (Beta)</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Lista de Espera (Beta)</CardTitle></CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -814,23 +641,13 @@ export default function Admin() {
                           <td className="py-3 px-2">{entry.name || "-"}</td>
                           <td className="py-3 px-2">{entry.email}</td>
                           <td className="py-3 px-2">
-                            {entry.is_approved === 1 ? (
-                              <Badge className="bg-emerald-500">Aprovado</Badge>
-                            ) : (
-                              <Badge variant="secondary">Pendente</Badge>
-                            )}
+                            {entry.is_approved === 1 ? <Badge className="bg-emerald-500">Aprovado</Badge> : <Badge variant="secondary">Pendente</Badge>}
                           </td>
-                          <td className="py-3 px-2 text-muted-foreground text-xs">
-                            {formatDate(entry.created_at)}
-                          </td>
+                          <td className="py-3 px-2 text-muted-foreground text-xs">{formatDate(entry.created_at)}</td>
                         </tr>
                       ))}
                       {waitlist.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="py-8 text-center text-muted-foreground">
-                            Nenhum registro na lista de espera
-                          </td>
-                        </tr>
+                        <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Nenhum registro na lista de espera</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -839,12 +656,9 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
-          {/* Leads Tab */}
           <TabsContent value="leads">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Leads Capturados</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Leads Capturados</CardTitle></CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -863,20 +677,12 @@ export default function Admin() {
                           <td className="py-3 px-2 text-muted-foreground">{lead.id}</td>
                           <td className="py-3 px-2">{lead.name}</td>
                           <td className="py-3 px-2">{lead.email}</td>
-                          <td className="py-3 px-2">
-                            <Badge variant="outline">{lead.source}</Badge>
-                          </td>
-                          <td className="py-3 px-2 text-muted-foreground text-xs">
-                            {formatDate(lead.created_at)}
-                          </td>
+                          <td className="py-3 px-2"><Badge variant="outline">{lead.source}</Badge></td>
+                          <td className="py-3 px-2 text-muted-foreground text-xs">{formatDate(lead.created_at)}</td>
                         </tr>
                       ))}
                       {leads.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="py-8 text-center text-muted-foreground">
-                            Nenhum lead capturado
-                          </td>
-                        </tr>
+                        <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Nenhum lead capturado</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -885,66 +691,19 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
-          {/* Students Tab */}
           <TabsContent value="students">
             <div className="space-y-6">
-              {/* Student Stats */}
               {studentStats && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <GraduationCap className="w-8 h-8 text-violet-500" />
-                        <div>
-                          <p className="text-2xl font-bold">{studentStats.totalStudents}</p>
-                          <p className="text-xs text-muted-foreground">Total Estudantes</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <Activity className="w-8 h-8 text-emerald-500" />
-                        <div>
-                          <p className="text-2xl font-bold">{studentStats.activeToday}</p>
-                          <p className="text-xs text-muted-foreground">Ativos Hoje</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <BookOpen className="w-8 h-8 text-blue-500" />
-                        <div>
-                          <p className="text-2xl font-bold">{studentStats.totalCases}</p>
-                          <p className="text-xs text-muted-foreground">Casos Resolvidos</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <Target className="w-8 h-8 text-amber-500" />
-                        <div>
-                          <p className="text-2xl font-bold">{studentStats.avgAccuracy}%</p>
-                          <p className="text-xs text-muted-foreground">Média Acertos</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><GraduationCap className="w-8 h-8 text-violet-500" /><div><p className="text-2xl font-bold">{studentStats.totalStudents}</p><p className="text-xs text-muted-foreground">Total Estudantes</p></div></div></CardContent></Card>
+                  <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><Activity className="w-8 h-8 text-emerald-500" /><div><p className="text-2xl font-bold">{studentStats.activeToday}</p><p className="text-xs text-muted-foreground">Ativos Hoje</p></div></div></CardContent></Card>
+                  <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><BookOpen className="w-8 h-8 text-blue-500" /><div><p className="text-2xl font-bold">{studentStats.totalCases}</p><p className="text-xs text-muted-foreground">Casos Resolvidos</p></div></div></CardContent></Card>
+                  <Card><CardContent className="pt-4 pb-4"><div className="flex items-center gap-3"><Target className="w-8 h-8 text-amber-500" /><div><p className="text-2xl font-bold">{studentStats.avgAccuracy}%</p><p className="text-xs text-muted-foreground">Média Acertos</p></div></div></CardContent></Card>
                 </div>
               )}
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <GraduationCap className="w-5 h-5 text-violet-500" />
-                    Estudantes Cadastrados
-                  </CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><GraduationCap className="w-5 h-5 text-violet-500" />Estudantes Cadastrados</CardTitle></CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -960,43 +719,20 @@ export default function Admin() {
                       </thead>
                       <tbody>
                         {students.map((student) => {
-                          const accuracy = student.cases_completed > 0 
-                            ? Math.round((student.cases_correct / student.cases_completed) * 100) 
-                            : 0;
+                          const accuracy = student.cases_completed > 0 ? Math.round((student.cases_correct / student.cases_completed) * 100) : 0;
                           return (
                             <tr key={student.id} className="border-b hover:bg-muted/50">
                               <td className="py-3 px-2 font-medium">{student.user_name || "-"}</td>
                               <td className="py-3 px-2 text-muted-foreground">{student.user_email}</td>
-                              <td className="py-3 px-2 text-center">
-                                <Badge variant="outline" className="gap-1">
-                                  <Trophy className="w-3 h-3" />
-                                  {student.cases_completed}
-                                </Badge>
-                              </td>
-                              <td className="py-3 px-2 text-center">
-                                <Badge 
-                                  className={accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : "bg-slate-400"}
-                                >
-                                  {accuracy}%
-                                </Badge>
-                              </td>
-                              <td className="py-3 px-2 text-center">
-                                <Badge variant="secondary">
-                                  {student.modules_visited?.length || 0}
-                                </Badge>
-                              </td>
-                              <td className="py-3 px-2 text-muted-foreground text-xs">
-                                {formatDate(student.updated_at)}
-                              </td>
+                              <td className="py-3 px-2 text-center"><Badge variant="outline" className="gap-1"><Trophy className="w-3 h-3" />{student.cases_completed}</Badge></td>
+                              <td className="py-3 px-2 text-center"><Badge className={accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : "bg-slate-400"}>{accuracy}%</Badge></td>
+                              <td className="py-3 px-2 text-center"><Badge variant="secondary">{student.modules_visited?.length || 0}</Badge></td>
+                              <td className="py-3 px-2 text-muted-foreground text-xs">{formatDate(student.updated_at)}</td>
                             </tr>
                           );
                         })}
                         {students.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                              Nenhum estudante cadastrado
-                            </td>
-                          </tr>
+                          <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Nenhum estudante cadastrado</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -1011,22 +747,21 @@ export default function Admin() {
   );
 }
 
-// Feature adoption progress bar
-function FeatureBar({ 
-  label, 
-  count, 
-  total, 
+function FeatureBar({
+  label,
+  count,
+  total,
   icon,
-  color 
-}: { 
-  label: string; 
-  count: number; 
+  color,
+}: {
+  label: string;
+  count: number;
   total: number;
   icon: React.ReactNode;
   color: string;
 }) {
   const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-  
+
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-sm">
@@ -1037,7 +772,7 @@ function FeatureBar({
         <span className="font-medium">{count} ({percentage}%)</span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">
-        <div 
+        <div
           className={`h-full ${color} transition-all duration-500`}
           style={{ width: `${percentage}%` }}
         />
@@ -1046,13 +781,12 @@ function FeatureBar({
   );
 }
 
-// Metric card
-function MetricCard({ 
-  label, 
-  value, 
-  icon 
-}: { 
-  label: string; 
+function MetricCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
   value: number;
   icon: React.ReactNode;
 }) {
