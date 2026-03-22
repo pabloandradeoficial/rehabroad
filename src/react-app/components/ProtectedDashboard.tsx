@@ -1,38 +1,52 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
-import { Activity, Loader2 } from "lucide-react";
-import DashboardLayout from "./layout/DashboardLayout";
+import { Outlet, useLocation, useNavigate } from "react-router";
+import { Loader2 } from "lucide-react";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
+import DashboardLayout from "@/react-app/components/layout/DashboardLayout";
 
 export default function ProtectedDashboard() {
-  const navigate = useNavigate();
   const { user, isPending } = useAppAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!isPending && !user) {
-      navigate("/login", { replace: true });
+    if (isPending) return;
+
+    if (!user) {
+      const destination = `${location.pathname}${location.search}${location.hash}`;
+      const encodedDestination = encodeURIComponent(destination);
+
+      navigate(`/login?redirect=${encodedDestination}`, {
+        replace: true,
+      });
     }
-  }, [user, isPending, navigate]);
+  }, [user, isPending, navigate, location]);
 
   if (isPending) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg shadow-primary/25">
-            <Activity className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <div className="flex items-center justify-center gap-3">
-            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span className="text-muted-foreground">Carregando...</span>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Carregando sessão...</span>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Redirecionando para login...</span>
+        </div>
+      </div>
+    );
   }
 
-  return <DashboardLayout />;
+  return (
+    <DashboardLayout>
+      <Outlet />
+    </DashboardLayout>
+  );
 }
