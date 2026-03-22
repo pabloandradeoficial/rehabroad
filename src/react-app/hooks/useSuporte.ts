@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/react-app/lib/api";
 
 export interface ClinicalInsight {
   category: "pain" | "progression" | "region" | "caminho" | "evolution" | "alert";
@@ -35,7 +36,50 @@ export interface SuporteData {
   caminho: any;
   latestEvolution: any;
   suggestions: string[];
-  structured?: StructuredSuporte;
+  structured?: StructuredSuporte | null;
+}
+
+const EMPTY_SUPORTE: SuporteData = {
+  evaluation: null,
+  caminho: null,
+  latestEvolution: null,
+  suggestions: [],
+  structured: {
+    painStatus: {
+      level: null,
+      severity: "none",
+      trend: null,
+      changePercent: null,
+    },
+    insights: [],
+    nextSteps: [],
+    diagnosticHypotheses: [],
+  },
+};
+
+async function parseErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.reason === "string" && data.reason.trim()) {
+      return data.reason;
+    }
+
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 export function useSuporte(patientId: number | string | null) {
@@ -54,53 +98,43 @@ export function useSuporte(patientId: number | string | null) {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/api/patients/${patientId}/suporte`);
-      
+
+      const res = await apiFetch(`/api/patients/${patientId}/suporte`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
       if (!res.ok) {
         if (res.status === 404) {
-          setSuporte({
-            evaluation: null,
-            caminho: null,
-            latestEvolution: null,
-            suggestions: [],
-            structured: {
-              painStatus: { level: null, severity: "none", trend: null, changePercent: null },
-              insights: [],
-              nextSteps: [],
-              diagnosticHypotheses: []
-            }
-          });
+          setSuporte(EMPTY_SUPORTE);
           return;
         }
-        throw new Error("Erro ao carregar dados do paciente");
+
+        throw new Error(
+          await parseErrorMessage(res, "Erro ao carregar dados do paciente")
+        );
       }
-      
+
       const data = await res.json();
-      
+
       setSuporte({
-        evaluation: data.evaluation || null,
-        caminho: data.caminho || null,
-        latestEvolution: data.latestEvolution || null,
-        suggestions: data.suggestions || [],
-        structured: data.structured || null
+        evaluation: data?.evaluation || null,
+        caminho: data?.caminho || null,
+        latestEvolution: data?.latestEvolution || null,
+        suggestions: Array.isArray(data?.suggestions) ? data.suggestions : [],
+        structured: data?.structured || EMPTY_SUPORTE.structured,
       });
     } catch (err) {
       console.error("Erro useSuporte:", err);
       setError(err instanceof Error ? err.message : "Erro desconhecido");
-      setSuporte({
-        evaluation: null,
-        caminho: null,
-        latestEvolution: null,
-        suggestions: [],
-        structured: undefined
-      });
+      setSuporte(EMPTY_SUPORTE);
     } finally {
       setLoading(false);
     }
   }, [patientId]);
 
   useEffect(() => {
-    fetchSuporte();
+    void fetchSuporte();
   }, [fetchSuporte]);
 
   return { suporte, loading, error, refetch: fetchSuporte };
