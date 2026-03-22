@@ -2089,31 +2089,56 @@ app.get("/api/subscription", authMiddleware, async (c) => {
 
   // Admin email - auto-grant admin access
   const ADMIN_EMAIL = "pabloandradeoficial@gmail.com";
-  const isOwnerEmail = user!.email === ADMIN_EMAIL;
+  const normalizedUserEmail = String(user?.email || "").trim().toLowerCase();
+  const normalizedAdminEmail = ADMIN_EMAIL.trim().toLowerCase();
+  const isOwnerEmail = normalizedUserEmail === normalizedAdminEmail;
 
-  // Create beta_trial subscription if none exists
+  // Create subscription if none exists
   if (!subscription) {
-    subscription = await c.env.DB.prepare(
-      `INSERT INTO subscriptions (user_id, plan_type, status, is_active, trial_start_date, is_admin) 
-       VALUES (?, 'free', 'beta_trial', 1, ?, ?)
-       RETURNING *`
-    ).bind(user!.id, now, isOwnerEmail ? 1 : 0).first();
-  } 
-  // If existing user is owner but not admin yet, grant admin
-  else if (isOwnerEmail && !subscription.is_admin) {
+    if (isOwnerEmail) {
+      subscription = await c.env.DB.prepare(
+        `INSERT INTO subscriptions (user_id, plan_type, status, is_active, trial_start_date, is_admin)
+         VALUES (?, 'monthly', 'active_paid', 1, ?, 1)
+         RETURNING *`
+      ).bind(user!.id, now).first();
+    } else {
+      subscription = await c.env.DB.prepare(
+        `INSERT INTO subscriptions (user_id, plan_type, status, is_active, trial_start_date, is_admin)
+         VALUES (?, 'free', 'beta_trial', 1, ?, 0)
+         RETURNING *`
+      ).bind(user!.id, now).first();
+    }
+  }
+  // If existing user is owner, always grant admin + full paid access
+  else if (isOwnerEmail) {
     await c.env.DB.prepare(
-      `UPDATE subscriptions SET is_admin = 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`
+      `UPDATE subscriptions
+       SET is_admin = 1,
+           is_active = 1,
+           status = 'active_paid',
+           plan_type = CASE
+             WHEN plan_type IS NULL OR TRIM(plan_type) = '' OR plan_type = 'free' THEN 'monthly'
+             ELSE plan_type
+           END,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = ?`
     ).bind(user!.id).run();
+
     subscription.is_admin = 1;
-  } 
+    subscription.is_active = 1;
+    subscription.status = 'active_paid';
+    subscription.plan_type = subscription.plan_type && subscription.plan_type !== 'free'
+      ? subscription.plan_type
+      : 'monthly';
+  }
   // If existing subscription doesn't have trial_start_date and is not active_paid, set up beta trial
   else if (!subscription.trial_start_date && subscription.status !== 'active_paid') {
     await c.env.DB.prepare(
-      `UPDATE subscriptions SET 
-       trial_start_date = ?, 
-       status = 'beta_trial', 
+      `UPDATE subscriptions SET
+       trial_start_date = ?,
+       status = 'beta_trial',
        is_active = 1,
-       updated_at = CURRENT_TIMESTAMP 
+       updated_at = CURRENT_TIMESTAMP
        WHERE user_id = ?`
     ).bind(now, user!.id).run();
     subscription.trial_start_date = now;
@@ -2123,18 +2148,24 @@ app.get("/api/subscription", authMiddleware, async (c) => {
 
   // Calculate effective status based on trial duration and admin status
   let effectiveStatus = subscription.status;
-  
+
   // Admins always have full access
-  const isAdmin = subscription.is_admin === 1 || subscription.is_admin === true;
+  const isAdmin = subscription.is_admin === 1 || subscription.is_admin === true || isOwnerEmail;
   if (isAdmin) {
-    effectiveStatus = 'active_paid'; // Treat admins as paid users
+    effectiveStatus = 'active_paid';
+    subscription.is_admin = 1;
+    subscription.is_active = 1;
+    subscription.status = 'active_paid';
+    subscription.plan_type = subscription.plan_type && subscription.plan_type !== 'free'
+      ? subscription.plan_type
+      : 'monthly';
   }
   // If user is in beta_trial, check if trial has expired (30 days)
   else if (subscription.status === 'beta_trial' && subscription.trial_start_date) {
     const trialStart = new Date(subscription.trial_start_date);
     const nowDate = new Date();
     const daysDiff = Math.floor((nowDate.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (daysDiff > 30) {
       // Trial expired, update to free_limited
       effectiveStatus = 'free_limited';
