@@ -71,14 +71,21 @@ Teste grátis por 30 dias: ${referralLink}`;
     <PageTransition>
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-violet-500/25">
-            <Gift className="w-8 h-8 text-white" />
+        <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500" />
+          <div className="relative flex items-start gap-4">
+            <div className="hidden sm:block">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg">
+                <Gift className="w-7 h-7 text-white" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">Indicar para Colega</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                <span className="italic">Ajude outros fisioterapeutas a conhecer o RehabRoad</span>
+              </p>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Indicar para Colega</h1>
-          <p className="text-muted-foreground">
-            Ajude outros fisioterapeutas a conhecer o RehabRoad
-          </p>
         </div>
 
         {/* Benefits Card */}

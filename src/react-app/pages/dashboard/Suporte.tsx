@@ -262,12 +262,21 @@ function SuporteContent() {
       <PageTransition>
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Header */}
-          <div className="text-center py-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-primary flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <HeartPulse className="w-8 h-8 text-white" />
+          <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-primary" />
+            <div className="relative flex items-start gap-4">
+              <div className="hidden sm:block">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-primary flex items-center justify-center shadow-lg">
+                  <HeartPulse className="w-7 h-7 text-white" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">Apoio Clínico</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  <span className="italic">Análise inteligente para apoiar suas decisões</span>
+                </p>
+              </div>
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Apoio Clínico</h1>
-            <p className="text-muted-foreground mt-1">Análise inteligente para apoiar suas decisões</p>
           </div>
 
           {/* Patient Selection */}
@@ -333,15 +342,19 @@ function SuporteContent() {
   return (
     <PageTransition>
       <div className="space-y-8">
-        {/* Compact Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-primary flex items-center justify-center">
-              <HeartPulse className="w-5 h-5 text-white" />
+        {/* Header */}
+        <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-primary" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:block">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-primary flex items-center justify-center shadow-lg">
+                <HeartPulse className="w-7 h-7 text-white" />
+              </div>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">Apoio Clínico</h1>
-              <p className="text-sm text-muted-foreground">{selectedPatient?.name}</p>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">Apoio Clínico</h1>
+              <p className="text-sm text-muted-foreground mt-1"><span className="italic">{selectedPatient?.name ?? "Análise clínica inteligente"}</span></p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -358,6 +371,7 @@ function SuporteContent() {
             <Button variant="outline" size="icon" onClick={refetch} className="h-9 w-9">
               <RefreshCw className="w-4 h-4" />
             </Button>
+          </div>
           </div>
         </div>
 

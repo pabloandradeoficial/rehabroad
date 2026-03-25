@@ -563,13 +563,22 @@ export default function AgendaPage() {
   return (
     <PageTransition>
       <div className="space-y-6">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Agenda</h1>
-            <p className="text-sm text-muted-foreground">
-              Gerencie seus atendimentos
-            </p>
-          </div>
+        <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="hidden sm:block">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-500 flex items-center justify-center shadow-lg">
+                  <Calendar className="w-7 h-7 text-white" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">Agenda</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  <span className="italic">Gerencie seus atendimentos</span>
+                </p>
+              </div>
+            </div>
 
           <div className="flex gap-2">
             <div className="rounded-lg bg-muted/50 p-1">
@@ -600,6 +609,7 @@ export default function AgendaPage() {
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Novo Agendamento</span>
             </Button>
+          </div>
           </div>
         </div>
 

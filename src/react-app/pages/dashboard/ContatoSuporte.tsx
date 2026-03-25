@@ -104,14 +104,21 @@ export default function ContatoSuportePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <MessageSquare className="h-7 w-7 text-primary" />
-          Contato / Suporte
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Entre em contato com nossa equipe para dúvidas, sugestões ou suporte técnico
-        </p>
+      <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500" />
+        <div className="relative flex items-start gap-4">
+          <div className="hidden sm:block">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">
+              <MessageSquare className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Contato / Suporte</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              <span className="italic">Entre em contato com nossa equipe para dúvidas, sugestões ou suporte técnico</span>
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

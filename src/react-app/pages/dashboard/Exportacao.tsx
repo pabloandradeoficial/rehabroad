@@ -618,17 +618,18 @@ function ExportacaoContent() {
       </Dialog>
 
       <div className="max-w-3xl mx-auto space-y-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <FileText className="w-6 h-6 text-white" />
+        <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500" />
+          <div className="relative flex items-start gap-4">
+            <div className="hidden sm:block">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-green-500 flex items-center justify-center shadow-lg">
+                <FileText className="w-7 h-7 text-white" />
+              </div>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Exportação de Relatórios
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Geração de documentos clínicos profissionais em PDF
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">Exportação de Relatórios</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                <span className="italic">Geração de documentos clínicos profissionais em PDF</span>
               </p>
             </div>
           </div>

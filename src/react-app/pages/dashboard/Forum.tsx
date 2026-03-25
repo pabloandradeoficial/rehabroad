@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
 import { useToast } from "@/react-app/components/ui/microinteractions";
+import { apiFetch } from "@/react-app/lib/api";
 import { Button } from "@/react-app/components/ui/button";
 import { Input } from "@/react-app/components/ui/input";
 import { Textarea } from "@/react-app/components/ui/textarea";
@@ -125,7 +126,7 @@ export default function Forum() {
         selectedCategory === "all"
           ? "/api/forum/posts"
           : `/api/forum/posts?category=${selectedCategory}`;
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (res.ok) {
         const data = await res.json();
         setPosts(data);
@@ -145,9 +146,8 @@ export default function Forum() {
 
     try {
       setSubmitting(true);
-      const res = await fetch("/api/forum/posts", {
+      const res = await apiFetch("/api/forum/posts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newPostForm),
       });
 
@@ -171,8 +171,8 @@ export default function Forum() {
 
     try {
       const [postRes, likedRes] = await Promise.all([
-        fetch(`/api/forum/posts/${post.id}`),
-        fetch(`/api/forum/posts/${post.id}/liked`),
+        apiFetch(`/api/forum/posts/${post.id}`),
+        apiFetch(`/api/forum/posts/${post.id}/liked`),
       ]);
 
       if (postRes.ok) {
@@ -198,15 +198,14 @@ export default function Forum() {
 
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/forum/posts/${selectedPost.id}/comments`, {
+      const res = await apiFetch(`/api/forum/posts/${selectedPost.id}/comments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newComment }),
       });
 
       if (res.ok) {
         setNewComment("");
-        const postRes = await fetch(`/api/forum/posts/${selectedPost.id}`);
+        const postRes = await apiFetch(`/api/forum/posts/${selectedPost.id}`);
         if (postRes.ok) {
           const data = await postRes.json();
           setComments(data.comments || []);
@@ -232,7 +231,7 @@ export default function Forum() {
 
   async function handleLikePost(postId: number) {
     try {
-      const res = await fetch(`/api/forum/posts/${postId}/like`, {
+      const res = await apiFetch(`/api/forum/posts/${postId}/like`, {
         method: "POST",
       });
 
@@ -272,7 +271,7 @@ export default function Forum() {
     if (!confirm("Tem certeza que deseja excluir este post?")) return;
 
     try {
-      const res = await fetch(`/api/forum/posts/${postId}`, {
+      const res = await apiFetch(`/api/forum/posts/${postId}`, {
         method: "DELETE",
       });
 
@@ -294,9 +293,8 @@ export default function Forum() {
 
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/forum/posts/${editingPost.id}`, {
+      const res = await apiFetch(`/api/forum/posts/${editingPost.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newPostForm),
       });
 
@@ -322,9 +320,8 @@ export default function Forum() {
 
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/forum/comments/${editingComment.id}`, {
+      const res = await apiFetch(`/api/forum/comments/${editingComment.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: editCommentContent }),
       });
 
@@ -333,7 +330,7 @@ export default function Forum() {
         setEditingComment(null);
         setEditCommentContent("");
         if (selectedPost) {
-          const postRes = await fetch(`/api/forum/posts/${selectedPost.id}`);
+          const postRes = await apiFetch(`/api/forum/posts/${selectedPost.id}`);
           if (postRes.ok) {
             const data = await postRes.json();
             setComments(data.comments || []);

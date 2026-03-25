@@ -361,24 +361,36 @@ export default function FinanceiroPage() {
     <PageTransition>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Financeiro</h1>
-            <p className="text-muted-foreground text-sm">Controle de receitas, despesas e lucratividade</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => exportPDF(filteredTransactions, summary, dateRange)}
-            >
-              <FileDown className="w-4 h-4" />
-              Exportar PDF
-            </Button>
-            <Button onClick={openNewTransaction} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Nova Transação
-            </Button>
+        <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="hidden sm:block">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-green-500 flex items-center justify-center shadow-lg">
+                  <TrendingUp className="w-7 h-7 text-white" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">Financeiro</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  <span className="italic">Controle de receitas, despesas e lucratividade</span>
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => exportPDF(filteredTransactions, summary, dateRange)}
+              >
+                <FileDown className="w-4 h-4" />
+                Exportar PDF
+              </Button>
+              <Button onClick={openNewTransaction} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Nova Transação
+              </Button>
+            </div>
           </div>
         </div>
 
