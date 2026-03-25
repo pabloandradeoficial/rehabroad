@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   DollarSign,
   TrendingUp,
-  Clock,
+  TrendingDown,
   Users,
   Plus,
   Filter,
@@ -18,9 +18,20 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Receipt,
+  FileDown,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { Button } from "@/react-app/components/ui/button";
-import { Card, CardContent } from "@/react-app/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
 import { Label } from "@/react-app/components/ui/label";
 import { Textarea } from "@/react-app/components/ui/textarea";
@@ -43,9 +54,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/react-app/components/ui/dropdown-menu";
-import { PageTransition, Spinner, useToast } from "@/react-app/components/ui/microinteractions";
-import { useTransactions, Transaction, TransactionInput } from "@/react-app/hooks/useTransactions";
+import {
+  PageTransition,
+  Spinner,
+  useToast,
+} from "@/react-app/components/ui/microinteractions";
+import {
+  useTransactions,
+  Transaction,
+  TransactionInput,
+} from "@/react-app/hooks/useTransactions";
 import { usePatients } from "@/react-app/hooks/usePatients";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAYMENT_METHODS: Record<string, { label: string; icon: React.ReactNode }> = {
   dinheiro: { label: "Dinheiro", icon: <Banknote className="w-4 h-4" /> },
@@ -60,6 +81,18 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   pending: { label: "Pendente", color: "text-amber-600", bg: "bg-amber-100" },
   cancelled: { label: "Cancelado", color: "text-red-600", bg: "bg-red-100" },
 };
+
+const INCOME_CATEGORIES = ["Sessão", "Avaliação", "Retorno", "Pacote", "Outros"];
+const EXPENSE_CATEGORIES = [
+  "Aluguel",
+  "Água/Luz/Internet",
+  "Materiais",
+  "Equipamentos",
+  "Salários",
+  "Outros",
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
@@ -86,48 +119,163 @@ function getMonthRange() {
   };
 }
 
+function exportPDF(
+  transactions: Transaction[],
+  summary: ReturnType<typeof useTransactions>["summary"],
+  dateRange: { start: string; end: string }
+) {
+  // Build a printable HTML page and open in a new window for the user to print/save as PDF
+  const rows = transactions
+    .map((t) => {
+      const isIncome = t.type === "income";
+      const color = isIncome ? "#059669" : "#dc2626";
+      const sign = isIncome ? "+" : "-";
+      const status = STATUS_CONFIG[t.status]?.label || t.status;
+      return `
+        <tr>
+          <td>${formatDate(t.transaction_date)}</td>
+          <td>${t.description || (isIncome ? "Receita" : "Despesa")}</td>
+          <td>${t.category || "-"}</td>
+          <td>${t.patient_name || "-"}</td>
+          <td>${STATUS_CONFIG[t.status] ? `<span style="color:${STATUS_CONFIG[t.status].color}">${status}</span>` : status}</td>
+          <td style="color:${color};font-weight:600;text-align:right">${sign} ${formatCurrency(t.amount)}</td>
+        </tr>`;
+    })
+    .join("");
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Relatório Financeiro</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 13px; margin-bottom: 24px; }
+    .cards { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+    .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 20px; flex: 1; min-width: 160px; }
+    .card-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+    .card-value { font-size: 20px; font-weight: 700; }
+    .green { color: #059669; }
+    .red { color: #dc2626; }
+    .blue { color: #2563eb; }
+    .purple { color: #7c3aed; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #f3f4f6; padding: 10px 12px; text-align: left; font-size: 12px; color: #374151; border-bottom: 2px solid #e5e7eb; }
+    td { padding: 9px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    tr:hover td { background: #fafafa; }
+    .footer { margin-top: 24px; font-size: 12px; color: #9ca3af; text-align: center; }
+    @media print { body { padding: 16px; } .no-print { display: none; } }
+  </style>
+</head>
+<body>
+  <h1>Relatório Financeiro</h1>
+  <p class="subtitle">Período: ${formatDate(dateRange.start)} a ${formatDate(dateRange.end)} &nbsp;|&nbsp; Gerado em ${new Date().toLocaleDateString("pt-BR")}</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Receitas do Mês</div>
+      <div class="card-value green">${formatCurrency(summary.monthly_income)}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Despesas do Mês</div>
+      <div class="card-value red">${formatCurrency(summary.monthly_expenses)}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Lucro Líquido</div>
+      <div class="card-value ${summary.net_profit >= 0 ? "green" : "red"}">${formatCurrency(summary.net_profit)}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Pacientes Ativos</div>
+      <div class="card-value purple">${summary.total_patients}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Descrição</th>
+        <th>Categoria</th>
+        <th>Paciente</th>
+        <th>Status</th>
+        <th style="text-align:right">Valor</th>
+      </tr>
+    </thead>
+    <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:24px">Nenhuma transação no período</td></tr>'}</tbody>
+  </table>
+
+  <div class="footer">Rehabroad — Relatório gerado automaticamente</div>
+  <script>window.onload = () => window.print();</script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank");
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+  }
+}
+
+// ─── Chart tooltip ────────────────────────────────────────────────────────────
+
+function ChartTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-background border border-border rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-semibold mb-1">{label}</p>
+      {payload.map((p: any) => (
+        <p key={p.dataKey} style={{ color: p.color }}>
+          {p.name}: {formatCurrency(p.value)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function FinanceiroPage() {
   const toast = useToast();
   const { start, end } = getMonthRange();
   const [dateRange, setDateRange] = useState({ start, end });
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
-  const { transactions, summary, loading, createTransaction, updateTransaction, deleteTransaction } =
+  const { transactions, summary, chartData, loading, createTransaction, updateTransaction, deleteTransaction } =
     useTransactions(dateRange.start, dateRange.end);
   const { patients } = usePatients();
 
-  const [form, setForm] = useState<TransactionInput>({
+  const emptyForm: TransactionInput = {
     patient_id: null,
     amount: 0,
     type: "income",
     payment_method: "pix",
     status: "pending",
-    description: "Sessão de Fisioterapia",
+    description: "",
     transaction_date: new Date().toISOString().split("T")[0],
     notes: "",
-  });
+    category: null,
+  };
+
+  const [form, setForm] = useState<TransactionInput>(emptyForm);
 
   const filteredTransactions = useMemo(() => {
-    if (filterStatus === "all") return transactions;
-    return transactions.filter((t) => t.status === filterStatus);
-  }, [transactions, filterStatus]);
+    return transactions.filter((t) => {
+      if (filterStatus !== "all" && t.status !== filterStatus) return false;
+      if (filterType !== "all" && t.type !== filterType) return false;
+      return true;
+    });
+  }, [transactions, filterStatus, filterType]);
 
   const openNewTransaction = () => {
     setEditingTransaction(null);
-    setForm({
-      patient_id: null,
-      amount: 0,
-      type: "income",
-      payment_method: "pix",
-      status: "pending",
-      description: "Sessão de Fisioterapia",
-      transaction_date: new Date().toISOString().split("T")[0],
-      notes: "",
-    });
+    setForm({ ...emptyForm, transaction_date: new Date().toISOString().split("T")[0] });
     setDialogOpen(true);
   };
 
@@ -142,12 +290,13 @@ export default function FinanceiroPage() {
       description: t.description || "",
       transaction_date: t.transaction_date,
       notes: t.notes || "",
+      category: t.category || null,
     });
     setDialogOpen(true);
   };
 
   const handleSubmit = async () => {
-    if (form.amount <= 0) {
+    if (!form.amount || form.amount <= 0) {
       toast.showError("Informe um valor válido");
       return;
     }
@@ -180,17 +329,23 @@ export default function FinanceiroPage() {
   const markAsPaid = async (t: Transaction) => {
     try {
       await updateTransaction(t.id, {
-        ...t,
-        status: "paid",
+        patient_id: t.patient_id,
+        amount: t.amount,
+        type: t.type,
         payment_method: t.payment_method || undefined,
+        status: "paid",
         description: t.description || undefined,
+        transaction_date: t.transaction_date,
         notes: t.notes || undefined,
+        category: t.category || undefined,
       });
       toast.showSuccess("Marcado como pago");
     } catch {
       toast.showError("Erro ao atualizar");
     }
   };
+
+  const currentCategories = form.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
   if (loading) {
     return (
@@ -209,12 +364,22 @@ export default function FinanceiroPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Financeiro</h1>
-            <p className="text-muted-foreground text-sm">Controle de receitas e pagamentos</p>
+            <p className="text-muted-foreground text-sm">Controle de receitas, despesas e lucratividade</p>
           </div>
-          <Button onClick={openNewTransaction} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Nova Transação
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => exportPDF(filteredTransactions, summary, dateRange)}
+            >
+              <FileDown className="w-4 h-4" />
+              Exportar PDF
+            </Button>
+            <Button onClick={openNewTransaction} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Nova Transação
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -224,7 +389,7 @@ export default function FinanceiroPage() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Receita do Mês</p>
+                    <p className="text-sm text-muted-foreground">Receitas do Mês</p>
                     <p className="text-2xl font-bold text-emerald-600">
                       {formatCurrency(summary.monthly_income)}
                     </p>
@@ -237,48 +402,48 @@ export default function FinanceiroPage() {
             </Card>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card className="border-l-4 border-l-amber-500">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+            <Card className="border-l-4 border-l-red-500">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Pendente</p>
-                    <p className="text-2xl font-bold text-amber-600">
-                      {formatCurrency(summary.monthly_pending)}
+                    <p className="text-sm text-muted-foreground">Despesas do Mês</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {formatCurrency(summary.monthly_expenses)}
                     </p>
                   </div>
-                  <div className="p-3 bg-amber-100 rounded-full">
-                    <Clock className="w-5 h-5 text-amber-600" />
+                  <div className="p-3 bg-red-100 rounded-full">
+                    <TrendingDown className="w-5 h-5 text-red-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="border-l-4 border-l-primary">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
+            <Card className={`border-l-4 ${summary.net_profit >= 0 ? "border-l-primary" : "border-l-orange-500"}`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Recebido</p>
-                    <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(summary.total_paid)}
+                    <p className="text-sm text-muted-foreground">Lucro Líquido</p>
+                    <p className={`text-2xl font-bold ${summary.net_profit >= 0 ? "text-primary" : "text-orange-600"}`}>
+                      {formatCurrency(summary.net_profit)}
                     </p>
                   </div>
-                  <div className="p-3 bg-primary/10 rounded-full">
-                    <DollarSign className="w-5 h-5 text-primary" />
+                  <div className={`p-3 rounded-full ${summary.net_profit >= 0 ? "bg-primary/10" : "bg-orange-100"}`}>
+                    <DollarSign className={`w-5 h-5 ${summary.net_profit >= 0 ? "text-primary" : "text-orange-600"}`} />
                   </div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
             <Card className="border-l-4 border-l-violet-500">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Pacientes</p>
+                    <p className="text-sm text-muted-foreground">Pacientes Ativos</p>
                     <p className="text-2xl font-bold text-violet-600">{summary.total_patients}</p>
                   </div>
                   <div className="p-3 bg-violet-100 rounded-full">
@@ -290,34 +455,73 @@ export default function FinanceiroPage() {
           </motion.div>
         </div>
 
+        {/* Bar Chart — Receitas x Despesas 6 meses */}
+        {chartData.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Receitas × Despesas — últimos 6 meses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={chartData} barCategoryGap="30%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(v) =>
+                        v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v}`
+                      }
+                    />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend
+                      formatter={(value) => (value === "income" ? "Receitas" : "Despesas")}
+                    />
+                    <Bar dataKey="income" name="income" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="expenses" name="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="space-y-4 md:space-y-0 md:flex md:flex-wrap md:items-center md:gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Filtros:</span>
               </div>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <Input
-                    type="date"
-                    value={dateRange.start}
-                    onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                    className="flex-1 min-w-0"
-                  />
-                </div>
-                <span className="text-muted-foreground text-center">até</span>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <Input
+                  type="date"
+                  value={dateRange.start}
+                  onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                  className="w-36"
+                />
+                <span className="text-muted-foreground text-sm">até</span>
                 <Input
                   type="date"
                   value={dateRange.end}
                   onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                  className="flex-1 min-w-0"
+                  className="w-36"
                 />
               </div>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="income">Receitas</SelectItem>
+                  <SelectItem value="expense">Despesas</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectTrigger className="w-[130px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -365,13 +569,14 @@ export default function FinanceiroPage() {
 
         {/* New/Edit Transaction Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingTransaction ? "Editar Transação" : "Nova Transação"}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-2">
+              {/* Tipo */}
               <div>
                 <Label>Tipo</Label>
                 <div className="flex gap-2 mt-1">
@@ -379,7 +584,7 @@ export default function FinanceiroPage() {
                     type="button"
                     variant={form.type === "income" ? "default" : "outline"}
                     className="flex-1 gap-2"
-                    onClick={() => setForm({ ...form, type: "income" })}
+                    onClick={() => setForm({ ...form, type: "income", category: null })}
                   >
                     <ArrowUpRight className="w-4 h-4" />
                     Receita
@@ -387,8 +592,8 @@ export default function FinanceiroPage() {
                   <Button
                     type="button"
                     variant={form.type === "expense" ? "default" : "outline"}
-                    className="flex-1 gap-2"
-                    onClick={() => setForm({ ...form, type: "expense" })}
+                    className={`flex-1 gap-2 ${form.type === "expense" ? "bg-red-600 hover:bg-red-700 border-red-600" : ""}`}
+                    onClick={() => setForm({ ...form, type: "expense", category: null })}
                   >
                     <ArrowDownRight className="w-4 h-4" />
                     Despesa
@@ -396,6 +601,28 @@ export default function FinanceiroPage() {
                 </div>
               </div>
 
+              {/* Categoria */}
+              <div>
+                <Label>Categoria</Label>
+                <Select
+                  value={form.category || "none"}
+                  onValueChange={(val) => setForm({ ...form, category: val === "none" ? null : val })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem categoria</SelectItem>
+                    {currentCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Paciente */}
               <div>
                 <Label>Paciente (opcional)</Label>
                 <Select
@@ -418,17 +645,20 @@ export default function FinanceiroPage() {
                 </Select>
               </div>
 
+              {/* Valor */}
               <div>
                 <Label>Valor (R$)</Label>
                 <Input
                   type="number"
                   step="0.01"
+                  min="0"
                   value={form.amount || ""}
                   onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
                   placeholder="0,00"
                 />
               </div>
 
+              {/* Data + Pagamento */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Data</Label>
@@ -458,11 +688,14 @@ export default function FinanceiroPage() {
                 </div>
               </div>
 
+              {/* Status */}
               <div>
                 <Label>Status</Label>
                 <Select
                   value={form.status || "pending"}
-                  onValueChange={(val) => setForm({ ...form, status: val as "pending" | "paid" | "cancelled" })}
+                  onValueChange={(val) =>
+                    setForm({ ...form, status: val as "pending" | "paid" | "cancelled" })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -475,15 +708,21 @@ export default function FinanceiroPage() {
                 </Select>
               </div>
 
+              {/* Descrição */}
               <div>
                 <Label>Descrição</Label>
                 <Input
                   value={form.description || ""}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Ex: Sessão de Fisioterapia"
+                  placeholder={
+                    form.type === "income"
+                      ? "Ex: Sessão de Fisioterapia"
+                      : "Ex: Aluguel da clínica"
+                  }
                 />
               </div>
 
+              {/* Observações */}
               <div>
                 <Label>Observações</Label>
                 <Textarea
@@ -530,7 +769,8 @@ export default function FinanceiroPage() {
   );
 }
 
-// Transaction Row Component
+// ─── Transaction Row ───────────────────────────────────────────────────────────
+
 interface TransactionRowProps {
   transaction: Transaction;
   index: number;
@@ -541,17 +781,20 @@ interface TransactionRowProps {
 
 function TransactionRow({ transaction: t, index, onEdit, onDelete, onMarkPaid }: TransactionRowProps) {
   const statusConfig = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending;
-  const paymentMethod = PAYMENT_METHODS[t.payment_method || ""] || { label: t.payment_method || "-", icon: null };
+  const paymentMethod = PAYMENT_METHODS[t.payment_method || ""] || {
+    label: t.payment_method || "-",
+    icon: null,
+  };
   const isIncome = t.type === "income";
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: index * 0.04 }}
       className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
     >
-      <div className={`p-2 rounded-full ${isIncome ? "bg-emerald-100" : "bg-red-100"}`}>
+      <div className={`p-2 rounded-full shrink-0 ${isIncome ? "bg-emerald-100" : "bg-red-100"}`}>
         {isIncome ? (
           <ArrowUpRight className="w-4 h-4 text-emerald-600" />
         ) : (
@@ -560,15 +803,22 @@ function TransactionRow({ transaction: t, index, onEdit, onDelete, onMarkPaid }:
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <p className="font-medium truncate">
             {t.description || (isIncome ? "Receita" : "Despesa")}
           </p>
-          <span className={`text-xs px-2 py-0.5 rounded-full ${statusConfig.bg} ${statusConfig.color}`}>
+          {t.category && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+              {t.category}
+            </span>
+          )}
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full ${statusConfig.bg} ${statusConfig.color}`}
+          >
             {statusConfig.label}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5 flex-wrap">
           <span>{formatDate(t.transaction_date)}</span>
           {t.patient_name && (
             <>
@@ -576,7 +826,7 @@ function TransactionRow({ transaction: t, index, onEdit, onDelete, onMarkPaid }:
               <span className="truncate">{t.patient_name}</span>
             </>
           )}
-          {paymentMethod.icon && (
+          {paymentMethod.label && paymentMethod.label !== "-" && (
             <>
               <span>•</span>
               <span className="flex items-center gap-1">
@@ -588,13 +838,17 @@ function TransactionRow({ transaction: t, index, onEdit, onDelete, onMarkPaid }:
         </div>
       </div>
 
-      <div className={`text-lg font-bold ${isIncome ? "text-emerald-600" : "text-red-600"}`}>
+      <div
+        className={`text-lg font-bold shrink-0 ${
+          isIncome ? "text-emerald-600" : "text-red-600"
+        }`}
+      >
         {isIncome ? "+" : "-"} {formatCurrency(t.amount)}
       </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
             <MoreVertical className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>

@@ -14,6 +14,7 @@ export interface Transaction {
   description: string | null;
   transaction_date: string;
   notes: string | null;
+  category: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +29,7 @@ export interface TransactionInput {
   description?: string;
   transaction_date: string;
   notes?: string;
+  category?: string | null;
 }
 
 export interface FinancialSummary {
@@ -37,6 +39,14 @@ export interface FinancialSummary {
   total_patients: number;
   monthly_income: number;
   monthly_pending: number;
+  monthly_expenses: number;
+  net_profit: number;
+}
+
+export interface ChartDataPoint {
+  month: string;
+  income: number;
+  expenses: number;
 }
 
 const EMPTY_SUMMARY: FinancialSummary = {
@@ -46,6 +56,8 @@ const EMPTY_SUMMARY: FinancialSummary = {
   total_patients: 0,
   monthly_income: 0,
   monthly_pending: 0,
+  monthly_expenses: 0,
+  net_profit: 0,
 };
 
 async function parseErrorMessage(
@@ -54,19 +66,9 @@ async function parseErrorMessage(
 ): Promise<string> {
   try {
     const data = await response.json();
-
-    if (typeof data?.reason === "string" && data.reason.trim()) {
-      return data.reason;
-    }
-
-    if (typeof data?.error === "string" && data.error.trim()) {
-      return data.error;
-    }
-
-    if (typeof data?.message === "string" && data.message.trim()) {
-      return data.message;
-    }
-
+    if (typeof data?.reason === "string" && data.reason.trim()) return data.reason;
+    if (typeof data?.error === "string" && data.error.trim()) return data.error;
+    if (typeof data?.message === "string" && data.message.trim()) return data.message;
     return fallback;
   } catch {
     return fallback;
@@ -76,6 +78,7 @@ async function parseErrorMessage(
 export function useTransactions(startDate?: string, endDate?: string) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<FinancialSummary>(EMPTY_SUMMARY);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchTransactions = useCallback(async () => {
@@ -89,21 +92,23 @@ export function useTransactions(startDate?: string, endDate?: string) {
       const query = params.toString();
       const url = query ? `/api/transactions?${query}` : "/api/transactions";
 
-      const res = await apiFetch(url, {
-        method: "GET",
-        cache: "no-store",
-      });
+      const [res, chartRes] = await Promise.all([
+        apiFetch(url, { method: "GET", cache: "no-store" }),
+        apiFetch("/api/transactions/chart", { method: "GET", cache: "no-store" }),
+      ]);
 
       if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, "Erro ao carregar transações")
-        );
+        throw new Error(await parseErrorMessage(res, "Erro ao carregar transações"));
       }
 
       const data = await res.json();
-
       setTransactions(Array.isArray(data?.transactions) ? data.transactions : []);
       setSummary(data?.summary ?? EMPTY_SUMMARY);
+
+      if (chartRes.ok) {
+        const chart = await chartRes.json();
+        setChartData(Array.isArray(chart) ? chart : []);
+      }
     } catch (error) {
       console.error("Error fetching transactions:", error);
       setTransactions([]);
@@ -123,13 +128,9 @@ export function useTransactions(startDate?: string, endDate?: string) {
         method: "POST",
         body: JSON.stringify(input),
       });
-
       if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, "Erro ao criar transação")
-        );
+        throw new Error(await parseErrorMessage(res, "Erro ao criar transação"));
       }
-
       await fetchTransactions();
     },
     [fetchTransactions]
@@ -141,13 +142,9 @@ export function useTransactions(startDate?: string, endDate?: string) {
         method: "PUT",
         body: JSON.stringify(input),
       });
-
       if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, "Erro ao atualizar transação")
-        );
+        throw new Error(await parseErrorMessage(res, "Erro ao atualizar transação"));
       }
-
       await fetchTransactions();
     },
     [fetchTransactions]
@@ -158,13 +155,9 @@ export function useTransactions(startDate?: string, endDate?: string) {
       const res = await apiFetch(`/api/transactions/${id}`, {
         method: "DELETE",
       });
-
       if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, "Erro ao excluir transação")
-        );
+        throw new Error(await parseErrorMessage(res, "Erro ao excluir transação"));
       }
-
       await fetchTransactions();
     },
     [fetchTransactions]
@@ -173,6 +166,7 @@ export function useTransactions(startDate?: string, endDate?: string) {
   return {
     transactions,
     summary,
+    chartData,
     loading,
     createTransaction,
     updateTransaction,
