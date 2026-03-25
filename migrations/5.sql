@@ -1,0 +1,2 @@
+
+ALTER TABLE subscriptions ADD COLUMN is_admin BOOLEAN DEFAULT 0;

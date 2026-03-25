@@ -1,0 +1,1 @@
+ALTER TABLE student_progress DROP COLUMN avatar_url;

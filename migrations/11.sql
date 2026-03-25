@@ -1,0 +1,1 @@
+ALTER TABLE evolutions ADD COLUMN attendance_status TEXT DEFAULT 'attended';

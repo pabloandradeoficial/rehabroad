@@ -1,0 +1,1 @@
+ALTER TABLE evolutions DROP COLUMN attendance_status;

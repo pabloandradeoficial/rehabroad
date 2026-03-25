@@ -1,0 +1,1 @@
+ALTER TABLE subscriptions DROP COLUMN trial_start_date;
