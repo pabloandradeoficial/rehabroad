@@ -5225,8 +5225,16 @@ app.post("/api/forum/posts", authMiddleware, async (c) => {
     INSERT INTO forum_posts (user_id, user_name, category, title, content)
     VALUES (?, ?, ?, ?, ?)
   `).bind(user.id, userName, category, title, content).run();
-  
-  return c.json({ id: getInsertedId(result), success: true });
+
+  const newId = getInsertedId(result);
+
+  // SELECT immediately after INSERT on the same D1 connection is always consistent.
+  // Returning the full row avoids a separate GET that could hit an unsynced replica.
+  const newPost = await c.env.DB.prepare(
+    `SELECT * FROM forum_posts WHERE id = ?`
+  ).bind(newId).first();
+
+  return c.json({ post: newPost, success: true });
 });
 
 // Get single post with comments

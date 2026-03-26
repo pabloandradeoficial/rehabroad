@@ -151,25 +151,39 @@ export default function Forum() {
         body: JSON.stringify(newPostForm),
       });
 
+      console.log("[Forum] POST /api/forum/posts status:", res.status);
+
       if (res.ok) {
+        const data = await res.json() as { post: ForumPost; success: boolean };
+        console.log("[Forum] Post criado pelo servidor:", data);
+
+        if (data.post) {
+          // Add the new post directly from the server response — no re-fetch needed.
+          // This avoids D1 eventual-consistency issues where a GET right after INSERT
+          // might hit a replica that hasn't synced the write yet.
+          setPosts((prev) => {
+            const alreadyExists = prev.some((p) => p.id === data.post.id);
+            if (alreadyExists) return prev;
+            return [data.post, ...prev];
+          });
+          // Switch to "all" so the post is visible regardless of current filter
+          setSelectedCategory("all");
+        } else {
+          // Fallback: server didn't return the post object, do a full refetch
+          console.warn("[Forum] Server did not return post object, falling back to fetchPosts");
+          await fetchPosts();
+        }
+
         toast.showSuccess("Post publicado com sucesso!");
         setShowNewPost(false);
         setNewPostForm({ category: "casos", title: "", content: "" });
-
-        // Always switch to "all" so the new post is visible.
-        // If already on "all", setSelectedCategory won't change (same value),
-        // so useEffect won't re-run — call fetchPosts directly in that case.
-        if (selectedCategory === "all") {
-          await fetchPosts();
-        } else {
-          setSelectedCategory("all");
-          // useEffect will re-run fetchPosts when selectedCategory changes
-        }
       } else {
         const errData = await res.json().catch(() => ({})) as { error?: string };
+        console.error("[Forum] Erro ao criar post:", errData);
         toast.showError(errData.error ?? "Erro ao publicar");
       }
-    } catch (_err) {
+    } catch (err) {
+      console.error("[Forum] Exceção em handleCreatePost:", err);
       toast.showError("Erro ao publicar");
     } finally {
       setSubmitting(false);
