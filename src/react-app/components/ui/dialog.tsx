@@ -36,7 +36,7 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={cn("data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 bg-black/60 duration-100 fixed inset-0 z-[9998]", className)}
+      className={cn("data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 bg-black/60 duration-100 fixed inset-0 z-[45]", className)}
       {...props}
     />
   )
@@ -57,7 +57,7 @@ function DialogContent({
         data-slot="dialog-content"
         onOpenAutoFocus={(e) => e.preventDefault()}
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ring-foreground/5 grid max-w-[calc(100%-2rem)] gap-6 rounded-4xl p-6 pb-10 lg:pb-6 text-sm ring-1 duration-100 sm:max-w-md fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-full overflow-y-auto max-h-[90vh]",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ring-foreground/5 grid max-w-[calc(100%-2rem)] gap-6 rounded-4xl p-6 pb-10 lg:pb-6 text-sm ring-1 duration-100 sm:max-w-md fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[46] w-full overflow-y-auto max-h-[90vh]",
           className
         )}
         {...props}

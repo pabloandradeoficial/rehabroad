@@ -93,7 +93,7 @@ export default function DashboardLayout() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-slate-900/95 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-[40] h-16 bg-slate-900/95 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -141,7 +141,7 @@ export default function DashboardLayout() {
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-[38] bg-black/60 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -149,7 +149,7 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <Sidebar
         className={cn(
-          "fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-out lg:translate-x-0",
+          "fixed top-0 left-0 z-[40] h-screen transition-all duration-300 ease-out lg:translate-x-0",
           sidebarCollapsed ? "lg:w-20" : "lg:w-64",
           "w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -161,7 +161,7 @@ export default function DashboardLayout() {
       <button
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
         className={cn(
-          "hidden lg:flex fixed z-50 top-1/2 -translate-y-1/2 items-center justify-center",
+          "hidden lg:flex fixed z-[40] top-1/2 -translate-y-1/2 items-center justify-center",
           "w-6 h-12 bg-slate-800 hover:bg-slate-700 rounded-r-lg border border-l-0 border-white/10",
           "text-slate-400 hover:text-white transition-all duration-300 shadow-lg",
           sidebarCollapsed ? "left-20" : "left-64"
@@ -252,7 +252,7 @@ export default function DashboardLayout() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-white/5 flex items-stretch safe-area-inset-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[40] bg-slate-900/95 backdrop-blur-xl border-t border-white/5 flex items-stretch safe-area-inset-bottom">
         {BOTTOM_NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
