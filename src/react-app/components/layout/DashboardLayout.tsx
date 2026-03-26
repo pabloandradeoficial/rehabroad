@@ -56,6 +56,7 @@ export default function DashboardLayout() {
     isFreeLimited,
     loading: subscriptionLoading,
     isAdmin,
+    subscription,
   } = useSubscription();
   const location = useLocation();
 
@@ -66,7 +67,12 @@ export default function DashboardLayout() {
 
   // Determine if user should be blocked
   const shouldBlockAccess =
-    !subscriptionLoading && isFreeLimited && !isAllowedPage && !isAdmin;
+    !subscriptionLoading &&
+    isFreeLimited &&
+    !isAllowedPage &&
+    !isAdmin &&
+    subscription?.effective_status !== 'active_paid' &&
+    subscription?.status !== 'active_paid';
 
   // Persist sidebar collapsed state
   useEffect(() => {

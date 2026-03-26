@@ -126,7 +126,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [fetchSubscription]);
 
   const isAdmin =
-    subscription?.is_admin === true || subscription?.is_admin === 1;
+    Boolean(subscription?.is_admin) ||
+    subscription?.effective_status === 'active_paid' ||
+    subscription?.status === 'active_paid';
 
   const effectiveStatus =
     subscription?.effective_status || subscription?.status || "inactive";
