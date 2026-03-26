@@ -24,6 +24,7 @@ function ExerciciosContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [exerciseDetailOpen, setExerciseDetailOpen] = useState(false);
   const [prescribeDialogOpen, setPrescribeDialogOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const [prescriptionNotes, setPrescriptionNotes] = useState("");
@@ -37,17 +38,29 @@ function ExerciciosContent() {
     return exercises;
   }, [searchQuery, selectedCategory]);
 
+  const openExerciseDetail = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+    setExerciseDetailOpen(true);
+  };
+
+  const closeExerciseDetail = () => {
+    setExerciseDetailOpen(false);
+    setSelectedExercise(null);
+  };
+
   const handlePrescribe = async () => {
     if (!selectedExercise || !selectedPatientId) return;
     const patient = patients.find(p => p.id.toString() === selectedPatientId);
     toast.showSuccess(`Exercício prescrito para ${patient?.name || "paciente"}`);
     setPrescribeDialogOpen(false);
+    setSelectedExercise(null);
     setSelectedPatientId("");
     setPrescriptionNotes("");
   };
 
   const openPrescribeDialog = (exercise: Exercise) => {
     setSelectedExercise(exercise);
+    setExerciseDetailOpen(false);
     setPrescribeDialogOpen(true);
   };
 
@@ -248,7 +261,7 @@ function ExerciciosContent() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: index * 0.02 }}
                     whileHover={{ y: -4 }}
-                    onClick={() => setSelectedExercise(exercise)}
+                    onClick={() => openExerciseDetail(exercise)}
                     className="cursor-pointer"
                   >
                     <Card className="h-full relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 group">
@@ -316,7 +329,7 @@ function ExerciciosContent() {
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ delay: index * 0.02 }}
                     whileHover={{ x: 4 }}
-                    onClick={() => setSelectedExercise(exercise)}
+                    onClick={() => openExerciseDetail(exercise)}
                     className="cursor-pointer"
                   >
                     <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
@@ -393,7 +406,7 @@ function ExerciciosContent() {
         )}
 
         {/* Exercise Detail Dialog */}
-        <Dialog open={!!selectedExercise && !prescribeDialogOpen} onOpenChange={(open) => !open && setSelectedExercise(null)}>
+        <Dialog open={exerciseDetailOpen} onOpenChange={(open) => { if (!open) closeExerciseDetail(); }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             {selectedExercise && (
               <>
@@ -536,7 +549,7 @@ function ExerciciosContent() {
         </Dialog>
 
         {/* Prescribe Dialog */}
-        <Dialog open={prescribeDialogOpen} onOpenChange={setPrescribeDialogOpen}>
+        <Dialog open={prescribeDialogOpen} onOpenChange={(open) => { setPrescribeDialogOpen(open); if (!open) setSelectedExercise(null); }}>
           <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -628,7 +641,7 @@ function ExerciciosContent() {
                   >
                     <Send className="w-4 h-4" />Registrar
                   </Button>
-                  <Button variant="outline" onClick={() => setPrescribeDialogOpen(false)} className="h-12 border-white/10">
+                  <Button variant="outline" onClick={() => { setPrescribeDialogOpen(false); setSelectedExercise(null); }} className="h-12 border-white/10">
                     Cancelar
                   </Button>
                 </div>

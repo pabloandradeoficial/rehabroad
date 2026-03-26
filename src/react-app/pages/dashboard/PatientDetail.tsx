@@ -825,7 +825,7 @@ export default function PatientDetailPage() {
                 <Label className="font-semibold">Tipo de Avaliação</Label>
                 <Select value={evalForm.type} onValueChange={(v) => setEvalForm({ ...evalForm, type: v as "initial" | "followup" })}>
                   <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     <SelectItem value="initial">Avaliação Inicial</SelectItem>
                     <SelectItem value="followup">Reavaliação</SelectItem>
                   </SelectContent>
@@ -910,7 +910,7 @@ export default function PatientDetailPage() {
                   <Label className="font-semibold">Presença</Label>
                   <Select value={evolForm.attendance_status || "attended"} onValueChange={(v) => setEvolForm({ ...evolForm, attendance_status: v as "attended" | "justified_absence" | "unjustified_absence" })}>
                     <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       <SelectItem value="attended">Compareceu</SelectItem>
                       <SelectItem value="justified_absence">Falta Justificada</SelectItem>
                       <SelectItem value="unjustified_absence">Falta Não Justificada</SelectItem>
@@ -930,7 +930,7 @@ export default function PatientDetailPage() {
                 <Label className="font-semibold">Resposta do Paciente</Label>
                 <Select value={evolForm.patient_response || ""} onValueChange={(v) => setEvolForm({ ...evolForm, patient_response: v })}>
                   <SelectTrigger className="h-11"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     <SelectItem value="positive">Positiva</SelectItem>
                     <SelectItem value="neutral">Neutra</SelectItem>
                     <SelectItem value="negative">Negativa</SelectItem>
