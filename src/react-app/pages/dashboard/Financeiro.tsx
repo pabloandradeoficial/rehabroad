@@ -486,12 +486,7 @@ export default function FinanceiroPage() {
                       }
                     />
                     <Tooltip content={<ChartTooltip />} />
-                    <Legend
-                      payload={[
-                        { value: "Receitas", type: "rect", color: "#10b981" },
-                        { value: "Despesas", type: "rect", color: "#ef4444" },
-                      ]}
-                    />
+                    <Legend />
                     <Bar dataKey="income" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="expenses" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
                   </BarChart>
