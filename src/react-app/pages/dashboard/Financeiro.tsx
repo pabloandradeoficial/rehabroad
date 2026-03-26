@@ -377,16 +377,16 @@ export default function FinanceiroPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 h-10"
                 onClick={() => exportPDF(filteredTransactions, summary, dateRange)}
               >
                 <FileDown className="w-4 h-4" />
                 Exportar PDF
               </Button>
-              <Button onClick={openNewTransaction} className="gap-2">
+              <Button onClick={openNewTransaction} className="gap-2 h-10">
                 <Plus className="w-4 h-4" />
                 Nova Transação
               </Button>

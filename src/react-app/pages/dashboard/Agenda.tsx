@@ -605,7 +605,7 @@ export default function AgendaPage() {
               </Button>
             </div>
 
-            <Button onClick={() => openNewAppointment()} className="gap-2">
+            <Button onClick={() => openNewAppointment()} className="gap-2 h-10 w-10 sm:w-auto sm:px-4">
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Novo Agendamento</span>
             </Button>

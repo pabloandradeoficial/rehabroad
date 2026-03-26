@@ -846,7 +846,7 @@ function CaminhoContent() {
         ))}
 
         {/* Bottom Save Button */}
-        <motion.div variants={itemVariants} className="sticky bottom-0 pt-4 pb-2 bg-background/95 backdrop-blur-sm -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent sm:backdrop-filter-none border-t border-border sm:border-0 mt-2">
+        <motion.div variants={itemVariants} className="sticky bottom-14 pt-4 pb-2 bg-background/95 backdrop-blur-sm -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent sm:backdrop-filter-none border-t border-border sm:border-0 mt-2 z-10">
           <Button
             onClick={handleSave}
             disabled={saving}
