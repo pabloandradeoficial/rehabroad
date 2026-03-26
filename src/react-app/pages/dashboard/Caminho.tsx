@@ -846,12 +846,12 @@ function CaminhoContent() {
         ))}
 
         {/* Bottom Save Button */}
-        <motion.div variants={itemVariants} className="flex justify-end pt-4">
-          <Button 
-            onClick={handleSave} 
-            disabled={saving} 
-            size="lg" 
-            className="gap-2 shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-emerald-600"
+        <motion.div variants={itemVariants} className="sticky bottom-0 pt-4 pb-2 bg-background/95 backdrop-blur-sm -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent sm:backdrop-filter-none border-t border-border sm:border-0 mt-2">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            size="lg"
+            className="gap-2 shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-emerald-600 w-full sm:w-auto"
           >
             {saving ? <Spinner size="sm" /> : <Save className="w-4 h-4" />}
             Salvar Registro Completo

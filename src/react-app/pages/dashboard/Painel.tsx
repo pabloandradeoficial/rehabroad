@@ -516,7 +516,7 @@ export default function PainelPage() {
         )}
 
         <motion.div variants={itemVariants}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             {[
               {
                 value: dashboardStats.totalPatients,
@@ -557,20 +557,20 @@ export default function PainelPage() {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <Card className={`relative overflow-hidden border border-border border-t-2 ${kpi.accent} shadow-sm bg-card`}>
-                  <CardContent className="p-5 relative">
-                    <div className="flex items-center justify-between gap-3">
+                  <CardContent className="p-3 sm:p-5 relative">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className={`text-3xl md:text-4xl font-bold tracking-tight ${kpi.text}`}>
+                        <p className={`text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight ${kpi.text}`}>
                           {kpi.value}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1.5 uppercase tracking-wider font-medium truncate">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium truncate">
                           {kpi.label}
                         </p>
                       </div>
                       <div
-                        className={`shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${kpi.gradient} flex items-center justify-center shadow-md`}
+                        className={`shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${kpi.gradient} flex items-center justify-center shadow-md`}
                       >
-                        <kpi.icon className="w-6 h-6 text-white" />
+                        <kpi.icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                       </div>
                     </div>
                   </CardContent>
