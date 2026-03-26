@@ -639,7 +639,7 @@ function CaminhoContent() {
                   <SelectTrigger className="w-full max-w-md h-12 bg-white/[0.03] border-white/10 focus:border-primary/50">
                     <SelectValue placeholder="Selecione um paciente..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     {patientsLoading ? (
                       <SelectItem value="loading" disabled>Carregando...</SelectItem>
                     ) : patients.length === 0 ? (
@@ -784,7 +784,7 @@ function CaminhoContent() {
                   <SelectTrigger className="w-28 sm:w-40 bg-white/[0.03] border-white/10 text-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     {patients.map(patient => (
                       <SelectItem key={patient.id} value={patient.id.toString()}>
                         {patient.name}

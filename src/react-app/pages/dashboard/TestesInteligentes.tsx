@@ -443,7 +443,7 @@ function TestesInteligentesContent() {
                     <User className="w-4 h-4 mr-2 text-muted-foreground" />
                     <SelectValue placeholder="Selecionar paciente..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     {patients.length === 0 ? (
                       <SelectItem value="empty" disabled>Nenhum paciente cadastrado</SelectItem>
                     ) : (

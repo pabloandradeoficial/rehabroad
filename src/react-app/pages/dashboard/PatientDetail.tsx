@@ -958,7 +958,7 @@ export default function PatientDetailPage() {
 
         {/* === REMINDER DIALOG === */}
         <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Bell className="w-5 h-5 text-amber-500" />
@@ -1067,7 +1067,7 @@ export default function PatientDetailPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-red-500 flex items-center gap-2">
                 <Trash2 className="w-5 h-5" />

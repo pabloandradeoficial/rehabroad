@@ -289,7 +289,7 @@ function SuporteContent() {
                 <SelectTrigger className="w-full max-w-xs mx-auto">
                   <SelectValue placeholder="Escolher paciente..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {patientsLoading ? (
                     <SelectItem value="loading" disabled>Carregando...</SelectItem>
                   ) : patients.length === 0 ? (

@@ -759,7 +759,7 @@ export default function FinanceiroPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="max-w-sm">
+          <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Excluir Transação</DialogTitle>
             </DialogHeader>

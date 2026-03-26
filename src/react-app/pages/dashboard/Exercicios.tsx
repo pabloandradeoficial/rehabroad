@@ -537,7 +537,7 @@ function ExerciciosContent() {
 
         {/* Prescribe Dialog */}
         <Dialog open={prescribeDialogOpen} onOpenChange={setPrescribeDialogOpen}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-teal-500 flex items-center justify-center shadow-lg">
@@ -555,7 +555,7 @@ function ExerciciosContent() {
                   <SelectTrigger className="h-12 bg-white/[0.02] border-white/10">
                     <SelectValue placeholder="Escolha um paciente..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     {patients.length === 0 ? (
                       <SelectItem value="empty" disabled>Nenhum paciente cadastrado</SelectItem>
                     ) : (

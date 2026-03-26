@@ -363,7 +363,7 @@ export default function PainelPage() {
         </motion.div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-md border-primary/20">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto border-primary/20">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
@@ -991,7 +991,7 @@ export default function PainelPage() {
         </motion.div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-lg border-primary/20">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto border-primary/20">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
@@ -1083,7 +1083,7 @@ export default function PainelPage() {
         </Dialog>
 
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-md border-destructive/20">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto border-destructive/20">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl text-destructive">
                 <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
