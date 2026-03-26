@@ -633,7 +633,7 @@ export default function AgendaPage() {
           <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h2 className="min-w-[180px] text-center text-lg font-semibold">
+          <h2 className="w-40 sm:w-48 text-center text-base sm:text-lg font-semibold">
             {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h2>
           <Button variant="outline" size="icon" onClick={() => navigateMonth(1)}>
@@ -688,7 +688,7 @@ export default function AgendaPage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setSelectedDateAndSyncMonth(dateStr)}
                         className={`
-                          relative min-h-[80px] border-b border-r border-border p-2 text-left transition-colors
+                          relative min-h-[56px] sm:min-h-[80px] border-b border-r border-border p-1 sm:p-2 text-left transition-colors
                           ${!isCurrentMonth ? "bg-muted/30" : "hover:bg-muted/50"}
                           ${isSelected ? "bg-primary/10 ring-2 ring-primary ring-inset" : ""}
                         `}

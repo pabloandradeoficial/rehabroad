@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router";
+import { Outlet, useLocation, NavLink } from "react-router";
 import { useState, useEffect } from "react";
 import {
   Menu,
@@ -11,6 +11,11 @@ import {
   Lock,
   AlertTriangle,
   CreditCard,
+  LayoutDashboard,
+  Calendar,
+  DollarSign,
+  Route,
+  Users,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
@@ -20,6 +25,14 @@ import { BetaCountdownBanner } from "@/react-app/components/BetaCountdownBanner"
 import { useLanguage } from "@/react-app/contexts/LanguageContext";
 import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
+
+const BOTTOM_NAV_ITEMS = [
+  { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", end: true },
+  { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", end: false },
+  { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", end: false },
+  { to: "/dashboard/caminho", icon: Route, label: "Caminho", end: false },
+  { to: "/dashboard/forum", icon: Users, label: "Comunidade", end: false },
+];
 
 // Pages that expired users can still access
 const ALLOWED_PAGES_FOR_EXPIRED = [
@@ -59,6 +72,11 @@ export default function DashboardLayout() {
   useEffect(() => {
     localStorage.setItem("sidebarCollapsed", String(sidebarCollapsed));
   }, [sidebarCollapsed]);
+
+  // Auto-close sidebar on navigation (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     localStorage.removeItem("loginMode");
@@ -154,7 +172,7 @@ export default function DashboardLayout() {
       {/* Main Content */}
       <main
         className={cn(
-          "min-h-screen pt-16 lg:pt-0 flex flex-col transition-all duration-300",
+          "min-h-screen pt-16 lg:pt-0 pb-16 lg:pb-0 flex flex-col transition-all duration-300",
           sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
         )}
       >
@@ -226,6 +244,32 @@ export default function DashboardLayout() {
 
         <Footer />
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-white/5 flex items-stretch safe-area-inset-bottom">
+        {BOTTOM_NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) =>
+              cn(
+                "flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1 text-[10px] font-medium transition-colors min-h-[56px]",
+                isActive
+                  ? "text-teal-400"
+                  : "text-slate-400 hover:text-slate-200"
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <item.icon className={cn("w-5 h-5", isActive && "text-teal-400")} />
+                <span className="leading-tight">{item.label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }
