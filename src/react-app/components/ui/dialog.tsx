@@ -36,7 +36,7 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={cn("data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 bg-black/80 duration-100 supports-[backdrop-filter]:backdrop-blur-[2px] fixed inset-0 isolate z-50", className)}
+      className={cn("data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 bg-black/80 duration-100 supports-[backdrop-filter]:backdrop-blur-[2px] fixed inset-0 z-50", className)}
       {...props}
     />
   )
@@ -56,7 +56,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ring-foreground/5 grid max-w-[calc(100%-2rem)] gap-6 rounded-4xl p-6 pb-10 lg:pb-6 text-sm ring-1 duration-100 sm:max-w-md fixed left-1/2 z-50 w-full -translate-x-1/2 top-20 overflow-y-auto max-h-[calc(100dvh-5.5rem)] lg:top-1/2 lg:-translate-y-1/2 lg:max-h-[90vh]",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ring-foreground/5 grid max-w-[calc(100%-2rem)] gap-6 rounded-4xl p-6 pb-10 lg:pb-6 text-sm ring-1 duration-100 sm:max-w-md fixed left-1/2 z-[51] w-full -translate-x-1/2 top-20 overflow-y-auto max-h-[calc(100dvh-5.5rem)] lg:top-1/2 lg:-translate-y-1/2 lg:max-h-[90vh]",
           className
         )}
         {...props}
