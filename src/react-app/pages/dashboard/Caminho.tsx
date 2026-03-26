@@ -3,6 +3,7 @@ import { Route, CheckCircle2, AlertCircle, Save, Sparkles, Target, Zap, Shield, 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Checkbox } from "@/react-app/components/ui/checkbox";
+import { Input } from "@/react-app/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
 import { usePatients } from "@/react-app/hooks/usePatients";
 import { useCaminho, type CaminhoFormData } from "@/react-app/hooks/useCaminho";
@@ -132,6 +133,7 @@ const painPatterns = [
   { id: "evening", label: "Vespertina (piora à noite)" },
   { id: "activity", label: "Relacionada à atividade" },
   { id: "rest", label: "Relacionada ao repouso" },
+  { id: "outro", label: "Outro" },
 ];
 
 const aggravatingFactors = [
@@ -144,6 +146,7 @@ const aggravatingFactors = [
   { id: "cold", label: "Frio" },
   { id: "stress", label: "Estresse emocional" },
   { id: "load", label: "Carga/peso" },
+  { id: "outro", label: "Outro" },
 ];
 
 const relievingFactors = [
@@ -155,6 +158,7 @@ const relievingFactors = [
   { id: "stretching", label: "Alongamento" },
   { id: "massage", label: "Massagem" },
   { id: "position_change", label: "Mudança de posição" },
+  { id: "outro", label: "Outro" },
 ];
 
 const functionalLimitations = [
@@ -167,6 +171,7 @@ const functionalLimitations = [
   { id: "leisure", label: "Lazer/esporte" },
   { id: "driving", label: "Dirigir" },
   { id: "housework", label: "Tarefas domésticas" },
+  { id: "outro", label: "Outro" },
 ];
 
 const treatmentGoals = [
@@ -178,6 +183,7 @@ const treatmentGoals = [
   { id: "sport_return", label: "Retorno ao esporte" },
   { id: "prevention", label: "Prevenção de recidivas" },
   { id: "education", label: "Educação em saúde" },
+  { id: "outro", label: "Outro" },
 ];
 
 const redFlags = [
@@ -189,8 +195,24 @@ const redFlags = [
   { id: "trauma", label: "Trauma recente significativo" },
   { id: "cancer_history", label: "Histórico de câncer" },
   { id: "immunosuppression", label: "Imunossupressão" },
+  { id: "outro", label: "Outro" },
   { id: "none", label: "Nenhuma das opções" },
 ];
+
+// Helpers to serialize/deserialize "outro:custom text" in stored comma-separated strings
+function parseField(raw: string): { ids: string[]; otherText: string } {
+  if (!raw) return { ids: [], otherText: "" };
+  let otherText = "";
+  const ids = raw.split(",").map(p => {
+    if (p.startsWith("outro:")) { otherText = decodeURIComponent(p.slice(6)); return "outro"; }
+    return p;
+  }).filter(Boolean);
+  return { ids, otherText };
+}
+
+function serializeField(ids: string[], otherText: string): string {
+  return ids.map(id => (id === "outro" && otherText.trim()) ? `outro:${encodeURIComponent(otherText.trim())}` : id).join(",");
+}
 
 const stepConfig = [
   { key: "painPatterns", icon: Zap, label: "Padrão da Dor", color: "primary", items: painPatterns },
@@ -219,9 +241,11 @@ interface PremiumStepProps {
   isOpen: boolean;
   onToggle: () => void;
   isWarning?: boolean;
+  otherText?: string;
+  onOtherTextChange?: (text: string) => void;
 }
 
-function PremiumStep({ step, stepNumber, selected, onChange, isOpen, onToggle, isWarning }: PremiumStepProps) {
+function PremiumStep({ step, stepNumber, selected, onChange, isOpen, onToggle, isWarning, otherText, onOtherTextChange }: PremiumStepProps) {
   const Icon = step.icon;
   const isCompleted = selected.length > 0;
   
@@ -314,6 +338,27 @@ function PremiumStep({ step, stepNumber, selected, onChange, isOpen, onToggle, i
                     </motion.label>
                   ))}
                 </div>
+
+                {/* "Outro" inline text input */}
+                <AnimatePresence>
+                  {selected.includes("outro") && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="mt-3"
+                    >
+                      <Input
+                        placeholder="Descreva o item personalizado..."
+                        value={otherText || ""}
+                        onChange={(e) => onOtherTextChange?.(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`text-sm bg-muted/50 ${colors.border} focus-visible:ring-0 focus-visible:border-current`}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 
                 {/* Red Flags Warning */}
                 {isWarning && selected.length > 0 && !selected.includes("none") && (
@@ -373,6 +418,15 @@ function CaminhoContent() {
     redFlags: [],
   });
 
+  const [otherTexts, setOtherTexts] = useState<Record<string, string>>({
+    painPatterns: "",
+    aggravatingFactors: "",
+    relievingFactors: "",
+    functionalLimitations: "",
+    treatmentGoals: "",
+    redFlags: "",
+  });
+
   // Progress calculation
   const progress = useMemo(() => {
     const completed = [
@@ -389,13 +443,27 @@ function CaminhoContent() {
   // Load existing data when patient changes
   useEffect(() => {
     if (caminho) {
+      const pp = parseField(caminho.pain_pattern || "");
+      const af = parseField(caminho.aggravating_factors || "");
+      const rf = parseField(caminho.relieving_factors || "");
+      const fl = parseField(caminho.functional_limitations || "");
+      const tg = parseField(caminho.treatment_goals || "");
+      const rfl = parseField(caminho.red_flags || "");
       setFormData({
-        painPatterns: caminho.pain_pattern ? caminho.pain_pattern.split(",") : [],
-        aggravatingFactors: caminho.aggravating_factors ? caminho.aggravating_factors.split(",") : [],
-        relievingFactors: caminho.relieving_factors ? caminho.relieving_factors.split(",") : [],
-        functionalLimitations: caminho.functional_limitations ? caminho.functional_limitations.split(",") : [],
-        treatmentGoals: caminho.treatment_goals ? caminho.treatment_goals.split(",") : [],
-        redFlags: caminho.red_flags ? caminho.red_flags.split(",") : [],
+        painPatterns: pp.ids,
+        aggravatingFactors: af.ids,
+        relievingFactors: rf.ids,
+        functionalLimitations: fl.ids,
+        treatmentGoals: tg.ids,
+        redFlags: rfl.ids,
+      });
+      setOtherTexts({
+        painPatterns: pp.otherText,
+        aggravatingFactors: af.otherText,
+        relievingFactors: rf.otherText,
+        functionalLimitations: fl.otherText,
+        treatmentGoals: tg.otherText,
+        redFlags: rfl.otherText,
       });
       // Open first incomplete step
       const steps = ["painPatterns", "aggravatingFactors", "relievingFactors", "functionalLimitations", "treatmentGoals", "redFlags"];
@@ -416,6 +484,14 @@ function CaminhoContent() {
         functionalLimitations: [],
         treatmentGoals: [],
         redFlags: [],
+      });
+      setOtherTexts({
+        painPatterns: "",
+        aggravatingFactors: "",
+        relievingFactors: "",
+        functionalLimitations: "",
+        treatmentGoals: "",
+        redFlags: "",
       });
       setOpenStep(0);
     }
@@ -450,12 +526,12 @@ function CaminhoContent() {
     setSaving(true);
     try {
       const data: CaminhoFormData = {
-        pain_pattern: formData.painPatterns.join(","),
-        aggravating_factors: formData.aggravatingFactors.join(","),
-        relieving_factors: formData.relievingFactors.join(","),
-        functional_limitations: formData.functionalLimitations.join(","),
-        treatment_goals: formData.treatmentGoals.join(","),
-        red_flags: formData.redFlags.join(","),
+        pain_pattern: serializeField(formData.painPatterns, otherTexts.painPatterns),
+        aggravating_factors: serializeField(formData.aggravatingFactors, otherTexts.aggravatingFactors),
+        relieving_factors: serializeField(formData.relievingFactors, otherTexts.relievingFactors),
+        functional_limitations: serializeField(formData.functionalLimitations, otherTexts.functionalLimitations),
+        treatment_goals: serializeField(formData.treatmentGoals, otherTexts.treatmentGoals),
+        red_flags: serializeField(formData.redFlags, otherTexts.redFlags),
       };
       await saveCaminho(data);
       toast.showSuccess("Caminho clínico salvo com sucesso!");
@@ -656,7 +732,7 @@ function CaminhoContent() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="space-y-6"
+        className="space-y-5"
       >
         {/* Header with Progress */}
         <motion.div variants={itemVariants} className="relative">
@@ -683,21 +759,25 @@ function CaminhoContent() {
               <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                 {/* Progress Ring */}
                 <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10">
-                  <div className="relative w-8 h-8 sm:w-10 sm:h-10">
+                  <div className="relative w-10 h-10 sm:w-12 sm:h-12">
                     <svg className="w-full h-full -rotate-90">
-                      <circle cx="50%" cy="50%" r="40%" className="fill-none stroke-muted/30 stroke-[3]" />
+                      <circle cx="50%" cy="50%" r="40%" className="fill-none stroke-muted/30 stroke-[4]" />
                       <circle
                         cx="50%" cy="50%" r="40%"
-                        className="fill-none stroke-primary stroke-[3]"
+                        className={`fill-none stroke-[4] ${progress === 100 ? "stroke-emerald-500" : "stroke-primary"}`}
                         strokeLinecap="round"
                         strokeDasharray={`${progress * 1.005} 100`}
+                        style={{ transition: "stroke-dasharray 0.5s ease" }}
                       />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] sm:text-xs font-bold">
+                    <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${progress === 100 ? "text-emerald-500" : "text-primary"}`}>
                       {progress}%
                     </span>
                   </div>
-                  <span className="text-sm text-muted-foreground hidden lg:inline">Preenchido</span>
+                  <div className="hidden lg:block">
+                    <p className="text-xs font-semibold text-foreground">{Math.round(progress / 100 * 6)}/6 seções</p>
+                    <p className="text-xs text-muted-foreground">{progress === 100 ? "Completo!" : "Preenchidas"}</p>
+                  </div>
                 </div>
 
                 <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
@@ -760,6 +840,8 @@ function CaminhoContent() {
             isOpen={openStep === index}
             onToggle={() => setOpenStep(openStep === index ? null : index)}
             isWarning={step.key === "redFlags"}
+            otherText={otherTexts[step.key]}
+            onOtherTextChange={(text) => setOtherTexts(prev => ({ ...prev, [step.key]: text }))}
           />
         ))}
 

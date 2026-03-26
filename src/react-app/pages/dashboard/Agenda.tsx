@@ -641,6 +641,24 @@ export default function AgendaPage() {
           </Button>
         </div>
 
+        {/* Color Legend */}
+        <div className="flex items-center justify-center flex-wrap gap-3">
+          {Object.entries(TYPE_LABELS).map(([, config]) => (
+            <div key={config.label} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${config.color}`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+              {config.label}
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-border text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Pago
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-border text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Pendente
+          </div>
+        </div>
+
         {view === "month" ? (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <Card className="overflow-hidden lg:col-span-2">
@@ -714,14 +732,31 @@ export default function AgendaPage() {
 
             <Card>
               <CardContent className="p-4">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-semibold">
-                    {parseLocalDate(selectedDate).toLocaleDateString("pt-BR", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                    })}
-                  </h3>
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold capitalize">
+                      {parseLocalDate(selectedDate).toLocaleDateString("pt-BR", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                      })}
+                    </h3>
+                    {selectedDateAppointments.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {selectedDateAppointments.length} agendamento{selectedDateAppointments.length !== 1 ? "s" : ""}
+                        {(() => {
+                          const totalValue = selectedDateAppointments
+                            .filter(a => a.price)
+                            .reduce((s, a) => s + (a.price || 0), 0);
+                          const paidValue = selectedDateAppointments
+                            .filter(a => a.is_paid && a.price)
+                            .reduce((s, a) => s + (a.price || 0), 0);
+                          if (totalValue === 0) return "";
+                          return ` · R$ ${paidValue.toFixed(0)} recebido${totalValue !== paidValue ? ` / R$ ${totalValue.toFixed(0)} total` : ""}`;
+                        })()}
+                      </p>
+                    )}
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
@@ -731,10 +766,27 @@ export default function AgendaPage() {
                   </Button>
                 </div>
 
+                {/* Status summary pills */}
+                {selectedDateAppointments.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {Object.entries(
+                      selectedDateAppointments.reduce<Record<string, number>>((acc, a) => {
+                        acc[a.status] = (acc[a.status] || 0) + 1;
+                        return acc;
+                      }, {})
+                    ).map(([status, count]) => (
+                      <span key={status} className={`text-xs px-2 py-0.5 rounded-full bg-muted ${STATUS_CONFIG[status]?.color || "text-muted-foreground"}`}>
+                        {count}× {STATUS_CONFIG[status]?.label || status}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {selectedDateAppointments.length === 0 ? (
                   <div className="py-8 text-center text-muted-foreground">
                     <Calendar className="mx-auto mb-2 h-8 w-8 opacity-50" />
                     <p className="text-sm">Nenhum agendamento</p>
+                    <p className="text-xs mt-1 opacity-60">Clique em + para adicionar</p>
                   </div>
                 ) : (
                   <div className="space-y-3">

@@ -45,7 +45,7 @@ export function OnboardingChecklist({
   firstEvaluationPatientId,
 }: OnboardingChecklistProps) {
   const navigate = useNavigate();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const steps = [
     {

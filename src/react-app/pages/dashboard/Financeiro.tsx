@@ -487,10 +487,13 @@ export default function FinanceiroPage() {
                     />
                     <Tooltip content={<ChartTooltip />} />
                     <Legend
-                      formatter={(value) => (value === "income" ? "Receitas" : "Despesas")}
+                      payload={[
+                        { value: "Receitas", type: "rect", color: "#10b981" },
+                        { value: "Despesas", type: "rect", color: "#ef4444" },
+                      ]}
                     />
-                    <Bar dataKey="income" name="income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="expenses" name="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="income" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="expenses" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -500,8 +503,8 @@ export default function FinanceiroPage() {
 
         {/* Filters */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-wrap items-center gap-3">
+          <CardContent className="p-5">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Filtros:</span>

@@ -516,14 +516,14 @@ export default function PainelPage() {
         )}
 
         <motion.div variants={itemVariants}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
                 value: dashboardStats.totalPatients,
                 label: "Total Pacientes",
                 icon: Users,
                 gradient: "from-primary to-emerald-500",
-                bg: "bg-primary/10",
+                accent: "border-t-primary",
                 text: "text-primary",
               },
               {
@@ -531,7 +531,7 @@ export default function PainelPage() {
                 label: "Avaliações",
                 icon: ClipboardList,
                 gradient: "from-violet-500 to-purple-500",
-                bg: "bg-violet-50",
+                accent: "border-t-violet-500",
                 text: "text-violet-600",
               },
               {
@@ -539,7 +539,7 @@ export default function PainelPage() {
                 label: "Evoluções",
                 icon: TrendingUp,
                 gradient: "from-emerald-400 to-teal-500",
-                bg: "bg-emerald-50",
+                accent: "border-t-emerald-500",
                 text: "text-emerald-600",
               },
               {
@@ -547,7 +547,7 @@ export default function PainelPage() {
                 label: "Alertas Ativos",
                 icon: Activity,
                 gradient: "from-rose-500 to-orange-500",
-                bg: "bg-rose-50",
+                accent: "border-t-rose-500",
                 text: "text-rose-600",
               },
             ].map((kpi, index) => (
@@ -556,19 +556,19 @@ export default function PainelPage() {
                 whileHover={{ y: -2, scale: 1.01 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <Card className="relative overflow-hidden border border-border shadow-sm bg-white">
+                <Card className={`relative overflow-hidden border border-border border-t-2 ${kpi.accent} shadow-sm bg-card`}>
                   <CardContent className="p-5 relative">
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
                         <p className={`text-3xl md:text-4xl font-bold tracking-tight ${kpi.text}`}>
                           {kpi.value}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium">
+                        <p className="text-xs text-muted-foreground mt-1.5 uppercase tracking-wider font-medium truncate">
                           {kpi.label}
                         </p>
                       </div>
                       <div
-                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${kpi.gradient} flex items-center justify-center shadow-md`}
+                        className={`shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${kpi.gradient} flex items-center justify-center shadow-md`}
                       >
                         <kpi.icon className="w-6 h-6 text-white" />
                       </div>
