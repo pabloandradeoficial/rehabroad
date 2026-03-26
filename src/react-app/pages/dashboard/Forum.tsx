@@ -261,51 +261,58 @@ export default function Forum() {
   }
 
   async function handleLikePost(postId: number) {
-    // ── Optimistic update: toggle immediately so the UI feels instant ──
     const wasLiked = likedPosts.has(postId);
-    const optimisticDelta = wasLiked ? -1 : 1;
+    const delta = wasLiked ? -1 : 1;
 
-    function applyDelta(delta: number) {
+    // ── Optimistic update: toggle immediately ──
+    setLikedPosts((prev) => {
+      const next = new Set(prev);
+      if (wasLiked) next.delete(postId);
+      else next.add(postId);
+      return next;
+    });
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, likes_count: p.likes_count + delta } : p))
+    );
+    setSelectedPost((prev) =>
+      prev?.id === postId ? { ...prev, likes_count: prev.likes_count + delta } : prev
+    );
+
+    try {
+      const res = await apiFetch(`/api/forum/posts/${postId}/like`, { method: "POST" });
+
+      if (!res.ok) {
+        // API falhou — reverte o estado otimista
+        setLikedPosts((prev) => {
+          const next = new Set(prev);
+          if (wasLiked) next.add(postId);
+          else next.delete(postId);
+          return next;
+        });
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, likes_count: p.likes_count - delta } : p))
+        );
+        setSelectedPost((prev) =>
+          prev?.id === postId ? { ...prev, likes_count: prev.likes_count - delta } : prev
+        );
+        toast.showError("Erro ao curtir. Tente novamente.");
+      }
+      // Se ok: o estado otimista já está correto — não faz mais nada
+    } catch (err) {
+      console.error("[Forum] handleLikePost:", err);
+      // Reverte em caso de exceção de rede
       setLikedPosts((prev) => {
         const next = new Set(prev);
-        if (delta > 0) next.add(postId);
+        if (wasLiked) next.add(postId);
         else next.delete(postId);
         return next;
       });
       setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, likes_count: p.likes_count + delta } : p))
+        prev.map((p) => (p.id === postId ? { ...p, likes_count: p.likes_count - delta } : p))
       );
       setSelectedPost((prev) =>
-        prev?.id === postId ? { ...prev, likes_count: prev.likes_count + delta } : prev
+        prev?.id === postId ? { ...prev, likes_count: prev.likes_count - delta } : prev
       );
-    }
-
-    applyDelta(optimisticDelta);
-
-    try {
-      const res = await apiFetch(`/api/forum/posts/${postId}/like`, { method: "POST" });
-      console.log(`[Forum] like post ${postId} → HTTP ${res.status}`);
-
-      if (res.ok) {
-        const data = await res.json() as { liked: boolean };
-        console.log(`[Forum] like response:`, data);
-
-        // If server disagrees with our optimistic guess, correct it
-        const expectedLiked = !wasLiked;
-        if (data.liked !== expectedLiked) {
-          // Revert optimistic, then apply what server says
-          applyDelta(-optimisticDelta);
-          applyDelta(data.liked ? 1 : -1);
-        }
-      } else {
-        console.error(`[Forum] like failed – HTTP ${res.status}`);
-        // Revert optimistic update
-        applyDelta(-optimisticDelta);
-        toast.showError("Erro ao curtir. Tente novamente.");
-      }
-    } catch (err) {
-      console.error("[Forum] like exception:", err);
-      applyDelta(-optimisticDelta);
       toast.showError("Erro ao curtir. Tente novamente.");
     }
   }
@@ -319,7 +326,10 @@ export default function Forum() {
       if (res.ok) {
         toast.showSuccess("Post excluído");
         setSelectedPost(null);
-        await fetchPosts();
+        // Remove only this post from the local array — without a full fetchPosts.
+        // fetchPosts has D1 eventual-consistency issues that can return a stale empty
+        // list right after a DELETE, wiping all posts from the UI.
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
       } else {
         toast.showError("Erro ao excluir");
       }
