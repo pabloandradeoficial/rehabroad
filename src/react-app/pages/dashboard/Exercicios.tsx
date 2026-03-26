@@ -260,9 +260,8 @@ function ExerciciosContent() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: index * 0.02 }}
-                    whileHover={{ y: -4 }}
                     onClick={() => openExerciseDetail(exercise)}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:-translate-y-1 transition-transform duration-200"
                   >
                     <Card className="h-full relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 group">
                       <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${category?.color || "from-gray-500 to-gray-600"}`} />
@@ -328,9 +327,8 @@ function ExerciciosContent() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ delay: index * 0.02 }}
-                    whileHover={{ x: 4 }}
                     onClick={() => openExerciseDetail(exercise)}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:translate-x-1 transition-transform duration-200"
                   >
                     <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
                       <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${category?.color || "from-gray-500 to-gray-600"}`} />
