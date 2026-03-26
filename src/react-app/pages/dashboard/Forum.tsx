@@ -161,13 +161,14 @@ export default function Forum() {
           // Add the new post directly from the server response — no re-fetch needed.
           // This avoids D1 eventual-consistency issues where a GET right after INSERT
           // might hit a replica that hasn't synced the write yet.
+          // We do NOT call setSelectedCategory("all") because it would trigger a
+          // refetch that could overwrite this optimistic state with stale D1 data.
+          // The client-side category filter in filteredPosts handles the display.
           setPosts((prev) => {
             const alreadyExists = prev.some((p) => p.id === data.post.id);
             if (alreadyExists) return prev;
             return [data.post, ...prev];
           });
-          // Switch to "all" so the post is visible regardless of current filter
-          setSelectedCategory("all");
         } else {
           // Fallback: server didn't return the post object, do a full refetch
           console.warn("[Forum] Server did not return post object, falling back to fetchPosts");
@@ -260,27 +261,52 @@ export default function Forum() {
   }
 
   async function handleLikePost(postId: number) {
+    // ── Optimistic update: toggle immediately so the UI feels instant ──
+    const wasLiked = likedPosts.has(postId);
+    const optimisticDelta = wasLiked ? -1 : 1;
+
+    function applyDelta(delta: number) {
+      setLikedPosts((prev) => {
+        const next = new Set(prev);
+        if (delta > 0) next.add(postId);
+        else next.delete(postId);
+        return next;
+      });
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, likes_count: p.likes_count + delta } : p))
+      );
+      setSelectedPost((prev) =>
+        prev?.id === postId ? { ...prev, likes_count: prev.likes_count + delta } : prev
+      );
+    }
+
+    applyDelta(optimisticDelta);
+
     try {
       const res = await apiFetch(`/api/forum/posts/${postId}/like`, { method: "POST" });
+      console.log(`[Forum] like post ${postId} → HTTP ${res.status}`);
 
       if (res.ok) {
         const data = await res.json() as { liked: boolean };
-        setLikedPosts((prev) => {
-          const next = new Set(prev);
-          if (data.liked) next.add(postId);
-          else next.delete(postId);
-          return next;
-        });
-        const delta = data.liked ? 1 : -1;
-        setPosts((prev) =>
-          prev.map((p) => (p.id === postId ? { ...p, likes_count: p.likes_count + delta } : p))
-        );
-        setSelectedPost((prev) =>
-          prev?.id === postId ? { ...prev, likes_count: prev.likes_count + delta } : prev
-        );
+        console.log(`[Forum] like response:`, data);
+
+        // If server disagrees with our optimistic guess, correct it
+        const expectedLiked = !wasLiked;
+        if (data.liked !== expectedLiked) {
+          // Revert optimistic, then apply what server says
+          applyDelta(-optimisticDelta);
+          applyDelta(data.liked ? 1 : -1);
+        }
+      } else {
+        console.error(`[Forum] like failed – HTTP ${res.status}`);
+        // Revert optimistic update
+        applyDelta(-optimisticDelta);
+        toast.showError("Erro ao curtir. Tente novamente.");
       }
     } catch (err) {
-      console.error("Error liking post:", err);
+      console.error("[Forum] like exception:", err);
+      applyDelta(-optimisticDelta);
+      toast.showError("Erro ao curtir. Tente novamente.");
     }
   }
 
@@ -376,11 +402,20 @@ export default function Forum() {
     setEditCommentContent(comment.content);
   }
 
-  const filteredPosts = posts.filter(
-    (post) =>
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Dual filtering: category (client-side safety net on top of the API param)
+  // and free-text search. The API already filters by category, but client-side
+  // filtering ensures correctness when the posts array contains mixed categories
+  // (e.g. after an optimistic update from a different category view).
+  const filteredPosts = posts.filter((post) => {
+    const matchesCategory =
+      selectedCategory === "all" || post.category === selectedCategory;
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      post.title.toLowerCase().includes(q) ||
+      post.content.toLowerCase().includes(q);
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <PageTransition>
