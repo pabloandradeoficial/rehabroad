@@ -5198,7 +5198,7 @@ app.get("/api/forum/posts", authMiddleware, async (c) => {
     params.push(category);
   }
   
-  query += ` ORDER BY is_pinned DESC, created_at DESC`;
+  query += ` ORDER BY COALESCE(is_pinned, 0) DESC, created_at DESC`;
   
   const stmt = params.length > 0 
     ? c.env.DB.prepare(query).bind(...params)

@@ -125,9 +125,11 @@ export default function Forum() {
       if (res.ok) {
         const data = (await res.json()) as ForumPost[];
         setPosts(Array.isArray(data) ? data : []);
+      } else {
+        console.error("[Forum] fetchPosts failed:", res.status, await res.text().catch(() => ""));
       }
     } catch (err) {
-      console.error("Error fetching posts:", err);
+      console.error("[Forum] fetchPosts error:", err);
       setPosts([]);
     } finally {
       setLoading(false);
