@@ -333,9 +333,12 @@ export default function Forum() {
         // list right after a DELETE, wiping all posts from the UI.
         setPosts((prev) => prev.filter((p) => p.id !== postId));
       } else {
-        toast.showError("Erro ao excluir");
+        const errBody = await res.json().catch(() => ({})) as Record<string, string>;
+        console.error("[Forum] delete post failed:", res.status, errBody);
+        toast.showError(`Erro ao excluir (${res.status}): ${errBody?.error ?? "tente novamente"}`);
       }
-    } catch (_err) {
+    } catch (err) {
+      console.error("[Forum] delete post error:", err);
       toast.showError("Erro ao excluir");
     }
   }

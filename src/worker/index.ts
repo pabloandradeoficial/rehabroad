@@ -5318,20 +5318,24 @@ app.post("/api/forum/posts/:id/like", authMiddleware, async (c) => {
   }
 });
 
-// Delete post (author only)
+// Delete post (author or admin only)
 app.delete("/api/forum/posts/:id", authMiddleware, async (c) => {
-  const user = c.get("user" as never) as { id: string };
+  const user = c.get("user" as never) as AppUser;
   const id = c.req.param("id");
-  
+
   const post = await c.env.DB.prepare(`
     SELECT user_id FROM forum_posts WHERE id = ?
   `).bind(id).first() as { user_id: string } | null;
-  
+
   if (!post) {
     return c.json({ error: "Post not found" }, 404);
   }
-  
-  if (post.user_id !== user.id) {
+
+  const isOwner = post.user_id === user.id;
+  const isAdmin = isOwnerAdminEmail(user.email);
+
+  if (!isOwner && !isAdmin) {
+    console.error(`[forum delete] unauthorized: post.user_id=${post.user_id} user.id=${user.id} user.email=${user.email}`);
     return c.json({ error: "Not authorized" }, 403);
   }
   
