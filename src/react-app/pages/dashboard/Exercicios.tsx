@@ -277,8 +277,23 @@ function ExerciciosContent() {
                             {exercise.sets}×{exercise.reps}
                           </Badge>
                         </div>
-                        
-                        <div className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                        <div className="mt-3 pt-3 border-t border-border/20">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full gap-2 h-8 text-xs text-primary hover:bg-primary/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openPrescribeDialog(exercise);
+                            }}
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            Enviar para Paciente
+                          </Button>
+                        </div>
+
+                        <div className="absolute top-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <ChevronRight className="w-5 h-5 text-primary" />
                         </div>
                       </CardContent>
@@ -335,7 +350,20 @@ function ExerciciosContent() {
                               <Calendar className="w-3 h-3" />{exercise.frequency}
                             </Badge>
                           </div>
-                          
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="hidden sm:flex gap-1.5 h-8 text-xs text-primary hover:bg-primary/10 shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openPrescribeDialog(exercise);
+                            }}
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            Enviar
+                          </Button>
+
                           <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                         </div>
                       </CardContent>

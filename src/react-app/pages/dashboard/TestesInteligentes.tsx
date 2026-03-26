@@ -95,11 +95,12 @@ const regiaoColors: Record<string, { bg: string; border: string; text: string; g
 };
 
 // Card de teste individual expandível
-function TesteCard({ teste, expandido, onToggle, index }: { 
-  teste: TesteOrtopedico; 
-  expandido: boolean; 
+function TesteCard({ teste, expandido, onToggle, index, isRecomendado }: {
+  teste: TesteOrtopedico;
+  expandido: boolean;
   onToggle: () => void;
   index: number;
+  isRecomendado?: boolean;
 }) {
   const colors = regiaoColors[teste.regiao] || regiaoColors.ombro;
   
@@ -134,6 +135,12 @@ function TesteCard({ teste, expandido, onToggle, index }: {
                       {categoriaIcons[teste.tags?.categoria] || <Target className="w-3 h-3" />}
                       <span className="ml-1">{teste.tags?.categoria || "Geral"}</span>
                     </Badge>
+                    {isRecomendado && (
+                      <Badge className="text-xs bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 border gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Recomendado
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
@@ -225,18 +232,20 @@ function TesteCard({ teste, expandido, onToggle, index }: {
 }
 
 // Grupo de testes por categoria
-function CategoriaGroup({ 
-  categoria, 
-  testes, 
-  testeExpandido, 
+function CategoriaGroup({
+  categoria,
+  testes,
+  testeExpandido,
   onToggleTeste,
-  regiao
-}: { 
+  regiao,
+  isRecomendado
+}: {
   categoria: string;
   testes: TesteOrtopedico[];
   testeExpandido: string | null;
   onToggleTeste: (id: string) => void;
   regiao: string;
+  isRecomendado?: boolean;
 }) {
   const [expandida, setExpandida] = useState(true);
   const colors = regiaoColors[regiao] || regiaoColors.ombro;
@@ -276,6 +285,7 @@ function CategoriaGroup({
                 expandido={testeExpandido === teste.id}
                 onToggle={() => onToggleTeste(teste.id)}
                 index={index}
+                isRecomendado={isRecomendado}
               />
             ))}
           </motion.div>
@@ -551,6 +561,19 @@ function TestesInteligentesContent() {
                   </div>
                 ) : (
                   <div className="space-y-6">
+                    {selectedPatientId && regiaoDetectada && regiaoDetectada === regiaoEfetiva && (
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                        <Sparkles className="w-5 h-5 text-emerald-500 shrink-0" />
+                        <div>
+                          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                            Testes Recomendados para este Paciente
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Todos os testes abaixo são relevantes para o local de dor identificado na avaliação.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     {Object.entries(testesPorCategoria).map(([categoria, testes]) => (
                       <CategoriaGroup
                         key={categoria}
@@ -559,6 +582,7 @@ function TestesInteligentesContent() {
                         testeExpandido={testeExpandido}
                         onToggleTeste={(id) => setTesteExpandido(testeExpandido === id ? null : id)}
                         regiao={regiaoEfetiva}
+                        isRecomendado={!!(selectedPatientId && regiaoDetectada && regiaoDetectada === regiaoEfetiva)}
                       />
                     ))}
                   </div>

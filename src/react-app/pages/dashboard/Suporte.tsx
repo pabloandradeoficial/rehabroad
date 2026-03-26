@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { 
-  HeartPulse, 
-  AlertTriangle, 
-  RefreshCw, 
-  FileText, 
-  Route, 
+  HeartPulse,
+  AlertTriangle,
+  RefreshCw,
+  FileText,
+  Route,
   Activity,
   TrendingUp,
   TrendingDown,
@@ -25,7 +25,8 @@ import {
   Dumbbell,
   ChevronDown,
   User,
-  Zap
+  Zap,
+  Download
 } from "lucide-react";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Badge } from "@/react-app/components/ui/badge";
@@ -339,6 +340,65 @@ function SuporteContent() {
   const highPriority = insights.filter(i => i.priority === "high");
   const otherInsights = insights.filter(i => i.priority !== "high");
 
+  const handleExportPDF = () => {
+    const patientName = selectedPatient?.name || "Paciente";
+    const date = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+
+    const alertsHtml = highPriority.length > 0
+      ? `<h2>Alertas Prioritários</h2>` + highPriority.map(i => `<div class="item red"><strong>${i.title}</strong>: ${i.description}</div>`).join("")
+      : "";
+    const insightsHtml = otherInsights.length > 0
+      ? `<h2>Pontos de Atenção</h2>` + otherInsights.map(i => `<div class="item"><strong>${i.title}</strong>: ${i.description}</div>`).join("")
+      : "";
+    const hypothesesHtml = diagnosticHypotheses.length > 0
+      ? `<h2>Hipóteses Diagnósticas</h2>` + diagnosticHypotheses.map(h => `<div class="item"><strong>${h.condition}</strong> (Confiança: ${h.confidence})</div>`).join("")
+      : "";
+    const exercisesHtml = suggestedExercises.length > 0
+      ? `<h2>Exercícios Sugeridos</h2>` + suggestedExercises.slice(0, 6).map(e => `<div class="exercise"><strong>${e.name}</strong> — ${e.sets}×${e.reps} — ${e.frequency}</div>`).join("")
+      : "";
+    const stepsHtml = nextSteps.length > 0
+      ? `<h2>Próximos Passos</h2>` + nextSteps.map((step, idx) => `<div class="step"><div class="step-num">${idx + 1}</div><div>${step}</div></div>`).join("")
+      : "";
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Apoio Clínico – ${patientName}</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #111; max-width: 800px; margin: 0 auto; padding: 32px; }
+    h1 { font-size: 24px; color: #7c3aed; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 14px; margin-bottom: 32px; }
+    h2 { font-size: 16px; font-weight: bold; color: #333; margin-top: 28px; margin-bottom: 12px; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; }
+    .item { background: #f9f9f9; border-left: 4px solid #7c3aed; padding: 10px 14px; margin-bottom: 8px; border-radius: 4px; font-size: 14px; }
+    .item.red { border-left-color: #dc2626; }
+    .exercise { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 14px; margin-bottom: 8px; border-radius: 6px; font-size: 14px; }
+    .step { display: flex; gap: 10px; margin-bottom: 8px; font-size: 14px; align-items: flex-start; }
+    .step-num { background: #7c3aed; color: white; min-width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #999; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Apoio Clínico</h1>
+  <div class="subtitle">Paciente: <strong>${patientName}</strong> &nbsp;•&nbsp; Data: ${date}</div>
+  ${alertsHtml}
+  ${insightsHtml}
+  ${hypothesesHtml}
+  ${exercisesHtml}
+  ${stepsHtml}
+  <div class="footer">Gerado pelo RehabRoad — Ferramenta de apoio ao raciocínio clínico. A decisão terapêutica é responsabilidade do profissional.</div>
+</body>
+</html>`;
+
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(htmlContent);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 500);
+    }
+  };
+
   return (
     <PageTransition>
       <div className="space-y-8">
@@ -368,7 +428,17 @@ function SuporteContent() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="icon" onClick={refetch} className="h-9 w-9">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPDF}
+              className="h-9 gap-2 text-xs"
+              title="Exportar PDF do relatório clínico"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Exportar PDF</span>
+            </Button>
+            <Button variant="outline" size="icon" onClick={refetch} className="h-9 w-9" title="Atualizar análise">
               <RefreshCw className="w-4 h-4" />
             </Button>
           </div>
