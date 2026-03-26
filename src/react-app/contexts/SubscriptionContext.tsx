@@ -29,6 +29,7 @@ interface Subscription {
   expires_at: string | null;
   trial_start_date: string | null;
   trial_days_remaining: number | null;
+  is_premium?: boolean;
 }
 
 interface SubscriptionContextType {
@@ -125,10 +126,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchSubscription]);
 
-  const isAdmin =
-    Boolean(subscription?.is_admin) ||
-    subscription?.effective_status === 'active_paid' ||
-    subscription?.status === 'active_paid';
+  const isAdmin = Boolean(subscription?.is_admin);
 
   const effectiveStatus =
     subscription?.effective_status || subscription?.status || "inactive";

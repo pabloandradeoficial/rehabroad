@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/react-app/components/ui/button";
 import { cn } from "@/react-app/lib/utils";
 import { getRecommendations, type ClinicalData, type Recommendation } from "@/react-app/data/neurofluxData";
+import { useNeuroflux } from "@/react-app/hooks/useNeuroflux";
 import { PageTransition } from "@/react-app/components/ui/microinteractions";
 
 type SelectionButtonProps = {
@@ -295,6 +296,7 @@ const scientificReferences = [
 ];
 
 function NeuroFluxContent() {
+  const { saveProgress } = useNeuroflux();
   const [formData, setFormData] = useState<ClinicalData>({
     diagnosis: "", tissue: null, pathophysiology: null, phase: null, objective: null, irritability: null,
   });
@@ -303,7 +305,10 @@ function NeuroFluxContent() {
   const isFormComplete = formData.diagnosis.trim() !== "" && formData.tissue !== null && formData.pathophysiology !== null && formData.phase !== null && formData.objective !== null && formData.irritability !== null;
 
   const handleGenerateRecommendation = () => {
-    if (isFormComplete) setRecommendations(getRecommendations(formData));
+    if (isFormComplete) {
+      setRecommendations(getRecommendations(formData));
+      void saveProgress(formData);
+    }
   };
 
   const handleReset = () => {

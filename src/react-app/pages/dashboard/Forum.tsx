@@ -358,13 +358,17 @@ export default function Forum() {
 
       if (res.ok) {
         toast.showSuccess("Post atualizado!");
+        // Local update — avoids D1 eventual-consistency issues on immediate refetch
+        const updated = { title: newPostForm.title, content: newPostForm.content, category: newPostForm.category };
+        setPosts((prev) =>
+          prev.map((p) => (p.id === editingPost.id ? { ...p, ...updated } : p))
+        );
+        setSelectedPost((prev) =>
+          prev?.id === editingPost.id ? { ...prev, ...updated } : prev
+        );
         setEditingPost(null);
         setShowNewPost(false);
         setNewPostForm({ category: "casos", title: "", content: "" });
-        await fetchPosts();
-        setSelectedPost((prev) =>
-          prev?.id === editingPost.id ? { ...prev, ...newPostForm } : prev
-        );
       } else {
         toast.showError("Erro ao atualizar");
       }
@@ -609,9 +613,20 @@ export default function Forum() {
                             <MessageCircle className="h-4 w-4" />
                             <span>{post.comments_count}</span>
                           </span>
-                          <span className="ml-auto text-xs text-violet-500 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-                            Ver discussão →
-                          </span>
+                          <div className="ml-auto flex items-center gap-2">
+                            {post.user_id === user?.id && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); startEditPost(post); }}
+                                className="p-1 rounded text-muted-foreground hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                                title="Editar post"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            <span className="text-xs text-violet-500 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+                              Ver discussão →
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

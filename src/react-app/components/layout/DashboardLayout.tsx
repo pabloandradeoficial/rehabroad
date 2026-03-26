@@ -45,7 +45,10 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("sidebarCollapsed") === "true";
+      const saved = localStorage.getItem("sidebarCollapsed");
+      if (saved !== null) return saved === "true";
+      // Default by breakpoint: collapse on mobile/tablet, expand on desktop
+      return window.innerWidth < 1024;
     }
     return false;
   });
@@ -70,14 +73,18 @@ export default function DashboardLayout() {
     !subscriptionLoading &&
     isFreeLimited &&
     !isAllowedPage &&
-    !isAdmin &&
-    subscription?.effective_status !== 'active_paid' &&
-    subscription?.status !== 'active_paid';
+    !isAdmin;
 
-  // Persist sidebar collapsed state
+  // Adjust sidebar default when window resizes, but only if user has no saved preference
   useEffect(() => {
-    localStorage.setItem("sidebarCollapsed", String(sidebarCollapsed));
-  }, [sidebarCollapsed]);
+    const handleResize = () => {
+      if (localStorage.getItem("sidebarCollapsed") === null) {
+        setSidebarCollapsed(window.innerWidth < 1024);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Auto-close sidebar on navigation (mobile)
   useEffect(() => {
@@ -159,7 +166,11 @@ export default function DashboardLayout() {
 
       {/* Desktop Sidebar Toggle Button */}
       <button
-        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onClick={() => {
+          const next = !sidebarCollapsed;
+          setSidebarCollapsed(next);
+          localStorage.setItem("sidebarCollapsed", String(next));
+        }}
         className={cn(
           "hidden lg:flex fixed z-[40] top-1/2 -translate-y-1/2 items-center justify-center",
           "w-6 h-12 bg-slate-800 hover:bg-slate-700 rounded-r-lg border border-l-0 border-white/10",
