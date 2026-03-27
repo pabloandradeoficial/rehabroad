@@ -4,6 +4,7 @@ import type { ClinicalData } from "@/react-app/data/neurofluxData";
 
 export interface ConsultationRecord {
   id: number;
+  patient_id: string | null;
   diagnosis: string;
   tissue: string | null;
   pathophysiology: string | null;
@@ -13,7 +14,7 @@ export interface ConsultationRecord {
   created_at: string;
 }
 
-export function useNeuroflux() {
+export function useNeuroflux(patientId?: string) {
   const [data, setData] = useState<ConsultationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +23,10 @@ export function useNeuroflux() {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiFetch("/api/neuroflux", { cache: "no-store" });
+      const url = patientId
+        ? `/api/neuroflux?patient_id=${encodeURIComponent(patientId)}`
+        : "/api/neuroflux";
+      const res = await apiFetch(url, { cache: "no-store" });
       if (res.ok) {
         const json = (await res.json()) as ConsultationRecord[];
         setData(Array.isArray(json) ? json : []);
@@ -34,36 +38,42 @@ export function useNeuroflux() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [patientId]);
 
   useEffect(() => {
     void fetchHistory();
   }, [fetchHistory]);
 
-  const saveProgress = useCallback(async (formData: ClinicalData) => {
-    try {
-      await apiFetch("/api/neuroflux", {
-        method: "POST",
-        body: JSON.stringify(formData),
-      });
-      // Prepend optimistically so history is up-to-date without a refetch
-      setData((prev) => [
-        {
-          id: Date.now(), // temp id until next real fetch
-          diagnosis: formData.diagnosis,
-          tissue: formData.tissue,
-          pathophysiology: formData.pathophysiology,
-          phase: formData.phase,
-          objective: formData.objective,
-          irritability: formData.irritability,
-          created_at: new Date().toISOString(),
-        },
-        ...prev.slice(0, 9), // keep last 10 total
-      ]);
-    } catch {
-      // Non-blocking — consultation history is auxiliary, not critical
-    }
-  }, []);
+  const saveProgress = useCallback(
+    async (formData: ClinicalData, patientIdOverride?: string | null) => {
+      const resolvedPatientId =
+        patientIdOverride !== undefined ? patientIdOverride : (patientId ?? null);
+      try {
+        await apiFetch("/api/neuroflux", {
+          method: "POST",
+          body: JSON.stringify({ ...formData, patient_id: resolvedPatientId }),
+        });
+        // Optimistic prepend
+        setData((prev) => [
+          {
+            id: Date.now(),
+            patient_id: resolvedPatientId ?? null,
+            diagnosis: formData.diagnosis,
+            tissue: formData.tissue,
+            pathophysiology: formData.pathophysiology,
+            phase: formData.phase,
+            objective: formData.objective,
+            irritability: formData.irritability,
+            created_at: new Date().toISOString(),
+          },
+          ...prev.slice(0, 9),
+        ]);
+      } catch {
+        // Non-blocking — consultation history is auxiliary, not critical
+      }
+    },
+    [patientId]
+  );
 
-  return { data, loading, error, saveProgress };
+  return { data, loading, error, saveProgress, refetch: fetchHistory };
 }

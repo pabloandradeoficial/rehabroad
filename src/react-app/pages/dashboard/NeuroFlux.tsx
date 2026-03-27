@@ -1,6 +1,11 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Brain, Zap, Waves, Sun, Snowflake, Flame, ChevronRight, Clock, Target, AlertTriangle, Lightbulb, BookOpen, CheckCircle2, Settings2, Sparkles, Activity, Shield } from "lucide-react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Brain, Zap, Waves, Sun, Snowflake, Flame, ChevronRight, Clock, Target,
+  AlertTriangle, Lightbulb, BookOpen, CheckCircle2, Settings2, Sparkles,
+  Activity, Shield, Search, User, X, FileText, Stethoscope, FlaskConical,
+  Layers, RotateCcw, History, ChevronDown,
+} from "lucide-react";
 import PremiumGate from "@/react-app/components/PremiumGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
@@ -11,51 +16,196 @@ import { Button } from "@/react-app/components/ui/button";
 import { cn } from "@/react-app/lib/utils";
 import { getRecommendations, type ClinicalData, type Recommendation } from "@/react-app/data/neurofluxData";
 import { useNeuroflux } from "@/react-app/hooks/useNeuroflux";
+import { apiFetch } from "@/react-app/lib/api";
 import { PageTransition } from "@/react-app/components/ui/microinteractions";
+
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
+
+type Patient = {
+  id: number;
+  name: string;
+  birth_date: string | null;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type Evaluation = {
+  id: number;
+  patient_id: number;
+  type: string;
+  chief_complaint: string | null;
+  history: string | null;
+  pain_level: number | null;
+  pain_location: string | null;
+  functional_status: string | null;
+  orthopedic_tests: string | null;
+  observations: string | null;
+  created_at: string;
+};
+
+type Mode = "free" | "patient";
+
+// ─────────────────────────────────────────────
+// Inference helpers
+// ─────────────────────────────────────────────
+
+function inferTissue(text: string): string | null {
+  const t = text.toLowerCase();
+  if (/tend[aã]o|tendino|tendinite|tendinopatia|tendinop/.test(t)) return "Tendão";
+  if (/ligamento|entorse|lca|lcp|lcl|lcm|lcfl/.test(t)) return "Ligamento";
+  if (/m[uú]sculo|mialgia|contratura|distens[aã]o|ruptura muscular|strain/.test(t)) return "Músculo";
+  if (/c[aá]psula|capsulite/.test(t)) return "Cápsula Articular";
+  return null;
+}
+
+function inferPathophysiology(diagnosis: string, history?: string | null): string | null {
+  const text = `${diagnosis} ${history ?? ""}`.toLowerCase();
+  if (/cirurg|p[oó]s.?op|operatório|p[oó]s.?cirúrg/.test(text)) return "Pós-operatório";
+  if (/crôni|desgaste|artrose|degener|osteoartrite|artrit/.test(text)) return "Desgaste / Crônico";
+  if (/sobrecarga|overuse|uso excessivo|repetitivo|esportivo/.test(text)) return "Sobrecarga / Irritado";
+  if (/agudo|inflamat|inflama[cç][aã]|trauma|queda/.test(text)) return "Inflamatório Agudo";
+  return null;
+}
+
+function inferIrritability(painLevel: number | null): string | null {
+  if (painLevel === null || painLevel === undefined) return null;
+  if (painLevel > 7) return "Alta";
+  if (painLevel > 4) return "Média";
+  return "Baixa";
+}
+
+function mapPatientToNeuroflux(
+  patient: Patient,
+  latestEval?: Evaluation | null
+): { data: Partial<ClinicalData>; autoFilled: Set<keyof ClinicalData> } {
+  const filled: Partial<ClinicalData> = {};
+  const autoFilled = new Set<keyof ClinicalData>();
+
+  // Diagnóstico — chief_complaint from evaluation is the best source
+  const rawDiagnosis = latestEval?.chief_complaint?.trim() || patient.notes?.trim() || "";
+  if (rawDiagnosis) {
+    filled.diagnosis = rawDiagnosis;
+    autoFilled.add("diagnosis");
+  }
+
+  const diagText = rawDiagnosis;
+
+  // Tecido
+  const tissue = inferTissue(diagText);
+  if (tissue) {
+    filled.tissue = tissue;
+    autoFilled.add("tissue");
+  }
+
+  // Estado fisiopatológico
+  const pathophysiology = inferPathophysiology(diagText, latestEval?.history);
+  if (pathophysiology) {
+    filled.pathophysiology = pathophysiology;
+    autoFilled.add("pathophysiology");
+  }
+
+  // Irritabilidade — from pain_level
+  const irritability = inferIrritability(latestEval?.pain_level ?? null);
+  if (irritability) {
+    filled.irritability = irritability;
+    autoFilled.add("irritability");
+  }
+
+  return { data: filled, autoFilled };
+}
+
+// ─────────────────────────────────────────────
+// AutoFill badge
+// ─────────────────────────────────────────────
+
+function AutoFillBadge({ onClear }: { onClear: () => void }) {
+  return (
+    <motion.span
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.15 }}
+      className="inline-flex items-center gap-1 ml-2"
+    >
+      <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[10px] py-0 px-1.5 h-5 gap-0.5">
+        <FileText className="w-2.5 h-2.5" />
+        Do prontuário
+      </Badge>
+      <button
+        type="button"
+        onClick={onClear}
+        title="Limpar campo"
+        className="w-4 h-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+      >
+        <X className="w-2.5 h-2.5" />
+      </button>
+    </motion.span>
+  );
+}
+
+// ─────────────────────────────────────────────
+// SelectionButton — extended with autoFilled badge
+// ─────────────────────────────────────────────
 
 type SelectionButtonProps = {
   selected: boolean;
   onClick: () => void;
   children: React.ReactNode;
   description?: string;
+  isAutoFilled?: boolean;
   className?: string;
 };
 
-function SelectionButton({ selected, onClick, children, description, className }: SelectionButtonProps) {
+function SelectionButton({ selected, onClick, children, description, isAutoFilled, className }: SelectionButtonProps) {
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onClick}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
       className={cn(
-        "relative px-5 py-3 rounded-2xl border-2 text-sm font-semibold transition-all duration-300 overflow-hidden",
+        "relative px-4 py-3 rounded-xl border-2 text-sm font-semibold transition-all duration-150 overflow-hidden text-left",
         selected
-          ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white border-violet-500 shadow-xl shadow-violet-500/25"
+          ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white border-violet-500 shadow-lg shadow-violet-500/20"
           : "bg-white/[0.02] text-foreground border-white/10 hover:border-violet-500/40 hover:bg-violet-500/5",
-        description && "text-left",
+        description && "flex flex-col gap-1",
         className
       )}
     >
       {selected && (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.2),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.15),transparent)]" />
       )}
-      <span className="relative">{children}</span>
+      <span className="relative flex items-center gap-1.5">
+        {selected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+        {children}
+        {isAutoFilled && selected && (
+          <span className="ml-auto">
+            <FileText className="w-3 h-3 text-amber-300 shrink-0" />
+          </span>
+        )}
+      </span>
       {description && (
         <p className={cn(
-          "text-xs mt-1.5 font-normal relative",
+          "text-xs font-normal relative",
           selected ? "text-violet-100" : "text-muted-foreground"
         )}>
           {description}
         </p>
       )}
-    </motion.button>
+    </button>
   );
 }
 
+// ─────────────────────────────────────────────
+// RecommendationCard (unchanged)
+// ─────────────────────────────────────────────
+
 function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }) {
   const [expanded, setExpanded] = useState(rank === 1);
-  
+
   const icons: Record<string, React.ReactNode> = {
     TENS: <Zap className="w-6 h-6" />,
     Ultrassom: <Waves className="w-6 h-6" />,
@@ -75,38 +225,22 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
   const config = rankConfig[rank - 1];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: rank * 0.1 }}
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: rank * 0.08 }}>
       <Card className={cn(
-        "relative overflow-hidden border-0 shadow-xl backdrop-blur-xl transition-all duration-500",
+        "relative overflow-hidden border-0 shadow-xl backdrop-blur-xl transition-all duration-300",
         rank === 1 ? `ring-2 ${config.ring} ${config.glow} shadow-2xl` : "bg-card/80"
       )}>
-        {rank === 1 && (
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-yellow-500/5" />
-        )}
-        
+        {rank === 1 && <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-yellow-500/5" />}
+
         <CardHeader className="relative pb-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4">
-              <div className={cn(
-                "relative w-14 h-14 rounded-2xl flex items-center justify-center text-white bg-gradient-to-br shadow-xl",
-                config.gradient, config.glow
-              )}>
-                {rank === 1 && (
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/30 to-transparent" />
-                )}
+              <div className={cn("relative w-14 h-14 rounded-2xl flex items-center justify-center text-white bg-gradient-to-br shadow-xl", config.gradient, config.glow)}>
+                {rank === 1 && <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/30 to-transparent" />}
                 <span className="relative font-black text-2xl">{rank}</span>
               </div>
               <div>
-                <p className={cn(
-                  "text-xs font-bold tracking-wider uppercase",
-                  rank === 1 ? "text-amber-500" : "text-muted-foreground"
-                )}>
-                  {config.label}
-                </p>
+                <p className={cn("text-xs font-bold tracking-wider uppercase", rank === 1 ? "text-amber-500" : "text-muted-foreground")}>{config.label}</p>
                 <div className="flex items-center gap-3 mt-1">
                   <div className="text-violet-500">{icons[rec.name]}</div>
                   <CardTitle className="text-2xl font-black">{rec.name}</CardTitle>
@@ -116,8 +250,7 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
             <div className="flex items-center gap-2 flex-wrap">
               {rec.mode && (
                 <Badge className="bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20">
-                  <Settings2 className="w-3 h-3 mr-1" />
-                  {rec.mode}
+                  <Settings2 className="w-3 h-3 mr-1" />{rec.mode}
                 </Badge>
               )}
               <Badge className={cn(
@@ -135,9 +268,8 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
             <span className="text-sm"><strong className="text-foreground">Indicação:</strong> <span className="text-muted-foreground">{rec.mainIndication}</span></span>
           </div>
         </CardHeader>
-        
+
         <CardContent className="relative space-y-5 pb-6">
-          {/* Parameters */}
           <div className="rounded-2xl overflow-hidden border border-white/10">
             <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-violet-500/10 to-purple-500/5">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
@@ -155,7 +287,6 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
             </div>
           </div>
 
-          {/* Application Time */}
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-teal-500/10 to-emerald-500/5 border border-teal-500/20">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-teal-500/20">
               <Clock className="w-6 h-6 text-white" />
@@ -166,7 +297,6 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
             </div>
           </div>
 
-          {/* Expandable Button */}
           <button
             onClick={() => setExpanded(!expanded)}
             className="w-full flex items-center justify-center gap-2 py-3 text-violet-500 hover:bg-violet-500/5 rounded-xl transition-all font-semibold"
@@ -176,12 +306,7 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
           </button>
 
           {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="space-y-5"
-            >
-              {/* How to Apply */}
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-5">
               <div className="rounded-2xl overflow-hidden border border-teal-500/20">
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-teal-500/10 to-emerald-500/5">
                   <Target className="w-5 h-5 text-teal-500" />
@@ -205,7 +330,6 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
                 </div>
               </div>
 
-              {/* Practical Tips */}
               <div className="rounded-2xl overflow-hidden border border-amber-500/20">
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/5">
                   <Lightbulb className="w-5 h-5 text-amber-500" />
@@ -223,7 +347,6 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
                 </div>
               </div>
 
-              {/* Contraindications */}
               <div className="rounded-2xl overflow-hidden border border-rose-500/20">
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-rose-500/10 to-red-500/5">
                   <Shield className="w-5 h-5 text-rose-500" />
@@ -241,7 +364,6 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
                 </div>
               </div>
 
-              {/* Scientific Rationale */}
               <div className="rounded-2xl overflow-hidden border border-purple-500/20">
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-500/10 to-violet-500/5">
                   <Activity className="w-5 h-5 text-purple-500" />
@@ -252,7 +374,6 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
                 </div>
               </div>
 
-              {/* Evidence */}
               <div className="rounded-2xl overflow-hidden border border-emerald-500/20">
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-emerald-500/10 to-green-500/5">
                   <BookOpen className="w-5 h-5 text-emerald-500" />
@@ -287,56 +408,328 @@ function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }
   );
 }
 
+// ─────────────────────────────────────────────
+// HistorySection
+// ─────────────────────────────────────────────
+
+function HistorySection({
+  records,
+  loading,
+  patientName,
+}: {
+  records: { id: number; patient_id: string | null; diagnosis: string; tissue: string | null; pathophysiology: string | null; phase: string | null; objective: string | null; irritability: string | null; created_at: string }[];
+  loading: boolean;
+  patientName?: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (loading) return null;
+  if (records.length === 0) return null;
+
+  const getTopModality = (r: typeof records[0]): string | null => {
+    if (!r.diagnosis || !r.tissue || !r.pathophysiology || !r.phase || !r.objective || !r.irritability) return null;
+    try {
+      const recs = getRecommendations({
+        diagnosis: r.diagnosis,
+        tissue: r.tissue,
+        pathophysiology: r.pathophysiology,
+        phase: r.phase,
+        objective: r.objective,
+        irritability: r.irritability,
+      });
+      return recs[0]?.name ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  return (
+    <Card className="border-0 shadow-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-slate-900 via-violet-900/30 to-slate-900 text-white hover:via-violet-900/50 transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+            <History className="w-4 h-4 text-white" />
+          </div>
+          <div className="text-left">
+            <p className="font-bold text-sm">Histórico NeuroFlux</p>
+            <p className="text-xs text-white/60">
+              {patientName ? `${patientName} — ` : ""}{records.length} consulta{records.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+        </div>
+        <ChevronDown className={cn("w-5 h-5 text-white/60 transition-transform duration-200", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <CardContent className="p-0 divide-y divide-white/5">
+          {records.map((r) => {
+            const topModality = getTopModality(r);
+            const date = new Date(r.created_at).toLocaleDateString("pt-BR", {
+              day: "2-digit", month: "short", year: "numeric",
+            });
+            return (
+              <div key={r.id} className="p-4 hover:bg-white/[0.02] transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground truncate">{r.diagnosis}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                      {r.tissue && <Badge variant="outline" className="text-[10px] py-0 h-4 border-white/10 text-muted-foreground">{r.tissue}</Badge>}
+                      {r.phase && <Badge variant="outline" className="text-[10px] py-0 h-4 border-white/10 text-muted-foreground">Fase {r.phase}</Badge>}
+                      {topModality && (
+                        <Badge className="text-[10px] py-0 h-4 bg-violet-500/10 text-violet-500 border-violet-500/20">
+                          <Zap className="w-2.5 h-2.5 mr-0.5" />{topModality}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground shrink-0">{date}</span>
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Scientific references (unchanged data)
+// ─────────────────────────────────────────────
+
 const scientificReferences = [
   { category: "TENS", refs: ["Sluka KA, Walsh D. J Pain. 2003;4(3):109-21.", "Johnson MI et al. Eur J Pain. 2022;26(1):29-44.", "Vance CG et al. Pain Manag. 2014;4(3):197-209."] },
   { category: "Ultrassom Terapêutico", refs: ["Watson T. Ultrasonics. 2008;48(4):321-9.", "Miller DL et al. J Ultrasound Med. 2012;31(4):623-34.", "Robertson VJ, Baker KG. Phys Ther. 2001;81(7):1339-50."] },
   { category: "Laserterapia", refs: ["Chung H et al. Ann Biomed Eng. 2012;40(2):516-33.", "Huang YY et al. Dose Response. 2009;7(4):358-83.", "Bjordal JM et al. Clin Rehabil. 2008;22(10-11):952-65."] },
   { category: "Crioterapia", refs: ["Bleakley C et al. Am J Sports Med. 2004;32(1):251-61.", "Malanga GA et al. Postgrad Med. 2015;127(1):57-65.", "Kwiecien SY, McHugh MP. Eur J Appl Physiol. 2021;121(8):2125-42."] },
-  { category: "Termoterapia", refs: ["Nadler SF et al. Pain Physician. 2004;7(3):395-9.", "Petrofsky J et al. J Med Eng Technol. 2009;33(5):361-9.", "Malanga GA et al. Postgrad Med. 2015;127(1):57-65."] }
+  { category: "Termoterapia", refs: ["Nadler SF et al. Pain Physician. 2004;7(3):395-9.", "Petrofsky J et al. J Med Eng Technol. 2009;33(5):361-9.", "Malanga GA et al. Postgrad Med. 2015;127(1):57-65."] },
 ];
 
+// ─────────────────────────────────────────────
+// EMPTY FORM state
+// ─────────────────────────────────────────────
+
+const EMPTY_FORM: ClinicalData = {
+  diagnosis: "",
+  tissue: null,
+  pathophysiology: null,
+  phase: null,
+  objective: null,
+  irritability: null,
+};
+
+// ─────────────────────────────────────────────
+// Main content component
+// ─────────────────────────────────────────────
+
 function NeuroFluxContent() {
-  const { saveProgress } = useNeuroflux();
-  const [formData, setFormData] = useState<ClinicalData>({
-    diagnosis: "", tissue: null, pathophysiology: null, phase: null, objective: null, irritability: null,
-  });
+  // Mode
+  const [mode, setMode] = useState<Mode>("free");
+
+  // Patient search
+  const [allPatients, setAllPatients] = useState<Patient[]>([]);
+  const [patientsLoaded, setPatientsLoaded] = useState(false);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Form
+  const [formData, setFormData] = useState<ClinicalData>(EMPTY_FORM);
+  const [autoFilledFields, setAutoFilledFields] = useState<Set<keyof ClinicalData>>(new Set());
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
+  const [generating, setGenerating] = useState(false);
 
-  const isFormComplete = formData.diagnosis.trim() !== "" && formData.tissue !== null && formData.pathophysiology !== null && formData.phase !== null && formData.objective !== null && formData.irritability !== null;
+  // History — patient-specific or general
+  const patientIdStr = selectedPatient ? String(selectedPatient.id) : undefined;
+  const { data: historyData, loading: historyLoading, saveProgress } = useNeuroflux(
+    mode === "patient" ? patientIdStr : undefined
+  );
 
-  const handleGenerateRecommendation = () => {
-    if (isFormComplete) {
-      setRecommendations(getRecommendations(formData));
-      void saveProgress(formData);
+  // ── Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // ── Load patients when entering patient mode
+  useEffect(() => {
+    if (mode === "patient" && !patientsLoaded) {
+      setPatientsLoading(true);
+      apiFetch("/api/patients")
+        .then((r) => r.json())
+        .then((d: unknown) => {
+          setAllPatients(Array.isArray(d) ? (d as Patient[]) : []);
+          setPatientsLoaded(true);
+        })
+        .catch(() => {})
+        .finally(() => setPatientsLoading(false));
     }
-  };
+  }, [mode, patientsLoaded]);
 
-  const handleReset = () => {
-    setFormData({ diagnosis: "", tissue: null, pathophysiology: null, phase: null, objective: null, irritability: null });
+  // ── Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // ── Filtered patients for dropdown
+  const filteredPatients = useMemo(() => {
+    if (!debouncedSearch.trim()) return allPatients.slice(0, 6);
+    const lower = debouncedSearch.toLowerCase();
+    return allPatients.filter((p) => p.name.toLowerCase().includes(lower)).slice(0, 8);
+  }, [allPatients, debouncedSearch]);
+
+  // ── Select patient and auto-fill form
+  const handleSelectPatient = useCallback(async (patient: Patient) => {
+    setSelectedPatient(patient);
+    setSearch(patient.name);
+    setShowDropdown(false);
+    setDetailLoading(true);
     setRecommendations(null);
-  };
+
+    try {
+      const evalsRes = await apiFetch(`/api/patients/${patient.id}/evaluations`);
+      const evals: Evaluation[] = evalsRes.ok ? ((await evalsRes.json()) as Evaluation[]) : [];
+      const latestEval = evals[0] ?? null;
+
+      const { data: mapped, autoFilled } = mapPatientToNeuroflux(patient, latestEval);
+      setFormData({ ...EMPTY_FORM, ...mapped });
+      setAutoFilledFields(autoFilled);
+    } catch {
+      // non-blocking
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  // ── Clear patient
+  const handleClearPatient = useCallback(() => {
+    setSelectedPatient(null);
+    setSearch("");
+    setFormData(EMPTY_FORM);
+    setAutoFilledFields(new Set());
+    setRecommendations(null);
+  }, []);
+
+  // ── Clear one auto-filled field
+  const clearAutoFilledField = useCallback((field: keyof ClinicalData) => {
+    setAutoFilledFields((prev) => {
+      const next = new Set(prev);
+      next.delete(field);
+      return next;
+    });
+    if (field === "diagnosis") {
+      setFormData((prev) => ({ ...prev, diagnosis: "" }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: null }));
+    }
+  }, []);
+
+  // ── Mode switch
+  const handleModeSwitch = useCallback((newMode: Mode) => {
+    setMode(newMode);
+    if (newMode === "free") {
+      handleClearPatient();
+    }
+  }, [handleClearPatient]);
+
+  // ── Field update helper
+  const setField = useCallback(<K extends keyof ClinicalData>(key: K, value: ClinicalData[K]) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+    // If user manually changes a pre-filled field, clear its badge
+    setAutoFilledFields((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }, []);
+
+  const isFormComplete =
+    formData.diagnosis.trim() !== "" &&
+    formData.tissue !== null &&
+    formData.pathophysiology !== null &&
+    formData.phase !== null &&
+    formData.objective !== null &&
+    formData.irritability !== null;
+
+  const handleGenerateRecommendation = useCallback(() => {
+    if (!isFormComplete) return;
+    setGenerating(true);
+    // slight visual delay for feedback
+    setTimeout(() => {
+      setRecommendations(getRecommendations(formData));
+      void saveProgress(formData, selectedPatient ? String(selectedPatient.id) : null);
+      setGenerating(false);
+    }, 600);
+  }, [isFormComplete, formData, saveProgress, selectedPatient]);
+
+  const handleReset = useCallback(() => {
+    setFormData(selectedPatient ? formData : EMPTY_FORM);
+    setRecommendations(null);
+  }, [selectedPatient, formData]);
+
+  // ── Helper: is a field auto-filled?
+  const isAF = (f: keyof ClinicalData) => autoFilledFields.has(f);
+
+  // ─────────────────────────────────────────────
+  // Generate button (shared between desktop and mobile sticky)
+  // ─────────────────────────────────────────────
+  const generateButton = (
+    <Button
+      onClick={handleGenerateRecommendation}
+      disabled={!isFormComplete || generating}
+      className="w-full h-14 text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-xl shadow-violet-500/25 disabled:opacity-50 disabled:shadow-none transition-all duration-150"
+    >
+      {generating ? (
+        <>
+          <div className="w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          Analisando dados clínicos...
+        </>
+      ) : (
+        <>
+          <Sparkles className="w-5 h-5 mr-2" />
+          Gerar Recomendação
+          <ChevronRight className="w-5 h-5 ml-2" />
+        </>
+      )}
+    </Button>
+  );
 
   return (
     <PageTransition>
-      <div className="space-y-8 pb-8">
-        {/* Hero Header */}
-        <motion.div 
+      <div className="space-y-6 pb-24 md:pb-8">
+
+        {/* ── SEÇÃO A: Hero Header ──────────────────── */}
+        <motion.div
           className="relative overflow-hidden rounded-3xl"
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(139,92,246,0.3),transparent_50%)]" />
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-          
-          <div className="relative p-8 md:p-10">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex items-center gap-5">
-                <div className="relative">
+
+          <div className="relative p-6 md:p-10">
+            {/* Top row: title + science button */}
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
                   <div className="absolute inset-0 bg-white/20 rounded-2xl blur-xl" />
-                  <div className="relative w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20 shadow-2xl">
-                    <Brain className="w-10 h-10 text-white" />
+                  <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20 shadow-2xl">
+                    <Brain className="w-8 h-8 md:w-10 md:h-10 text-white" />
                   </div>
                 </div>
                 <div>
@@ -345,13 +738,13 @@ function NeuroFluxContent() {
                     <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">Suporte à Decisão Clínica</span>
                   </div>
                   <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">NeuroFlux</h1>
-                  <p className="text-violet-200 mt-1">Recomendações baseadas em evidência para eletroterapia</p>
+                  <p className="text-violet-200 mt-1 text-sm md:text-base">Recomendações baseadas em evidência para eletroterapia</p>
                 </div>
               </div>
-              
+
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-xl gap-2 shadow-xl">
+                  <Button className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-xl gap-2 shadow-xl self-start">
                     <BookOpen className="w-4 h-4" />
                     Base Científica
                   </Button>
@@ -380,188 +773,414 @@ function NeuroFluxContent() {
               </Dialog>
             </div>
 
-            {/* Feature Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+            {/* Mode toggle */}
+            <div className="mt-6">
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">Modo de uso</p>
+              <div className="inline-flex bg-white/10 rounded-2xl p-1 gap-1 backdrop-blur-xl border border-white/10">
+                <button
+                  onClick={() => handleModeSwitch("free")}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+                    mode === "free"
+                      ? "bg-white text-violet-700 shadow-lg"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  )}
+                >
+                  <FlaskConical className="w-4 h-4" />
+                  Estudo livre
+                </button>
+                <button
+                  onClick={() => handleModeSwitch("patient")}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+                    mode === "patient"
+                      ? "bg-white text-violet-700 shadow-lg"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  )}
+                >
+                  <Stethoscope className="w-4 h-4" />
+                  Por paciente
+                </button>
+              </div>
+            </div>
+
+            {/* Feature pills */}
+            <div className="flex flex-wrap gap-3 mt-6">
               {[
-                { icon: Zap, title: "Ranking Inteligente", desc: "Recursos priorizados por indicação" },
-                { icon: Settings2, title: "Parâmetros Completos", desc: "Protocolos detalhados de aplicação" },
-                { icon: BookOpen, title: "Baseado em Evidência", desc: "Fundamentação científica sólida" },
+                { icon: Zap, text: "Ranking inteligente" },
+                { icon: Settings2, text: "Parâmetros completos" },
+                { icon: BookOpen, text: "Baseado em evidência" },
               ].map((feat, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + i * 0.1 }}
-                  className="p-4 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10"
+                  transition={{ delay: 0.15 + i * 0.07 }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                      <feat.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-white text-sm">{feat.title}</p>
-                      <p className="text-xs text-white/60">{feat.desc}</p>
-                    </div>
-                  </div>
+                  <feat.icon className="w-4 h-4 text-white/80" />
+                  <span className="text-xs font-semibold text-white/80">{feat.text}</span>
                 </motion.div>
               ))}
             </div>
           </div>
         </motion.div>
 
-        {/* Form */}
+        {/* ── SEÇÃO B: Patient selector (só modo "Por paciente") ── */}
+        <AnimatePresence>
+          {mode === "patient" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: undefined }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              <Card className="border-0 shadow-xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-slate-900 via-violet-900/40 to-slate-900 text-white p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold">Selecionar Paciente</CardTitle>
+                      <p className="text-xs text-white/60 mt-0.5">Dados serão pré-preenchidos automaticamente</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-5 space-y-4">
+                  {/* Search input */}
+                  {!selectedPatient ? (
+                    <div ref={searchRef} className="relative">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Buscar paciente pelo nome..."
+                          value={search}
+                          onChange={(e) => {
+                            setSearch(e.target.value);
+                            setShowDropdown(true);
+                          }}
+                          onFocus={() => setShowDropdown(true)}
+                          className="pl-10 h-12 bg-white/[0.02] border-white/10 focus:border-violet-500/50 rounded-xl"
+                          disabled={patientsLoading}
+                        />
+                        {patientsLoading && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+                        )}
+                      </div>
+
+                      {/* Dropdown */}
+                      <AnimatePresence>
+                        {showDropdown && filteredPatients.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute z-50 top-full left-0 right-0 mt-1 rounded-xl border border-white/10 bg-card shadow-2xl overflow-hidden"
+                          >
+                            {filteredPatients.map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onMouseDown={() => handleSelectPatient(p)}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-violet-500/10 transition-colors border-b border-white/5 last:border-0"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+                                  <span className="text-xs font-bold text-violet-500">
+                                    {p.name.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm text-foreground truncate">{p.name}</p>
+                                  {p.notes && (
+                                    <p className="text-xs text-muted-foreground truncate">{p.notes}</p>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                        {showDropdown && !patientsLoading && debouncedSearch.length > 1 && filteredPatients.length === 0 && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute z-50 top-full left-0 right-0 mt-1 rounded-xl border border-white/10 bg-card shadow-2xl p-4 text-center"
+                          >
+                            <p className="text-sm text-muted-foreground">Nenhum paciente encontrado</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ) : (
+                    /* Selected patient card */
+                    <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center shrink-0">
+                          <span className="text-sm font-black text-violet-500">
+                            {selectedPatient.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-foreground">{selectedPatient.name}</p>
+                          {selectedPatient.notes && (
+                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">{selectedPatient.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {detailLoading && (
+                          <div className="w-4 h-4 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+                        )}
+                        {autoFilledFields.size > 0 && !detailLoading && (
+                          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-xs gap-1 shrink-0">
+                            <FileText className="w-3 h-3" />
+                            {autoFilledFields.size} campo{autoFilledFields.size !== 1 ? "s" : ""} pré-preenchido{autoFilledFields.size !== 1 ? "s" : ""}
+                          </Badge>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleClearPatient}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors border border-white/10"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          Limpar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── SEÇÃO C: Clinical fields ──────────────── */}
         {!recommendations && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <Card className="border-0 shadow-2xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-slate-900 via-violet-900/50 to-slate-900 text-white p-6">
+              <CardHeader className="bg-gradient-to-r from-slate-900 via-violet-900/50 to-slate-900 text-white p-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-white" />
+                  <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+                    <Activity className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Dados Clínicos</CardTitle>
-                    <p className="text-sm text-white/60">Preencha para gerar recomendações personalizadas</p>
+                    <CardTitle className="text-base">Dados Clínicos</CardTitle>
+                    <p className="text-xs text-white/60 mt-0.5">
+                      {mode === "patient" && selectedPatient
+                        ? `Revise e ajuste os dados de ${selectedPatient.name}`
+                        : "Preencha para gerar recomendações personalizadas"}
+                    </p>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-6 md:p-8 space-y-8">
-                {/* Diagnosis */}
-                <div className="space-y-3">
-                  <Label className="text-base font-bold flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold">1</span>
-                    Nome do Problema / Diagnóstico
-                  </Label>
-                  <Input
-                    placeholder="Ex: Tendinopatia do supraespinhal, Lombalgia mecânica..."
-                    value={formData.diagnosis}
-                    onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
-                    className="h-14 text-base bg-white/[0.02] border-white/10 focus:border-violet-500/50 rounded-xl"
-                  />
-                </div>
 
-                {/* Tissue */}
-                <div className="space-y-4">
-                  <Label className="text-base font-bold flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold">2</span>
-                    Tecido Predominante
-                  </Label>
-                  <div className="flex flex-wrap gap-3">
-                    {["Músculo", "Tendão", "Ligamento", "Cápsula Articular", "Múltiplo / Misto"].map((t) => (
-                      <SelectionButton key={t} selected={formData.tissue === t} onClick={() => setFormData({ ...formData, tissue: t })}>
-                        {t}
-                      </SelectionButton>
-                    ))}
+              <CardContent className="p-5 md:p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+
+                  {/* ── Coluna esquerda ── */}
+                  <div className="space-y-8">
+                    {/* 1. Diagnóstico */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold flex items-center flex-wrap gap-1">
+                        <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">1</span>
+                        <span className="flex items-center gap-1">
+                          <Stethoscope className="w-3.5 h-3.5 text-violet-500" />
+                          Nome do Problema / Diagnóstico
+                        </span>
+                        <AnimatePresence>
+                          {isAF("diagnosis") && (
+                            <AutoFillBadge onClear={() => clearAutoFilledField("diagnosis")} />
+                          )}
+                        </AnimatePresence>
+                      </Label>
+                      <Input
+                        placeholder="Ex: Tendinopatia do supraespinhal, Lombalgia mecânica..."
+                        value={formData.diagnosis}
+                        onChange={(e) => setField("diagnosis", e.target.value)}
+                        className={cn(
+                          "h-12 text-sm bg-white/[0.02] border-white/10 focus:border-violet-500/50 rounded-xl transition-colors",
+                          isAF("diagnosis") && "border-amber-500/30 bg-amber-500/5"
+                        )}
+                      />
+                    </div>
+
+                    {/* 3. Estado Fisiopatológico */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold flex items-center flex-wrap gap-1">
+                        <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">3</span>
+                        <span className="flex items-center gap-1">
+                          <Layers className="w-3.5 h-3.5 text-violet-500" />
+                          Estado Fisiopatológico
+                        </span>
+                        <AnimatePresence>
+                          {isAF("pathophysiology") && (
+                            <AutoFillBadge onClear={() => clearAutoFilledField("pathophysiology")} />
+                          )}
+                        </AnimatePresence>
+                      </Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {[
+                          { value: "Inflamatório Agudo", desc: "Lesão recente com sinais flogísticos" },
+                          { value: "Sobrecarga / Irritado", desc: "Uso excessivo sem inflamação clássica" },
+                          { value: "Desgaste / Crônico", desc: "Alterações estruturais ao longo do tempo" },
+                          { value: "Pós-operatório", desc: "Após procedimento cirúrgico" },
+                        ].map((p) => (
+                          <SelectionButton
+                            key={p.value}
+                            selected={formData.pathophysiology === p.value}
+                            onClick={() => setField("pathophysiology", p.value)}
+                            description={p.desc}
+                            isAutoFilled={isAF("pathophysiology") && formData.pathophysiology === p.value}
+                          >
+                            {p.value}
+                          </SelectionButton>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 5. Objetivo Terapêutico */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold flex items-center gap-1">
+                        <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">5</span>
+                        <span className="flex items-center gap-1">
+                          <Target className="w-3.5 h-3.5 text-violet-500" />
+                          Objetivo Terapêutico Principal
+                        </span>
+                      </Label>
+                      <div className="flex flex-wrap gap-2">
+                        {["Analgesia", "Redução de Edema", "Bioestimulação", "Ganho de Mobilidade", "Relaxamento Muscular"].map((o) => (
+                          <SelectionButton
+                            key={o}
+                            selected={formData.objective === o}
+                            onClick={() => setField("objective", o)}
+                          >
+                            {o}
+                          </SelectionButton>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── Coluna direita ── */}
+                  <div className="space-y-8">
+                    {/* 2. Tecido Predominante */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold flex items-center flex-wrap gap-1">
+                        <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">2</span>
+                        <span className="flex items-center gap-1">
+                          <Activity className="w-3.5 h-3.5 text-violet-500" />
+                          Tecido Predominante
+                        </span>
+                        <AnimatePresence>
+                          {isAF("tissue") && (
+                            <AutoFillBadge onClear={() => clearAutoFilledField("tissue")} />
+                          )}
+                        </AnimatePresence>
+                      </Label>
+                      <div className="flex flex-wrap gap-2">
+                        {["Músculo", "Tendão", "Ligamento", "Cápsula Articular", "Múltiplo / Misto"].map((t) => (
+                          <SelectionButton
+                            key={t}
+                            selected={formData.tissue === t}
+                            onClick={() => setField("tissue", t)}
+                            isAutoFilled={isAF("tissue") && formData.tissue === t}
+                          >
+                            {t}
+                          </SelectionButton>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 4. Fase da Lesão */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold flex items-center gap-1">
+                        <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">4</span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-violet-500" />
+                          Fase da Lesão
+                        </span>
+                      </Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { value: "Aguda", desc: "0–7 dias" },
+                          { value: "Subaguda", desc: "7–21 dias" },
+                          { value: "Crônica", desc: ">21 dias" },
+                        ].map((p) => (
+                          <SelectionButton
+                            key={p.value}
+                            selected={formData.phase === p.value}
+                            onClick={() => setField("phase", p.value)}
+                            description={p.desc}
+                          >
+                            {p.value}
+                          </SelectionButton>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 6. Irritabilidade */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold flex items-center flex-wrap gap-1">
+                        <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">6</span>
+                        <span className="flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5 text-violet-500" />
+                          Irritabilidade Tecidual
+                        </span>
+                        <AnimatePresence>
+                          {isAF("irritability") && (
+                            <AutoFillBadge onClear={() => clearAutoFilledField("irritability")} />
+                          )}
+                        </AnimatePresence>
+                      </Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { value: "Alta", desc: "Dor fácil, limita AVDs" },
+                          { value: "Média", desc: "Dor moderada" },
+                          { value: "Baixa", desc: "Dor só no fim da amplitude" },
+                        ].map((i) => (
+                          <SelectionButton
+                            key={i.value}
+                            selected={formData.irritability === i.value}
+                            onClick={() => setField("irritability", i.value)}
+                            description={i.desc}
+                            isAutoFilled={isAF("irritability") && formData.irritability === i.value}
+                          >
+                            {i.value}
+                          </SelectionButton>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Pathophysiology */}
-                <div className="space-y-4">
-                  <Label className="text-base font-bold flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold">3</span>
-                    Estado Fisiopatológico
-                  </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {[
-                      { value: "Inflamatório Agudo", desc: "Lesão recente com sinais flogísticos" },
-                      { value: "Sobrecarga / Irritado", desc: "Uso excessivo sem inflamação clássica" },
-                      { value: "Desgaste / Crônico", desc: "Alterações estruturais ao longo do tempo" },
-                      { value: "Pós-operatório", desc: "Após procedimento cirúrgico" },
-                    ].map((p) => (
-                      <SelectionButton key={p.value} selected={formData.pathophysiology === p.value} onClick={() => setFormData({ ...formData, pathophysiology: p.value })} description={p.desc}>
-                        {p.value}
-                      </SelectionButton>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Phase */}
-                <div className="space-y-4">
-                  <Label className="text-base font-bold flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold">4</span>
-                    Fase da Lesão
-                  </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[
-                      { value: "Aguda", desc: "0-7 dias" },
-                      { value: "Subaguda", desc: "7-21 dias" },
-                      { value: "Crônica", desc: ">21 dias" },
-                    ].map((p) => (
-                      <SelectionButton key={p.value} selected={formData.phase === p.value} onClick={() => setFormData({ ...formData, phase: p.value })} description={p.desc}>
-                        {p.value}
-                      </SelectionButton>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Objective */}
-                <div className="space-y-4">
-                  <Label className="text-base font-bold flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold">5</span>
-                    Objetivo Terapêutico Principal
-                  </Label>
-                  <div className="flex flex-wrap gap-3">
-                    {["Analgesia", "Redução de Edema", "Bioestimulação", "Ganho de Mobilidade", "Relaxamento Muscular"].map((o) => (
-                      <SelectionButton key={o} selected={formData.objective === o} onClick={() => setFormData({ ...formData, objective: o })}>
-                        {o}
-                      </SelectionButton>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Irritability */}
-                <div className="space-y-4">
-                  <Label className="text-base font-bold flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold">6</span>
-                    Irritabilidade Tecidual
-                  </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[
-                      { value: "Alta", desc: "Dor fácil, limita AVDs" },
-                      { value: "Média", desc: "Dor moderada" },
-                      { value: "Baixa", desc: "Dor somente no final da amplitude" },
-                    ].map((i) => (
-                      <SelectionButton key={i.value} selected={formData.irritability === i.value} onClick={() => setFormData({ ...formData, irritability: i.value })} description={i.desc}>
-                        {i.value}
-                      </SelectionButton>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Submit */}
-                <div className="pt-6 border-t border-white/10">
+                {/* ── SEÇÃO D: Botão desktop ── */}
+                <div className="hidden md:block mt-8 pt-6 border-t border-white/10">
                   {!isFormComplete && (
                     <div className="flex items-center gap-2 text-amber-500 text-sm mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                      <AlertTriangle className="w-4 h-4" />
-                      <span>Preencha todos os campos para continuar</span>
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span>Preencha todos os 6 campos para gerar a recomendação</span>
                     </div>
                   )}
-                  <Button
-                    onClick={handleGenerateRecommendation}
-                    disabled={!isFormComplete}
-                    className="w-full h-14 text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-xl shadow-violet-500/25 disabled:opacity-50 disabled:shadow-none"
-                  >
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Gerar Recomendação
-                    <ChevronRight className="w-5 h-5 ml-2" />
-                  </Button>
+                  {generateButton}
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         )}
 
-        {/* Results */}
+        {/* ── SEÇÃO D: Botão mobile (sticky) ── */}
+        {!recommendations && (
+          <div className="md:hidden fixed bottom-16 left-0 right-0 z-30 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-xl border-t border-white/10">
+            {generateButton}
+          </div>
+        )}
+
+        {/* ── Results ── */}
         {recommendations && (
           <div className="space-y-6">
-            {/* Results Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <Card className="border-0 shadow-2xl overflow-hidden bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white">
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -570,9 +1189,15 @@ function NeuroFluxContent() {
                         <Sparkles className="w-4 h-4 text-amber-300" />
                         <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">Análise Concluída</span>
                       </div>
-                      <h2 className="text-2xl font-black">Recomendação para: {formData.diagnosis}</h2>
+                      <h2 className="text-xl md:text-2xl font-black">Recomendação para: {formData.diagnosis}</h2>
+                      {selectedPatient && (
+                        <p className="text-sm text-violet-200 mt-1 flex items-center gap-1">
+                          <User className="w-3.5 h-3.5" />
+                          {selectedPatient.name}
+                        </p>
+                      )}
                     </div>
-                    <Button onClick={handleReset} className="bg-white/10 hover:bg-white/20 border border-white/20 text-white shadow-lg">
+                    <Button onClick={handleReset} className="bg-white/10 hover:bg-white/20 border border-white/20 text-white shadow-lg shrink-0">
                       Nova Análise
                     </Button>
                   </div>
@@ -585,7 +1210,6 @@ function NeuroFluxContent() {
               </Card>
             </motion.div>
 
-            {/* Recommendations */}
             <div className="space-y-6">
               {recommendations.map((rec, idx) => (
                 <RecommendationCard key={rec.name} rec={rec} rank={idx + 1} />
@@ -593,6 +1217,13 @@ function NeuroFluxContent() {
             </div>
           </div>
         )}
+
+        {/* ── SEÇÃO E: Histórico ── */}
+        <HistorySection
+          records={historyData}
+          loading={historyLoading}
+          patientName={selectedPatient?.name}
+        />
       </div>
     </PageTransition>
   );
