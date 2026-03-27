@@ -24,7 +24,7 @@ app.use("*", async (c, next) => {
   const url = new URL(c.req.url);
   const proto = c.req.header("x-forwarded-proto") || url.protocol.replace(":", "");
 
-  if (proto === "http" && !url.hostname.includes("localhost")) {
+  if (proto === "http" && !url.hostname.includes("localhost") && url.hostname !== "127.0.0.1") {
     const httpsUrl = `https://${url.hostname}${url.pathname}${url.search}`;
     return c.redirect(httpsUrl, 301);
   }

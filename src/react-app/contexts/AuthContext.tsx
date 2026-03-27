@@ -10,6 +10,25 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "@/react-app/lib/supabase";
 
+// E2E test bypass — only active in Vite dev mode
+function getE2eBypassUser(): { session: Session; user: User } | null {
+  if (!import.meta.env.DEV) return null;
+  const match = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith("rehabroad-test-bypass="));
+  if (!match) return null;
+  const fakeUser = {
+    id: "e2e-test-user",
+    email: "e2e@rehabroad.local",
+    role: "authenticated",
+    aud: "authenticated",
+    app_metadata: {},
+    user_metadata: { name: "E2E Test User" },
+    created_at: new Date().toISOString(),
+  } as unknown as User;
+  return { user: fakeUser, session: { user: fakeUser } as unknown as Session };
+}
+
 type AuthContextType = {
   user: User | null;
   session: Session | null;
@@ -33,6 +52,13 @@ export function AppAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshSession = useCallback(async () => {
+    // E2E bypass: skip Supabase entirely in dev when test cookie is present
+    const e2e = getE2eBypassUser();
+    if (e2e) {
+      applySession(e2e.session);
+      setIsPending(false);
+      return;
+    }
     try {
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
@@ -49,6 +75,11 @@ export function AppAuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
 
     refreshSession();
+
+    // Skip Supabase listener in E2E mode — bypass already applied
+    if (getE2eBypassUser()) {
+      return () => { isMounted = false; };
+    }
 
     const {
       data: { subscription },
