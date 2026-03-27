@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components
 import { Badge } from "@/react-app/components/ui/badge";
 import { Button } from "@/react-app/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components/ui/tabs";
-import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { PageTransition, Spinner, useToast } from "@/react-app/components/ui/microinteractions";
 import { apiFetch } from "@/react-app/lib/api";
 
 interface AdminStats {
@@ -151,6 +151,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     void fetchData();
@@ -236,8 +237,8 @@ export default function Admin() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Export error:", err);
+    } catch {
+      toast.showError("Erro ao exportar dados. Tente novamente.");
     } finally {
       setExporting(false);
     }
