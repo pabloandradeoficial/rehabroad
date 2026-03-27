@@ -39,7 +39,7 @@ const EMPTY_CHECKIN: CheckinState = {
 // ─────────────────────────────────────────────
 
 function DifficultyButton({
-  value,
+  value: _value,
   label,
   selected,
   onClick,
@@ -73,7 +73,7 @@ export default function HepPatientPortal() {
   const { plan, exercises, loading, error, expired, submitCheckin } = useHepPatient(token);
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [checkins, setCheckins] = useState<CheckinState[]>([]);
+  const [_checkins, setCheckins] = useState<CheckinState[]>([]);
   const [currentCheckin, setCurrentCheckin] = useState<CheckinState>(EMPTY_CHECKIN);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
