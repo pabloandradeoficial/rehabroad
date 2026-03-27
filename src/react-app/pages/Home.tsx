@@ -228,7 +228,7 @@ export default function Home() {
                 <div className="w-3 h-3 rounded-full bg-green-400" />
                 <div className="ml-3 flex-1 bg-white rounded-md h-5 max-w-xs text-xs text-gray-400 flex items-center px-2">app.rehabroad.com.br</div>
               </div>
-              <img src="/images/imagem1.png" alt="Dashboard Rehabroad" className="w-full" />
+              <img src="/imagem1.png" alt="Dashboard Rehabroad" className="w-full" />
             </div>
 
             {/* Badge inferior esquerdo */}
@@ -564,7 +564,7 @@ export default function Home() {
           </div>
 
           <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-            <img src="/images/imagem2.png" alt="Apoio Clínico Rehabroad" className="w-full" />
+            <img src="/imagem2.png" alt="Apoio Clínico Rehabroad" className="w-full" />
             <div className="absolute top-4 left-4 bg-green-500 text-white rounded-full px-3 py-1 text-xs font-semibold">
               ✓ Baseado em evidência científica
             </div>
