@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Route, CheckCircle2, AlertCircle, Save, Sparkles, Target, Zap, Shield, ChevronRight, Check, Wand2, BookOpen } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/react-app/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Checkbox } from "@/react-app/components/ui/checkbox";
 import { Input } from "@/react-app/components/ui/input";

@@ -555,21 +555,6 @@ function NeuroFluxContent() {
     mode === "patient" ? patientIdStr : undefined
   );
 
-  // ── Restore persisted patient on mount (after patients load)
-  const restoredPatientRef = useRef(false);
-  useEffect(() => {
-    if (allPatients.length > 0 && !restoredPatientRef.current && !selectedPatient) {
-      const savedId = localStorage.getItem("apoio-clinico-patient-id");
-      if (savedId) {
-        const found = allPatients.find((p) => String(p.id) === savedId);
-        if (found) {
-          restoredPatientRef.current = true;
-          void handleSelectPatient(found);
-        }
-      }
-    }
-  }, [allPatients.length, selectedPatient, handleSelectPatient]);
-
   // ── Debounce search
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -679,6 +664,21 @@ function NeuroFluxContent() {
       setDetailLoading(false);
     }
   }, []);
+
+  // ── Restore persisted patient on mount (after patients load)
+  const restoredPatientRef = useRef(false);
+  useEffect(() => {
+    if (allPatients.length > 0 && !restoredPatientRef.current && !selectedPatient) {
+      const savedId = localStorage.getItem("apoio-clinico-patient-id");
+      if (savedId) {
+        const found = allPatients.find((p) => String(p.id) === savedId);
+        if (found) {
+          restoredPatientRef.current = true;
+          void handleSelectPatient(found);
+        }
+      }
+    }
+  }, [allPatients.length, selectedPatient, handleSelectPatient]);
 
   // ── Clear patient (full reset — used on mode switch to free)
   const handleClearPatient = useCallback(() => {
