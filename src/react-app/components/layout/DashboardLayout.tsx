@@ -1,5 +1,5 @@
 import { Outlet, useLocation, NavLink } from "react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import {
   Menu,
   X,
@@ -16,6 +16,7 @@ import {
   DollarSign,
   Route,
   Users,
+  Bot,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
@@ -25,6 +26,8 @@ import { BetaCountdownBanner } from "@/react-app/components/BetaCountdownBanner"
 import { useLanguage } from "@/react-app/contexts/LanguageContext";
 import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
+
+const RehabFriendChat = lazy(() => import("@/react-app/components/RehabFriendChat"));
 
 const BOTTOM_NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", end: true },
@@ -43,6 +46,7 @@ const ALLOWED_PAGES_FOR_EXPIRED = [
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [rehabFriendOpen, setRehabFriendOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("sidebarCollapsed");
@@ -59,6 +63,7 @@ export default function DashboardLayout() {
     isFreeLimited,
     loading: subscriptionLoading,
     isAdmin,
+    isPremium,
   } = useSubscription();
   const location = useLocation();
 
@@ -260,6 +265,31 @@ export default function DashboardLayout() {
 
         <Footer />
       </main>
+
+      {/* Rehab Friend floating button — premium only */}
+      {isPremium && (
+        <button
+          type="button"
+          onClick={() => setRehabFriendOpen(true)}
+          className={cn(
+            "fixed z-[39] flex items-center gap-2 rounded-full shadow-lg transition-all duration-200",
+            "bg-gradient-to-br from-primary to-primary/80 text-white hover:scale-105 active:scale-95",
+            "bottom-20 right-4 lg:bottom-6 lg:right-6 px-4 py-3"
+          )}
+          title="Rehab Friend — Assistente IA"
+        >
+          <Bot className="w-5 h-5" />
+          <span className="text-sm font-semibold hidden sm:inline">Rehab Friend</span>
+        </button>
+      )}
+
+      {/* Rehab Friend Chat Drawer */}
+      <Suspense fallback={null}>
+        <RehabFriendChat
+          open={rehabFriendOpen}
+          onClose={() => setRehabFriendOpen(false)}
+        />
+      </Suspense>
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[40] bg-slate-900/95 backdrop-blur-xl border-t border-white/5 flex items-stretch safe-area-inset-bottom">
