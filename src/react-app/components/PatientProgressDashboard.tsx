@@ -161,8 +161,10 @@ export default function PatientProgressDashboard({ patientId }: Props) {
               />
               <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} ticks={[0, 2, 4, 6, 8, 10]} />
               <Tooltip
-                formatter={(val: string | number | (string | number)[]) => [`${val}/10`, "Dor"]}
-                labelFormatter={(l) => `Sessão ${l}`}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={(val: any) => [`${val}/10`, "Dor"]}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                labelFormatter={(l: any) => `Sessão ${l}`}
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
               />
               <ReferenceLine y={7} stroke="#f87171" strokeDasharray="4 2" label={{ value: "Alta", fontSize: 10, fill: "#f87171" }} />
@@ -194,11 +196,13 @@ export default function PatientProgressDashboard({ patientId }: Props) {
               <XAxis dataKey="session" tick={{ fontSize: 11 }} tickFormatter={(v) => `S${v}`} />
               <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} ticks={[0, 5, 8, 10]} />
               <Tooltip
-                formatter={(val: string | number | (string | number)[]) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={(val: any) => {
                   const n = typeof val === "number" ? val : 0;
                   return [n >= 7 ? "Positiva" : n >= 4 ? "Neutra" : "Negativa", "Resposta"];
                 }}
-                labelFormatter={(l) => `Sessão ${l}`}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                labelFormatter={(l: any) => `Sessão ${l}`}
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
               />
               <Bar
