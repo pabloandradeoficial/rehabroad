@@ -61,13 +61,15 @@ rehabFriendRouter.post("/chat", async (c) => {
   const db = c.env.DB;
 
   const body = await c.req.json<{
-    message: string;
+    message?: string;
     patientId?: number;
     history?: { role: string; content: string }[];
+    imageBase64?: string | null;
+    imageMimeType?: string | null;
   }>();
 
-  if (!body.message?.trim()) {
-    return c.json({ error: "Mensagem inválida" }, 400);
+  if (!body.message?.trim() && !body.imageBase64) {
+    return c.json({ error: "Mensagem ou imagem obrigatória" }, 400);
   }
 
   // ── Rate limiting ──
@@ -142,12 +144,34 @@ rehabFriendRouter.post("/chat", async (c) => {
 
   // ── Build messages array ──
   const systemContent = SYSTEM_PROMPT + patientContext;
-  const history = (body.history ?? []).slice(-8);
+  const history = (body.history ?? []).slice(-6);
+
+  type UserContent =
+    | string
+    | { type: string; image_url?: { url: string; detail: string }; text?: string }[];
+
+  const userContent: UserContent = body.imageBase64
+    ? [
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:${body.imageMimeType};base64,${body.imageBase64}`,
+            detail: "high",
+          },
+        },
+        {
+          type: "text",
+          text:
+            body.message?.trim() ||
+            "Analise este laudo/imagem clínica e me dê os principais achados relevantes para fisioterapia.",
+        },
+      ]
+    : (body.message ?? "");
 
   const messages = [
     { role: "system", content: systemContent },
     ...history,
-    { role: "user", content: body.message },
+    { role: "user", content: userContent },
   ];
 
   // ── Call OpenAI ──
@@ -178,11 +202,15 @@ rehabFriendRouter.post("/chat", async (c) => {
   const assistantContent = openaiData.choices?.[0]?.message?.content ?? "";
 
   // ── Persist messages ──
+  const savedUserContent = body.imageBase64
+    ? `[imagem: ${body.imageMimeType}] ${body.message?.trim() ?? ""}`.trim()
+    : (body.message ?? "");
+
   await db
     .prepare(
       `INSERT INTO rehab_friend_messages (user_id, role, content, patient_id) VALUES (?, ?, ?, ?)`
     )
-    .bind(userId, "user", body.message, body.patientId ?? null)
+    .bind(userId, "user", savedUserContent, body.patientId ?? null)
     .run();
 
   await db
