@@ -894,13 +894,15 @@ function NeuroFluxContent() {
         <AnimatePresence>
           {mode === "patient" && (
             <motion.div
+              className="w-full"
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
               animate={{ opacity: 1, height: "auto", marginTop: undefined }}
               exit={{ opacity: 0, height: 0, marginTop: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
+              style={{ overflow: "visible" }}
             >
-              <Card className="border-0 shadow-xl overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-slate-900 via-violet-900/40 to-slate-900 text-white p-5">
+              <Card className="border-0 shadow-xl">
+                <CardHeader className="bg-gradient-to-r from-slate-900 via-violet-900/40 to-slate-900 text-white p-5 rounded-t-lg overflow-hidden">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
                       <User className="w-4 h-4 text-white" />
