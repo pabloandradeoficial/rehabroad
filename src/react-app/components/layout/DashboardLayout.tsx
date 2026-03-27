@@ -59,7 +59,6 @@ export default function DashboardLayout() {
     isFreeLimited,
     loading: subscriptionLoading,
     isAdmin,
-    subscription,
   } = useSubscription();
   const location = useLocation();
 
