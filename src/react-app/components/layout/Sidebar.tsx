@@ -111,10 +111,11 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
       </div>
 
       <div className={cn(collapsed ? "p-2" : "p-4")}>
-        <div
+        <NavLink
+          to="/dashboard/perfil"
           data-onboarding="user-profile"
           className={cn(
-            "flex items-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors",
+            "flex items-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors cursor-pointer",
             collapsed ? "p-2 justify-center" : "gap-3 p-3"
           )}
         >
@@ -152,7 +153,7 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
               )}
             </>
           )}
-        </div>
+        </NavLink>
       </div>
 
       <nav className={cn("flex-1 overflow-y-auto scrollbar-thin", collapsed ? "px-2" : "px-3")}>

@@ -85,8 +85,6 @@ interface ProfessionalProfile {
   location: string;
 }
 
-const PROFILE_STORAGE_KEY = "rehabroad_professional_profile";
-
 function parseArrayResponse<T>(data: unknown, key?: string): T[] {
   if (Array.isArray(data)) {
     return data as T[];
@@ -123,23 +121,37 @@ function ExportacaoContent() {
 
   useEffect(() => {
     void fetchPatients();
-    loadProfile();
+    void loadProfile();
   }, []);
 
-  const loadProfile = () => {
+  const loadProfile = async () => {
     try {
-      const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (saved) {
-        setProfile(JSON.parse(saved));
-      }
+      const res = await apiFetch("/api/profile");
+      if (!res.ok) return;
+      const data = await res.json() as { crefito?: string; phone?: string; city?: string; state?: string };
+      setProfile({
+        crefito: data.crefito || "",
+        contact: data.phone || "",
+        location: data.city && data.state ? `${data.city}, ${data.state}` : data.city || data.state || "",
+      });
     } catch {
-      // localStorage parse error — silently reset to defaults
+      // silently fall back to empty profile
     }
   };
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     try {
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      const [cityPart, statePart] = profile.location.split(",").map((s) => s.trim());
+      await apiFetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          crefito: profile.crefito || null,
+          phone: profile.contact || null,
+          city: cityPart || null,
+          state: statePart || null,
+        }),
+      });
       setProfileSaved(true);
       toast.showSuccess("Perfil profissional salvo!");
       setTimeout(() => setProfileSaved(false), 2000);

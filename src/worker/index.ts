@@ -16,6 +16,7 @@ import { clinicalContextRouter } from "./routes/clinical-context";
 import { hepRouter } from "./routes/hep";
 import { rehabFriendRouter } from "./routes/rehab-friend";
 import { scribeRouter } from "./routes/scribe";
+import { profileRouter } from "./routes/profile";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -90,6 +91,9 @@ app.use("*", async (c, next) => {
 
 // Auth routes: /api/oauth/*, /api/sessions, /api/users/me, /api/logout
 app.route("/api", authRouter);
+
+// Profile routes: /api/profile, /api/profile/avatar
+app.route("/api", profileRouter);
 
 // Subscription routes: /api/beta-waitlist, /api/waitlist/*, /api/subscription/*, /api/webhooks/*
 app.route("/api", subscriptionRouter);
