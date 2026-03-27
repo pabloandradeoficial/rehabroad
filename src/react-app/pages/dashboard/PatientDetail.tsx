@@ -26,6 +26,7 @@ import { openWhatsApp, createContactMessage, createReminderMessage } from "@/rea
 import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
 import ClinicalInsights from "@/react-app/components/ClinicalInsights";
 import { HighlightedADM } from "@/react-app/lib/admHighlight";
+import PatientProgressDashboard from "@/react-app/components/PatientProgressDashboard";
 
 const termosParaRegiao: Record<string, string> = {
   "pescoço": "cervical", "cervical": "cervical", "nuca": "cervical",
@@ -471,8 +472,8 @@ export default function PatientDetailPage() {
                       <Badge className="h-5 px-2 text-xs bg-primary/20 text-primary border-0">{evaluations.length}</Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="evolutions" 
+                  <TabsTrigger
+                    value="evolutions"
                     className="flex-1 md:flex-none gap-2 px-6 py-2.5 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all font-semibold text-muted-foreground data-[state=active]:shadow-lg"
                   >
                     <TrendingUp className="w-4 h-4" />
@@ -480,6 +481,13 @@ export default function PatientDetailPage() {
                     {evolutions.length > 0 && (
                       <Badge className="h-5 px-2 text-xs bg-emerald-500/20 text-emerald-600 border-0">{evolutions.length}</Badge>
                     )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="progress"
+                    className="flex-1 md:flex-none gap-2 px-6 py-2.5 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all font-semibold text-muted-foreground data-[state=active]:shadow-lg"
+                  >
+                    <Activity className="w-4 h-4" />
+                    Progresso
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -801,6 +809,17 @@ export default function PatientDetailPage() {
                     ))}
                   </div>
                 )}
+              </TabsContent>
+
+              {/* === PROGRESS TAB === */}
+              <TabsContent value="progress" className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold">Progresso do Paciente</h2>
+                    <p className="text-sm text-muted-foreground">Evolução clínica ao longo das sessões</p>
+                  </div>
+                </div>
+                <PatientProgressDashboard patientId={id!} />
               </TabsContent>
             </Tabs>
           </Card>

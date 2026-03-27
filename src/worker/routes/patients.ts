@@ -1318,3 +1318,110 @@ patientsRouter.get("/patients/:patientId/clinical-summary", authMiddleware, asyn
     recommendations
   });
 });
+
+// GET /api/patients/:id/progress
+patientsRouter.get("/:id/progress", authMiddleware, async (c) => {
+  const user = c.get("user" as never) as { id: string };
+  const patientId = c.req.param("id");
+
+  const patient = await c.env.DB.prepare(
+    `SELECT id, name FROM patients WHERE id = ? AND user_id = ?`
+  ).bind(patientId, user.id).first<{ id: number; name: string }>();
+
+  if (!patient) return c.json({ error: "Patient not found" }, 404);
+
+  const { results: evolutions } = await c.env.DB.prepare(
+    `SELECT pain_level, patient_response, session_date, functional_status, procedures
+     FROM evolutions WHERE patient_id = ? ORDER BY session_date ASC`
+  ).bind(patientId).all<{
+    pain_level: number | null;
+    patient_response: string | null;
+    session_date: string;
+    functional_status: string | null;
+    procedures: string | null;
+  }>();
+
+  const responseToScore = (r: string | null): number | null => {
+    if (!r) return null;
+    const map: Record<string, number> = {
+      positive: 8, improving: 8,
+      neutral: 5, stable: 5,
+      negative: 2, worsening: 2,
+    };
+    return map[r] ?? null;
+  };
+
+  const painTimeline = evolutions
+    .filter((e) => e.pain_level !== null)
+    .map((e, i) => ({
+      session: i + 1,
+      date: e.session_date,
+      pain: e.pain_level as number,
+    }));
+
+  const functionalTimeline = evolutions
+    .map((e, i) => {
+      const score = responseToScore(e.patient_response);
+      if (score === null) return null;
+      return { session: i + 1, date: e.session_date, score };
+    })
+    .filter(Boolean) as { session: number; date: string; score: number }[];
+
+  const painLevels = evolutions.filter((e) => e.pain_level !== null).map((e) => e.pain_level as number);
+  const initialPain = painLevels[0] ?? null;
+  const currentPain = painLevels[painLevels.length - 1] ?? null;
+  const painChange = initialPain !== null && currentPain !== null ? initialPain - currentPain : null;
+
+  const avgPain = painLevels.length > 0
+    ? Math.round((painLevels.reduce((a, b) => a + b, 0) / painLevels.length) * 10) / 10
+    : null;
+
+  const positiveCount = evolutions.filter((e) => e.patient_response === "positive" || e.patient_response === "improving").length;
+  const positiveRate = evolutions.length > 0 ? Math.round((positiveCount / evolutions.length) * 100) : null;
+
+  const milestones: { label: string; date: string; type: "start" | "improvement" | "goal" | "warning" }[] = [];
+
+  if (evolutions.length > 0) {
+    milestones.push({ label: "Início do tratamento", date: evolutions[0].session_date, type: "start" });
+  }
+
+  if (painChange !== null && painChange >= 3 && evolutions.length >= 3) {
+    const idx = painLevels.findIndex((p, i) => i > 0 && (painLevels[0] - p) >= 3);
+    if (idx >= 0) {
+      milestones.push({ label: `Redução significativa da dor (-${painChange} pts)`, date: evolutions[idx].session_date, type: "improvement" });
+    }
+  }
+
+  if (evolutions.length >= 5) {
+    milestones.push({ label: "5ª sessão concluída", date: evolutions[4].session_date, type: "goal" });
+  }
+  if (evolutions.length >= 10) {
+    milestones.push({ label: "10ª sessão concluída", date: evolutions[9].session_date, type: "goal" });
+  }
+
+  const last3 = evolutions.slice(-3);
+  const allNegative = last3.length >= 3 && last3.every((e) => e.patient_response === "negative" || e.patient_response === "worsening");
+  if (allNegative) {
+    milestones.push({ label: "3 sessões consecutivas negativas", date: last3[last3.length - 1].session_date, type: "warning" });
+  }
+
+  if (currentPain !== null && currentPain <= 2 && evolutions.length >= 3) {
+    milestones.push({ label: "Dor controlada (≤2/10)", date: evolutions[evolutions.length - 1].session_date, type: "goal" });
+  }
+
+  return c.json({
+    patientId: patient.id,
+    patientName: patient.name,
+    painTimeline,
+    functionalTimeline,
+    summary: {
+      totalSessions: evolutions.length,
+      initialPain,
+      currentPain,
+      painChange,
+      avgPain,
+      positiveRate,
+    },
+    milestones,
+  });
+});
