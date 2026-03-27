@@ -553,8 +553,33 @@ export default function AgendaPage() {
   if (loading) {
     return (
       <PageTransition>
-        <div className="flex min-h-[400px] items-center justify-center">
-          <Spinner size="lg" />
+        <div className="space-y-6">
+          <div className="rounded-2xl bg-card border border-border shadow-sm p-6 animate-pulse">
+            <div className="h-6 bg-muted rounded w-32 mb-2" />
+            <div className="h-4 bg-muted rounded w-56" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2 rounded-2xl bg-card border border-border p-4 animate-pulse">
+              <div className="grid grid-cols-7 gap-2 mb-3">
+                {[...Array(7)].map((_, i) => (
+                  <div key={i} className="h-4 bg-muted rounded" />
+                ))}
+              </div>
+              {[...Array(5)].map((_, row) => (
+                <div key={row} className="grid grid-cols-7 gap-2 mb-2">
+                  {[...Array(7)].map((_, col) => (
+                    <div key={col} className="h-9 bg-muted rounded-lg" />
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="rounded-2xl bg-card border border-border p-4 animate-pulse space-y-3">
+              <div className="h-5 bg-muted rounded w-32" />
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 bg-muted rounded-xl" />
+              ))}
+            </div>
+          </div>
         </div>
       </PageTransition>
     );
@@ -575,7 +600,7 @@ export default function AgendaPage() {
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">Agenda</h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  <span className="italic">Gerencie seus atendimentos</span>
+                  Visualize e organize seus agendamentos
                 </p>
               </div>
             </div>
@@ -1002,16 +1027,15 @@ export default function AgendaPage() {
               </div>
 
               {selectedDateAppointments.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground">
-                  <Calendar className="mx-auto mb-3 h-12 w-12 opacity-50" />
-                  <p>Nenhum agendamento para este dia</p>
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => openNewAppointment(selectedDate)}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar agendamento
+                <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                  <Calendar className="w-12 h-12 text-muted-foreground/40 mb-4" />
+                  <p className="text-base font-semibold text-foreground mb-1">Nenhum agendamento para este dia</p>
+                  <p className="text-sm text-muted-foreground mb-5 max-w-xs">
+                    Selecione outro dia ou adicione um novo agendamento
+                  </p>
+                  <Button onClick={() => openNewAppointment(selectedDate)} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Novo Agendamento
                   </Button>
                 </div>
               ) : (

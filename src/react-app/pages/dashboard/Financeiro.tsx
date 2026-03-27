@@ -350,8 +350,28 @@ export default function FinanceiroPage() {
   if (loading) {
     return (
       <PageTransition>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Spinner size="lg" />
+        <div className="space-y-6">
+          <div className="rounded-2xl bg-card border border-border shadow-sm p-6 animate-pulse">
+            <div className="h-6 bg-muted rounded w-40 mb-2" />
+            <div className="h-4 bg-muted rounded w-64" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-2xl bg-card border border-border p-4 animate-pulse">
+                <div className="h-4 bg-muted rounded w-24 mb-3" />
+                <div className="h-7 bg-muted rounded w-28" />
+              </div>
+            ))}
+          </div>
+          <div className="rounded-2xl bg-card border border-border overflow-hidden animate-pulse">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="p-4 border-b border-border flex items-center gap-4 last:border-0">
+                <div className="h-4 bg-muted rounded w-20" />
+                <div className="h-4 bg-muted rounded flex-1" />
+                <div className="h-4 bg-muted rounded w-16" />
+              </div>
+            ))}
+          </div>
         </div>
       </PageTransition>
     );
@@ -373,7 +393,7 @@ export default function FinanceiroPage() {
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">Financeiro</h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  <span className="italic">Controle de receitas, despesas e lucratividade</span>
+                  Controle de receitas, despesas e lucratividade
                 </p>
               </div>
             </div>
@@ -551,12 +571,17 @@ export default function FinanceiroPage() {
         <Card>
           <CardContent className="p-0">
             {filteredTransactions.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Receipt className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Nenhuma transação encontrada</p>
-                <Button variant="outline" className="mt-4" onClick={openNewTransaction}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Registrar transação
+              <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                <Receipt className="w-12 h-12 text-muted-foreground/40 mb-4" />
+                <p className="text-base font-semibold text-foreground mb-1">Nenhuma transação encontrada</p>
+                <p className="text-sm text-muted-foreground mb-5 max-w-xs">
+                  {filterStatus !== "all" || filterType !== "all"
+                    ? "Tente remover os filtros para ver todas as transações"
+                    : "Registre sua primeira receita ou despesa para acompanhar suas finanças"}
+                </p>
+                <Button onClick={openNewTransaction} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Nova Transação
                 </Button>
               </div>
             ) : (
