@@ -36,16 +36,19 @@ export function OnboardingTooltip({
   const measureTarget = useCallback(() => {
     const el = document.querySelector(step.target);
     if (!el) return;
-    const rect = el.getBoundingClientRect();
-    setTargetRect({
-      top: rect.top,
-      left: rect.left,
-      width: rect.width,
-      height: rect.height,
-      bottom: rect.bottom,
-      right: rect.right,
-    });
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    // Re-measure after scroll settles
+    setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      setTargetRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        bottom: rect.bottom,
+        right: rect.right,
+      });
+    }, 350);
   }, [step.target]);
 
   useEffect(() => {
@@ -228,39 +231,44 @@ export function OnboardingTooltip({
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  // Calculate tooltip position
   const TOOLTIP_W = 288; // w-72
-  const TOOLTIP_H = 220; // approx
+  const TOOLTIP_H = 240; // conservative estimate
+  const GAP = 12;
+  const EDGE = 16;
+
+  // Adaptive position: if step says "bottom" but element is in lower half, flip to "top"
+  const elementCenterY = targetRect.top + targetRect.height / 2;
+  let effectivePosition = step.position;
+  if (step.position === "bottom" && elementCenterY > vh * 0.6) {
+    effectivePosition = "top";
+  } else if (step.position === "top" && elementCenterY < vh * 0.4) {
+    effectivePosition = "bottom";
+  }
+
+  const clampTooltipPosition = (rawTop: number, rawLeft: number): React.CSSProperties => {
+    let top = rawTop;
+    let left = rawLeft;
+    if (left + TOOLTIP_W + EDGE > vw) left = vw - TOOLTIP_W - EDGE;
+    if (left < EDGE) left = EDGE;
+    if (top + TOOLTIP_H + EDGE > vh) top = vh - TOOLTIP_H - EDGE;
+    if (top < EDGE) top = EDGE;
+    return { position: "fixed", top, left };
+  };
+
   let tooltipStyle: React.CSSProperties = {};
 
-  switch (step.position) {
+  switch (effectivePosition) {
     case "bottom":
-      tooltipStyle = {
-        position: "fixed",
-        top: spotBottom + 12,
-        left: Math.min(Math.max(spotLeft, 12), vw - TOOLTIP_W - 12),
-      };
+      tooltipStyle = clampTooltipPosition(spotBottom + GAP, spotLeft);
       break;
     case "top":
-      tooltipStyle = {
-        position: "fixed",
-        top: Math.max(spotTop - TOOLTIP_H - 12, 12),
-        left: Math.min(Math.max(spotLeft, 12), vw - TOOLTIP_W - 12),
-      };
+      tooltipStyle = clampTooltipPosition(spotTop - TOOLTIP_H - GAP, spotLeft);
       break;
     case "right":
-      tooltipStyle = {
-        position: "fixed",
-        top: Math.min(Math.max(spotTop, 12), vh - TOOLTIP_H - 12),
-        left: Math.min(spotRight + 12, vw - TOOLTIP_W - 12),
-      };
+      tooltipStyle = clampTooltipPosition(spotTop, spotRight + GAP);
       break;
     case "left":
-      tooltipStyle = {
-        position: "fixed",
-        top: Math.min(Math.max(spotTop, 12), vh - TOOLTIP_H - 12),
-        left: Math.max(spotLeft - TOOLTIP_W - 12, 12),
-      };
+      tooltipStyle = clampTooltipPosition(spotTop, spotLeft - TOOLTIP_W - GAP);
       break;
   }
 

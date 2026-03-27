@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import {
   FileText,
   Download,
@@ -79,7 +80,6 @@ interface Evolution {
 }
 
 interface ProfessionalProfile {
-  name: string;
   crefito: string;
   contact: string;
   location: string;
@@ -105,10 +105,10 @@ function parseArrayResponse<T>(data: unknown, key?: string): T[] {
 }
 
 function ExportacaoContent() {
+  const { user } = useAppAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const [profile, setProfile] = useState<ProfessionalProfile>({
-    name: "",
     crefito: "",
     contact: "",
     location: "",
@@ -364,8 +364,9 @@ function ExportacaoContent() {
 
       yPos = 55;
 
+      const authName = user?.user_metadata?.name || user?.email?.split("@")[0] || "Fisioterapeuta";
       addSection("DADOS DO PROFISSIONAL RESPONSÁVEL");
-      addField("Fisioterapeuta", profile.name || "Não informado");
+      addField("Fisioterapeuta", authName);
       addField("CREFITO", profile.crefito || "Não informado");
       if (profile.contact) addField("Contato", profile.contact);
       if (profile.location) addField("Cidade/Estado", profile.location);
@@ -479,7 +480,7 @@ function ExportacaoContent() {
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(80, 80, 80);
-      doc.text(profile.name || "Fisioterapeuta Responsável", margin, yPos);
+      doc.text(user?.user_metadata?.name || user?.email?.split("@")[0] || "Fisioterapeuta Responsável", margin, yPos);
       yPos += 5;
       if (profile.crefito) {
         doc.text(profile.crefito, margin, yPos);
@@ -673,18 +674,7 @@ function ExportacaoContent() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="professionalName">Nome Completo</Label>
-                    <Input
-                      id="professionalName"
-                      value={profile.name}
-                      onChange={(e) =>
-                        setProfile({ ...profile, name: e.target.value })
-                      }
-                      placeholder="Dr(a). Nome Completo"
-                    />
-                  </div>
+                <div className="grid sm:grid-cols-3 gap-6">
                   <div className="space-y-3">
                     <Label htmlFor="professionalCrefito">CREFITO</Label>
                     <Input
@@ -696,8 +686,6 @@ function ExportacaoContent() {
                       placeholder="Ex: CREFITO-3/12345-F"
                     />
                   </div>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <Label htmlFor="professionalContact">Contato</Label>
                     <Input
