@@ -132,8 +132,8 @@ function ExportacaoContent() {
       if (saved) {
         setProfile(JSON.parse(saved));
       }
-    } catch (e) {
-      console.error("Error loading profile:", e);
+    } catch {
+      // localStorage parse error — silently reset to defaults
     }
   };
 
@@ -143,8 +143,7 @@ function ExportacaoContent() {
       setProfileSaved(true);
       toast.showSuccess("Perfil profissional salvo!");
       setTimeout(() => setProfileSaved(false), 2000);
-    } catch (e) {
-      console.error("Error saving profile:", e);
+    } catch {
       toast.showError("Erro ao salvar perfil.");
     }
   };
@@ -163,8 +162,7 @@ function ExportacaoContent() {
       const data: unknown = await res.json();
       const parsedPatients = parseArrayResponse<Patient>(data, "patients");
       setPatients(parsedPatients);
-    } catch (error) {
-      console.error("Error fetching patients:", error);
+    } catch {
       setPatients([]);
     } finally {
       setLoading(false);
@@ -243,8 +241,8 @@ function ExportacaoContent() {
               color: { dark: "#2563eb", light: "#ffffff" },
             }
           );
-        } catch (e) {
-          console.error("QR code generation failed:", e);
+        } catch {
+          // QR code generation failed — continue without QR
         }
 
         for (let i = 1; i <= pageCount; i++) {
@@ -520,16 +518,15 @@ function ExportacaoContent() {
           method: "POST",
           body: JSON.stringify({ patientId: patient.id }),
         });
-      } catch (e) {
-        console.error("Error tracking report export:", e);
+      } catch {
+        // non-critical — export tracking failure should not block the user
       }
 
       setSuccess(true);
       setShowShareDialog(true);
       toast.showSuccess("Relatório PDF gerado com sucesso!");
       setTimeout(() => setSuccess(false), 3000);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
+    } catch {
       toast.showError("Erro ao gerar relatório. Tente novamente.");
     } finally {
       setGenerating(false);
@@ -629,7 +626,7 @@ function ExportacaoContent() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">Exportação de Relatórios</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                <span className="italic">Geração de documentos clínicos profissionais em PDF</span>
+                Geração de documentos clínicos profissionais em PDF
               </p>
             </div>
           </div>

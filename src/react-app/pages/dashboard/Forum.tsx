@@ -126,10 +126,10 @@ export default function Forum() {
         const data = (await res.json()) as ForumPost[];
         setPosts(Array.isArray(data) ? data : []);
       } else {
-        console.error("[Forum] fetchPosts failed:", res.status, await res.text().catch(() => ""));
+        toast.showError("Erro ao carregar posts do fórum.");
       }
-    } catch (err) {
-      console.error("[Forum] fetchPosts error:", err);
+    } catch {
+      toast.showError("Erro ao carregar posts do fórum.");
       setPosts([]);
     } finally {
       setLoading(false);
@@ -153,11 +153,8 @@ export default function Forum() {
         body: JSON.stringify(newPostForm),
       });
 
-      console.log("[Forum] POST /api/forum/posts status:", res.status);
-
       if (res.ok) {
         const data = await res.json() as { post: ForumPost; success: boolean };
-        console.log("[Forum] Post criado pelo servidor:", data);
 
         if (data.post) {
           // Add the new post directly from the server response — no re-fetch needed.
@@ -173,7 +170,6 @@ export default function Forum() {
           });
         } else {
           // Fallback: server didn't return the post object, do a full refetch
-          console.warn("[Forum] Server did not return post object, falling back to fetchPosts");
           await fetchPosts();
         }
 
@@ -182,11 +178,9 @@ export default function Forum() {
         setNewPostForm({ category: "casos", title: "", content: "" });
       } else {
         const errData = await res.json().catch(() => ({})) as { error?: string };
-        console.error("[Forum] Erro ao criar post:", errData);
         toast.showError(errData.error ?? "Erro ao publicar");
       }
-    } catch (err) {
-      console.error("[Forum] Exceção em handleCreatePost:", err);
+    } catch {
       toast.showError("Erro ao publicar");
     } finally {
       setSubmitting(false);
@@ -217,8 +211,8 @@ export default function Forum() {
           setLikedPosts((prev) => new Set([...prev, post.id]));
         }
       }
-    } catch (err) {
-      console.error("Error loading post:", err);
+    } catch {
+      toast.showError("Erro ao carregar comentários.");
     } finally {
       setLoadingComments(false);
     }
@@ -300,8 +294,7 @@ export default function Forum() {
         toast.showError("Erro ao curtir. Tente novamente.");
       }
       // Se ok: o estado otimista já está correto — não faz mais nada
-    } catch (err) {
-      console.error("[Forum] handleLikePost:", err);
+    } catch {
       // Reverte em caso de exceção de rede
       setLikedPosts((prev) => {
         const next = new Set(prev);
@@ -334,11 +327,9 @@ export default function Forum() {
         setPosts((prev) => prev.filter((p) => p.id !== postId));
       } else {
         const errBody = await res.json().catch(() => ({})) as Record<string, string>;
-        console.error("[Forum] delete post failed:", res.status, errBody);
         toast.showError(`Erro ao excluir (${res.status}): ${errBody?.error ?? "tente novamente"}`);
       }
-    } catch (err) {
-      console.error("[Forum] delete post error:", err);
+    } catch {
       toast.showError("Erro ao excluir");
     }
   }
@@ -452,7 +443,7 @@ export default function Forum() {
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">Comunidade</h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  <span className="italic">Conecte-se com fisioterapeutas de todo o Brasil</span>
+                  Conecte-se com fisioterapeutas de todo o Brasil
                 </p>
               </div>
             </div>

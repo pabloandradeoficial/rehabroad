@@ -161,8 +161,8 @@ export default function PainelPage() {
           navigate(`/dashboard/paciente/${newPatient.id}`);
         }
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.showError("Erro ao salvar paciente. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -176,8 +176,8 @@ export default function PainelPage() {
       setDeleteDialogOpen(false);
       setDeletingId(null);
       showSuccess("Paciente removido");
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.showError("Erro ao remover paciente. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -329,7 +329,7 @@ export default function PainelPage() {
                   ].map((feature, i) => (
                     <div
                       key={i}
-                      className="text-center p-4 rounded-xl bg-white/[0.03] border border-white/5"
+                      className="text-center p-4 rounded-xl bg-card/[0.03] border border-white/5"
                     >
                       <feature.icon className={`w-6 h-6 ${feature.color} mx-auto mb-2`} />
                       <p className="text-xs text-muted-foreground">{feature.label}</p>
@@ -460,33 +460,32 @@ export default function PainelPage() {
         className="space-y-8"
       >
         <motion.div variants={itemVariants} className="relative">
-          <div className="relative p-6 md:p-8 rounded-2xl bg-white border border-border shadow-sm overflow-hidden">
+          <div className="relative p-6 rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-teal-500" />
 
-            <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex items-start gap-5">
-                <div className="relative hidden sm:block">
-                  <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-primary via-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="hidden sm:block">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary via-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
                     <Activity className="w-7 h-7 text-white" />
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
                     Central de Prontuários
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-primary" />
-                    <span className="italic">{motivationalMessage}</span>
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span>{motivationalMessage}</span>
                   </p>
                 </div>
               </div>
 
               <Button
                 onClick={openNewPatientDialog}
-                size="lg"
-                className="h-12 px-6 bg-gradient-to-r from-primary to-emerald-500 hover:opacity-90 shadow-lg font-semibold text-white border-0"
+                className="gap-2 h-10 bg-gradient-to-r from-primary to-emerald-500 hover:opacity-90 shadow-sm font-semibold text-white border-0"
               >
-                <Plus className="w-5 h-5 mr-2" />
+                <Plus className="w-4 h-4" />
                 Novo Paciente
               </Button>
             </div>
@@ -581,7 +580,7 @@ export default function PainelPage() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="border border-border shadow-sm bg-white overflow-hidden">
+          <Card className="border border-border shadow-sm bg-card overflow-hidden">
             <CardHeader className="pb-4 border-b border-border">
               <CardTitle className="text-base font-semibold flex items-center gap-3 text-foreground">
                 <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -636,7 +635,7 @@ export default function PainelPage() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="border border-border shadow-sm bg-white overflow-hidden">
+          <Card className="border border-border shadow-sm bg-card overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-start gap-5">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -727,7 +726,7 @@ export default function PainelPage() {
 
         <motion.div variants={itemVariants}>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <Card className="lg:col-span-3 border border-border shadow-sm bg-white overflow-hidden">
+            <Card className="lg:col-span-3 border border-border shadow-sm bg-card overflow-hidden">
               <CardHeader className="pb-4 border-b border-border">
                 <CardTitle className="text-base font-semibold flex items-center gap-3 text-foreground">
                   <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center">
@@ -750,7 +749,7 @@ export default function PainelPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.05 * index }}
-                        className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-border transition-colors"
+                        className="flex items-center gap-4 p-3 rounded-xl bg-muted/50 hover:bg-muted border border-border transition-colors"
                       >
                         <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
                           <CheckCircle className="w-5 h-5 text-emerald-600" />
@@ -779,7 +778,7 @@ export default function PainelPage() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2 border border-border shadow-sm bg-white overflow-hidden">
+            <Card className="lg:col-span-2 border border-border shadow-sm bg-card overflow-hidden">
               <CardHeader className="pb-4 border-b border-border">
                 <CardTitle className="text-base font-semibold flex items-center gap-3 text-foreground">
                   <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -842,7 +841,7 @@ export default function PainelPage() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="border border-border shadow-sm bg-white overflow-hidden">
+          <Card className="border border-border shadow-sm bg-card overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-teal-500" />
 
             <CardHeader className="pb-4 border-b border-border">
@@ -904,7 +903,7 @@ export default function PainelPage() {
                       transition={{ delay: index * 0.03 }}
                       whileHover={{ scale: 1.005 }}
                       onClick={() => navigate(`/dashboard/paciente/${paciente.id}`)}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-border hover:border-primary/30 transition-all cursor-pointer group"
+                      className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted border border-border hover:border-primary/30 transition-all cursor-pointer group"
                     >
                       <div className="relative">
                         <PatientAvatar name={paciente.name} size="md" />
@@ -977,10 +976,13 @@ export default function PainelPage() {
                 })}
 
                 {pacientesFiltrados.length === 0 && patients.length > 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Search className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p>Nenhum paciente encontrado para "{busca}"</p>
-                    <Button onClick={() => setBusca("")} variant="outline" className="mt-4">
+                  <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                    <Search className="w-12 h-12 text-muted-foreground/40 mb-4" />
+                    <p className="text-base font-semibold text-foreground mb-1">Nenhum paciente encontrado</p>
+                    <p className="text-sm text-muted-foreground mb-5 max-w-xs">
+                      Nenhum resultado para "{busca}". Verifique a grafia ou limpe a busca.
+                    </p>
+                    <Button onClick={() => setBusca("")} variant="outline" className="gap-2">
                       Limpar busca
                     </Button>
                   </div>

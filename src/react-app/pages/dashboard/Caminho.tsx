@@ -538,8 +538,7 @@ function CaminhoContent() {
       };
       await saveCaminho(data);
       toast.showSuccess("Caminho clínico salvo com sucesso!");
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.showError("Erro ao salvar. Tente novamente.");
     } finally {
       setSaving(false);
@@ -723,8 +722,21 @@ function CaminhoContent() {
 
   if (caminhoLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Spinner size="lg" />
+      <div className="space-y-5">
+        <div className="rounded-2xl bg-card border border-border shadow-sm p-6 animate-pulse">
+          <div className="h-6 bg-muted rounded w-44 mb-2" />
+          <div className="h-4 bg-muted rounded w-64" />
+        </div>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-2xl bg-card border border-border p-5 animate-pulse">
+            <div className="h-5 bg-muted rounded w-48 mb-3" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[...Array(6)].map((_, j) => (
+                <div key={j} className="h-10 bg-muted rounded-xl" />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -738,24 +750,24 @@ function CaminhoContent() {
         className="space-y-5"
       >
         {/* Header with Progress */}
-        <motion.div variants={itemVariants} className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-violet-500/5 rounded-3xl blur-xl" />
-          <div className="relative p-5 md:p-6 rounded-3xl bg-gradient-to-br from-card via-card/95 to-card/90 border border-white/10 shadow-2xl overflow-hidden">
-            <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-            
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="relative shrink-0">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary to-emerald-500 rounded-xl blur-lg opacity-40" />
-                  <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary via-primary to-emerald-500 flex items-center justify-center shadow-xl">
-                    <Route className="w-6 h-6 text-white" />
+        <motion.div variants={itemVariants}>
+          <div className="relative p-6 rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-violet-500" />
+
+            <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="hidden sm:block">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary via-emerald-500 to-violet-500 flex items-center justify-center shadow-lg">
+                    <Route className="w-7 h-7 text-white" />
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-xl md:text-2xl font-black tracking-tight text-foreground">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
                     Caminho Clínico
                   </h1>
-                  <p className="text-sm text-muted-foreground">{selectedPatient?.name}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedPatient?.name ?? "Estruture o raciocínio clínico do seu paciente"}
+                  </p>
                 </div>
               </div>
 

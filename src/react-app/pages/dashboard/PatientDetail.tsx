@@ -134,7 +134,7 @@ export default function PatientDetailPage() {
       setEvalDialogOpen(false);
       setEditingEvaluation(null);
       setEvalForm({ type: "initial", chief_complaint: "", history: "", pain_level: 5, pain_location: "", functional_status: "", orthopedic_tests: "", observations: "" });
-    } catch (err) { console.error(err); }
+    } catch { toast.showError("Erro ao salvar avaliação. Tente novamente."); }
     finally { setSaving(false); }
   };
 
@@ -168,7 +168,7 @@ export default function PatientDetailPage() {
       setEvolDialogOpen(false);
       setEditingEvolution(null);
       setEvolForm({ session_date: new Date().toISOString().split("T")[0], pain_level: 5, functional_status: "", procedures: "", patient_response: "", observations: "" });
-    } catch (err) { console.error(err); }
+    } catch { toast.showError("Erro ao salvar evolução. Tente novamente."); }
     finally { setSaving(false); }
   };
 
@@ -199,8 +199,7 @@ export default function PatientDetailPage() {
       if (!res.ok) throw new Error("Failed to delete patient");
       toast.showSuccess("Paciente excluído com sucesso");
       navigate("/dashboard");
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.showError("Erro ao excluir paciente");
     } finally {
       setDeleting(false);
@@ -265,7 +264,7 @@ export default function PatientDetailPage() {
         
         {/* === HEADER LIMPO === */}
         <motion.div variants={itemVariants} className="relative">
-          <div className="relative overflow-hidden rounded-2xl bg-white border border-border shadow-sm">
+          <div className="relative overflow-hidden rounded-2xl bg-card border border-border shadow-sm">
             {/* Decorative Top Line */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-teal-500" />
 
@@ -305,7 +304,7 @@ export default function PatientDetailPage() {
                   </div>
                   
                   <div>
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">{patient.name}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">{patient.name}</h1>
                     <p className="text-sm text-muted-foreground mt-1">Prontuário Eletrônico</p>
                   </div>
                 </div>
@@ -313,14 +312,14 @@ export default function PatientDetailPage() {
                 {/* Patient Info Cards */}
                 <div className="flex-1 flex flex-wrap items-center gap-3 md:justify-end">
                   {patient.birth_date && (
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 border border-border">
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted/50 border border-border">
                       <Calendar className="w-4 h-4 text-primary" />
                       <span className="text-sm font-semibold text-foreground">{calculateAge(patient.birth_date)} anos</span>
                     </div>
                   )}
                   {patient.phone && (
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 border border-border">
+                      <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted/50 border border-border">
                         <Phone className="w-4 h-4 text-emerald-500" />
                         <span className="text-sm text-foreground">{patient.phone}</span>
                       </div>
@@ -344,7 +343,7 @@ export default function PatientDetailPage() {
                     </div>
                   )}
                   {patient.email && (
-                    <div className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 border border-border">
+                    <div className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted/50 border border-border">
                       <Mail className="w-4 h-4 text-violet-500" />
                       <span className="text-sm text-foreground">{patient.email}</span>
                     </div>
@@ -359,7 +358,7 @@ export default function PatientDetailPage() {
 
               {/* Patient Notes */}
               {patient.notes && (
-                <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-border">
+                <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-border">
                   <p className="text-sm text-slate-300 leading-relaxed">{patient.notes}</p>
                 </div>
               )}
@@ -376,7 +375,7 @@ export default function PatientDetailPage() {
               { value: evaluations[0]?.pain_level ?? "—", label: "Dor Inicial", icon: Heart, gradient: "from-rose-500 via-red-500 to-orange-500", text: "text-rose-400" },
               { value: evolutions[0]?.pain_level ?? "—", label: "Dor Atual", icon: Activity, gradient: "from-violet-500 via-purple-500 to-fuchsia-500", text: "text-violet-400" },
             ].map((stat, i) => (
-              <Card key={i} className="border border-border shadow-md bg-white overflow-hidden group hover:shadow-lg transition-shadow">
+              <Card key={i} className="border border-border shadow-md bg-card overflow-hidden group hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -435,7 +434,7 @@ export default function PatientDetailPage() {
         {/* === NEW PATIENT WELCOME === */}
         {isNewPatient && !evalLoading && !evolLoading && (
           <motion.div variants={itemVariants}>
-            <Card className="border border-border shadow-lg bg-white overflow-hidden relative">
+            <Card className="border border-border shadow-lg bg-card overflow-hidden relative">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-teal-500" />
               <CardContent className="p-8 text-center relative">
                 <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary via-emerald-500 to-teal-500 flex items-center justify-center mb-6 shadow-xl shadow-primary/30">
@@ -456,12 +455,12 @@ export default function PatientDetailPage() {
 
         {/* === TABS SECTION === */}
         <motion.div variants={itemVariants}>
-          <Card className="border border-border shadow-lg bg-white overflow-hidden">
+          <Card className="border border-border shadow-lg bg-card overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-primary via-violet-500 to-emerald-500" />
             
             <Tabs defaultValue="evaluations" className="w-full">
               <div className="p-4 border-b border-border">
-                <TabsList className="w-full md:w-auto bg-slate-100 border border-border p-1.5 rounded-xl">
+                <TabsList className="w-full md:w-auto bg-muted border border-border p-1.5 rounded-xl">
                   <TabsTrigger 
                     value="evaluations" 
                     className="flex-1 md:flex-none gap-2 px-6 py-2.5 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-emerald-500 data-[state=active]:text-white transition-all font-semibold text-muted-foreground data-[state=active]:shadow-lg"
@@ -574,27 +573,27 @@ export default function PatientDetailPage() {
                           </CardHeader>
                           <CardContent className="p-4 space-y-3">
                             {evaluation.chief_complaint && (
-                              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                              <div className="p-3 rounded-xl bg-card/[0.02] border border-white/5">
                                 <span className="text-xs font-semibold text-primary uppercase tracking-wider">Queixa Principal</span>
                                 <p className="text-sm text-foreground mt-1">{evaluation.chief_complaint}</p>
                               </div>
                             )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {evaluation.pain_location && (
-                                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                <div className="p-3 rounded-xl bg-card/[0.02] border border-white/5">
                                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Local da Dor</span>
                                   <p className="text-sm mt-1">{evaluation.pain_location}</p>
                                 </div>
                               )}
                               {evaluation.functional_status && (
-                                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                <div className="p-3 rounded-xl bg-card/[0.02] border border-white/5">
                                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status Funcional</span>
                                   <p className="text-sm mt-1"><HighlightedADM text={evaluation.functional_status} /></p>
                                 </div>
                               )}
                             </div>
                             {evaluation.orthopedic_tests && (
-                              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                              <div className="p-3 rounded-xl bg-card/[0.02] border border-white/5">
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Testes Ortopédicos</span>
                                 <p className="text-sm mt-1">{evaluation.orthopedic_tests}</p>
                               </div>
@@ -791,13 +790,13 @@ export default function PatientDetailPage() {
                             )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {evolution.functional_status && (
-                                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                <div className="p-3 rounded-xl bg-card/[0.02] border border-white/5">
                                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status Funcional</span>
                                   <p className="text-sm mt-1"><HighlightedADM text={evolution.functional_status} /></p>
                                 </div>
                               )}
                               {evolution.observations && (
-                                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                <div className="p-3 rounded-xl bg-card/[0.02] border border-white/5">
                                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Observações</span>
                                   <p className="text-sm mt-1">{evolution.observations}</p>
                                 </div>

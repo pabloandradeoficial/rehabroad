@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePatients } from "@/react-app/hooks/usePatients";
 import { useSuporte } from "@/react-app/hooks/useSuporte";
 import PremiumGate from "@/react-app/components/PremiumGate";
-import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { PageTransition } from "@/react-app/components/ui/microinteractions";
 import { 
   testesOrtopedicos,
   regioes, 
@@ -400,8 +400,20 @@ function TestesInteligentesContent() {
   if (patientsLoading) {
     return (
       <PageTransition>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Spinner size="lg" />
+        <div className="space-y-6">
+          <div className="rounded-2xl bg-card border border-border shadow-sm p-6 animate-pulse">
+            <div className="h-6 bg-muted rounded w-48 mb-2" />
+            <div className="h-4 bg-muted rounded w-72" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="rounded-2xl bg-card border border-border p-5 animate-pulse">
+                <div className="h-5 bg-muted rounded w-32 mb-3" />
+                <div className="h-4 bg-muted rounded w-full mb-2" />
+                <div className="h-4 bg-muted rounded w-2/3" />
+              </div>
+            ))}
+          </div>
         </div>
       </PageTransition>
     );
@@ -411,51 +423,46 @@ function TestesInteligentesContent() {
     <PageTransition>
       <div className="space-y-8">
         {/* Header */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-8">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="relative">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white shadow-xl shadow-primary/25">
-                <Stethoscope className="w-7 h-7" />
+        <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-teal-500 to-emerald-500" />
+          <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="hidden sm:block">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary via-teal-500 to-emerald-500 flex items-center justify-center shadow-lg">
+                  <Stethoscope className="w-7 h-7 text-white" />
+                </div>
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                  Testes Inteligentes
-                </h1>
-                <p className="text-muted-foreground">
-                  Biblioteca completa de testes ortopédicos organizados por região
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">Testes Inteligentes</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Aplique testes clínicos validados e registre resultados por região anatômica
                 </p>
               </div>
             </div>
-
             {/* Seletor de paciente */}
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
-              <div className="flex-1 max-w-md">
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                  Selecione um paciente para sugestões personalizadas
-                </label>
-                <Select value={selectedPatientId} onValueChange={(v) => {
-                  setSelectedPatientId(v);
-                  setRegiaoSelecionada("");
-                  setTesteExpandido(null);
-                }}>
-                  <SelectTrigger className="bg-background/80 backdrop-blur-sm">
-                    <User className="w-4 h-4 mr-2 text-muted-foreground" />
-                    <SelectValue placeholder="Selecionar paciente..." />
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                    {patients.length === 0 ? (
-                      <SelectItem value="empty" disabled>Nenhum paciente cadastrado</SelectItem>
-                    ) : (
-                      patients.map(patient => (
-                        <SelectItem key={patient.id} value={patient.id.toString()}>
-                          {patient.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex-shrink-0 w-full sm:w-56">
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Paciente para sugestões</label>
+              <Select value={selectedPatientId} onValueChange={(v) => {
+                setSelectedPatientId(v);
+                setRegiaoSelecionada("");
+                setTesteExpandido(null);
+              }}>
+                <SelectTrigger>
+                  <User className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Selecionar paciente..." />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  {patients.length === 0 ? (
+                    <SelectItem value="empty" disabled>Nenhum paciente cadastrado</SelectItem>
+                  ) : (
+                    patients.map(patient => (
+                      <SelectItem key={patient.id} value={patient.id.toString()}>
+                        {patient.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

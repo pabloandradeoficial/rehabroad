@@ -115,7 +115,7 @@ export default function ContatoSuportePage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Contato / Suporte</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              <span className="italic">Entre em contato com nossa equipe para dúvidas, sugestões ou suporte técnico</span>
+              Entre em contato com nossa equipe para dúvidas, sugestões ou suporte técnico
             </p>
           </div>
         </div>

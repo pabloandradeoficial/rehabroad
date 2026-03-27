@@ -35,7 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePatients } from "@/react-app/hooks/usePatients";
 import { useSuporte, type ClinicalInsight, type DiagnosticHypothesis } from "@/react-app/hooks/useSuporte";
 import PremiumGate from "@/react-app/components/PremiumGate";
-import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { PageTransition } from "@/react-app/components/ui/microinteractions";
 import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
 import { Link } from "react-router";
 
@@ -274,7 +274,7 @@ function SuporteContent() {
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">Apoio Clínico</h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  <span className="italic">Análise inteligente para apoiar suas decisões</span>
+                  Análise clínica inteligente baseada nos dados do paciente
                 </p>
               </div>
             </div>
@@ -327,8 +327,26 @@ function SuporteContent() {
 
   if (suporteLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Spinner size="lg" />
+      <div className="space-y-4 animate-pulse">
+        <div className="rounded-2xl bg-card border border-border shadow-sm p-6">
+          <div className="h-6 bg-muted rounded w-44 mb-2" />
+          <div className="h-4 bg-muted rounded w-52" />
+        </div>
+        <div className="grid lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-2xl bg-card border border-border p-4">
+              <div className="h-4 bg-muted rounded w-24 mb-3" />
+              <div className="h-8 bg-muted rounded w-16" />
+            </div>
+          ))}
+        </div>
+        {[1, 2].map((i) => (
+          <div key={i} className="rounded-2xl bg-card border border-border p-5 space-y-3">
+            <div className="h-5 bg-muted rounded w-40" />
+            <div className="h-4 bg-muted rounded w-full" />
+            <div className="h-4 bg-muted rounded w-3/4" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -414,7 +432,7 @@ function SuporteContent() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">Apoio Clínico</h1>
-              <p className="text-sm text-muted-foreground mt-1"><span className="italic">{selectedPatient?.name ?? "Análise clínica inteligente"}</span></p>
+              <p className="text-sm text-muted-foreground mt-1">{selectedPatient?.name ?? "Análise clínica inteligente baseada nos dados do paciente"}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

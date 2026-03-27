@@ -82,7 +82,7 @@ Teste grátis por 30 dias: ${referralLink}`;
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">Indicar para Colega</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                <span className="italic">Ajude outros fisioterapeutas a conhecer o RehabRoad</span>
+                Ajude outros fisioterapeutas a conhecer o RehabRoad
               </p>
             </div>
           </div>
