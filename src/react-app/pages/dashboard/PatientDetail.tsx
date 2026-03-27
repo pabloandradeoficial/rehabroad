@@ -28,6 +28,7 @@ import ClinicalInsights from "@/react-app/components/ClinicalInsights";
 import { HighlightedADM } from "@/react-app/lib/admHighlight";
 import PatientProgressDashboard from "@/react-app/components/PatientProgressDashboard";
 import HepPlanManager from "@/react-app/components/HepPlanManager";
+import ScribeButton, { type ScribeResult } from "@/react-app/components/ScribeButton";
 
 const termosParaRegiao: Record<string, string> = {
   "pescoço": "cervical", "cervical": "cervical", "nuca": "cervical",
@@ -93,6 +94,7 @@ export default function PatientDetailPage() {
     pain_level: 5, functional_status: "", procedures: "",
     patient_response: "", observations: "", attendance_status: "attended",
   });
+  const [scribedFields, setScribedFields] = useState<string[]>([]);
 
   const regiaoDetectada = useMemo(() => detectarRegiao(evalForm.pain_location || ""), [evalForm.pain_location]);
 
@@ -168,6 +170,7 @@ export default function PatientDetailPage() {
       }
       setEvolDialogOpen(false);
       setEditingEvolution(null);
+      setScribedFields([]);
       setEvolForm({ session_date: new Date().toISOString().split("T")[0], pain_level: 5, functional_status: "", procedures: "", patient_response: "", observations: "" });
     } catch { toast.showError("Erro ao salvar evolução. Tente novamente."); }
     finally { setSaving(false); }
@@ -189,6 +192,7 @@ export default function PatientDetailPage() {
 
   const handleNewEvolution = () => {
     setEditingEvolution(null);
+    setScribedFields([]);
     setEvolForm({ session_date: new Date().toISOString().split("T")[0], pain_level: 5, functional_status: "", procedures: "", patient_response: "", observations: "", attendance_status: "attended" });
     setEvolDialogOpen(true);
   };
@@ -936,6 +940,27 @@ export default function PatientDetailPage() {
               </DialogTitle>
               <DialogDescription>{editingEvolution ? "Atualize os dados da sessão de tratamento." : "Registre a sessão de tratamento do paciente."}</DialogDescription>
             </DialogHeader>
+            {/* ── Scribe ── */}
+            {!editingEvolution && (
+              <div className="pb-2">
+                <ScribeButton
+                  patientId={patient.id}
+                  onResult={(result: ScribeResult) => {
+                    if (!result.extracted) return;
+                    const filled: string[] = [];
+                    const e = result.extracted;
+                    const updates: Partial<EvolutionFormData> = {};
+                    if (e.pain_level !== null) { updates.pain_level = e.pain_level; filled.push("pain_level"); }
+                    if (e.functional_status) { updates.functional_status = e.functional_status; filled.push("functional_status"); }
+                    if (e.procedures) { updates.procedures = e.procedures; filled.push("procedures"); }
+                    if (e.patient_response) { updates.patient_response = e.patient_response; filled.push("patient_response"); }
+                    if (e.observations) { updates.observations = e.observations; filled.push("observations"); }
+                    setEvolForm((prev) => ({ ...prev, ...updates }));
+                    setScribedFields(filled);
+                  }}
+                />
+              </div>
+            )}
             <div className="space-y-5 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -955,15 +980,24 @@ export default function PatientDetailPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                <Label className="font-semibold">Nível de Dor: {evolForm.pain_level}/10</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="font-semibold">Nível de Dor: {evolForm.pain_level}/10</Label>
+                  {scribedFields.includes("pain_level") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
+                </div>
                 <Slider value={[evolForm.pain_level || 0]} onValueChange={([v]) => setEvolForm({ ...evolForm, pain_level: v })} min={0} max={10} step={1} />
               </div>
               <div className="space-y-2">
-                <Label className="font-semibold">Procedimentos Realizados</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="font-semibold">Procedimentos Realizados</Label>
+                  {scribedFields.includes("procedures") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
+                </div>
                 <Textarea value={evolForm.procedures || ""} onChange={(e) => setEvolForm({ ...evolForm, procedures: e.target.value })} placeholder="Técnicas e exercícios aplicados..." rows={3} />
               </div>
               <div className="space-y-2">
-                <Label className="font-semibold">Resposta do Paciente</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="font-semibold">Resposta do Paciente</Label>
+                  {scribedFields.includes("patient_response") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
+                </div>
                 <Select value={evolForm.patient_response || ""} onValueChange={(v) => setEvolForm({ ...evolForm, patient_response: v })}>
                   <SelectTrigger className="h-11"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent position="popper">
@@ -974,11 +1008,17 @@ export default function PatientDetailPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="font-semibold">Status Funcional</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="font-semibold">Status Funcional</Label>
+                  {scribedFields.includes("functional_status") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
+                </div>
                 <Textarea value={evolForm.functional_status || ""} onChange={(e) => setEvolForm({ ...evolForm, functional_status: e.target.value })} placeholder="Evolução das capacidades funcionais..." rows={2} />
               </div>
               <div className="space-y-2">
-                <Label className="font-semibold">Observações</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="font-semibold">Observações</Label>
+                  {scribedFields.includes("observations") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
+                </div>
                 <Textarea value={evolForm.observations || ""} onChange={(e) => setEvolForm({ ...evolForm, observations: e.target.value })} placeholder="Observações da sessão..." rows={2} />
               </div>
             </div>

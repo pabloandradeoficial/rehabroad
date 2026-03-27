@@ -15,6 +15,7 @@ import { neurofluxRouter } from "./routes/neuroflux";
 import { clinicalContextRouter } from "./routes/clinical-context";
 import { hepRouter } from "./routes/hep";
 import { rehabFriendRouter } from "./routes/rehab-friend";
+import { scribeRouter } from "./routes/scribe";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -123,6 +124,7 @@ app.route("/api", clinicalContextRouter);
 // HEP routes: /api/hep/*
 app.route("/api/hep", hepRouter);
 app.route("/api/rehab-friend", rehabFriendRouter);
+app.route("/api/scribe", scribeRouter);
 
 // Misc routes: sitemap.xml, robots.txt, PDF downloads, /api/contato, /api/leads, /api/track-view
 app.route("/", miscRouter);
