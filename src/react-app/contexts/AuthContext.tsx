@@ -64,7 +64,6 @@ export function AppAuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       applySession(data.session ?? null);
     } catch (error) {
-      console.error("[auth] Falha ao carregar sessão:", error);
       applySession(null);
     } finally {
       setIsPending(false);

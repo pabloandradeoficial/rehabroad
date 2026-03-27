@@ -119,7 +119,6 @@ export function useOnboarding() {
         localStorage.setItem(REPORT_PROMPT_SHOWN_KEY, "true");
       }
     } catch (err) {
-      console.error("Error fetching onboarding progress:", err);
       setProgress((prev) => ({ ...prev, loading: false }));
     }
   }, []);

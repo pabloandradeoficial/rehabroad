@@ -40,8 +40,6 @@ export default function LoginPage() {
 
       await loginWithGoogle();
     } catch (error) {
-      console.error("[login] Falha ao iniciar login com Google:", error);
-
       setLoginError(
         error instanceof Error
           ? error.message

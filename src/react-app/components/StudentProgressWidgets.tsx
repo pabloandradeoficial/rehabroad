@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, TrendingUp, Calendar, Camera, X, Trash2, Upload } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
+import { useToast } from "@/react-app/components/ui/microinteractions";
 
 // Weekly Progress Chart
 interface WeeklyProgressProps {
@@ -281,6 +282,7 @@ interface StudentAvatarProps {
 }
 
 export function StudentAvatar({ name, imageUrl, size = 'md', editable, onAvatarChange, userId }: StudentAvatarProps) {
+  const toast = useToast();
   const [showEditModal, setShowEditModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -344,10 +346,10 @@ export function StudentAvatar({ name, imageUrl, size = 'md', editable, onAvatarC
         setPreviewUrl(null);
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao enviar foto');
+        toast.showError(error.error || 'Erro ao enviar foto');
       }
-    } catch (err) {
-      alert('Erro ao enviar foto');
+    } catch {
+      toast.showError('Erro ao enviar foto');
     } finally {
       setUploading(false);
     }
@@ -366,8 +368,8 @@ export function StudentAvatar({ name, imageUrl, size = 'md', editable, onAvatarC
         setShowEditModal(false);
         setPreviewUrl(null);
       }
-    } catch (err) {
-      alert('Erro ao remover foto');
+    } catch {
+      toast.showError('Erro ao remover foto');
     } finally {
       setUploading(false);
     }

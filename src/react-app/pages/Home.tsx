@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AnimateOnScroll, StaggerContainer, StaggerItem } from "@/react-app/components/ui/motion";
 import { Button } from "@/react-app/components/ui/button";
+import { useToast } from "@/react-app/components/ui/microinteractions";
 import { Input } from "@/react-app/components/ui/input";
 import { Label } from "@/react-app/components/ui/label";
 import { useLanguage } from "@/react-app/contexts/LanguageContext";
@@ -24,6 +25,7 @@ const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
 
 export default function Home() {
   const navigate = useNavigate();
+  const toast = useToast();
   useLanguage(); // Keep context active
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -140,8 +142,8 @@ export default function Home() {
         setSubmitted(true);
         setTimeout(() => navigate("/login"), 2000);
       }
-    } catch (error) {
-      console.error("Error submitting:", error);
+    } catch {
+      toast.showError("Não foi possível enviar. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }

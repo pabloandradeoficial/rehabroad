@@ -100,8 +100,6 @@ export default function AuthCallbackPage() {
         window.history.replaceState({}, document.title, window.location.pathname);
         window.location.replace(destination);
       } catch (error) {
-        console.error("[auth-callback] Falha ao concluir login:", error);
-
         if (!isMounted) return;
 
         setErrorMessage(

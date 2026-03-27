@@ -722,8 +722,7 @@ export function buscarTestes(
   
   try {
     resultados = [...testesOrtopedicos];
-  } catch (err) {
-    console.error("Erro ao copiar base de testes:", err);
+  } catch {
     return [];
   }
 

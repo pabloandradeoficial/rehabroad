@@ -48,7 +48,6 @@ export function useDashboardCharts() {
       const chartData = await res.json();
       setData(chartData);
     } catch (err) {
-      console.error("Error fetching dashboard charts:", err);
     } finally {
       setLoading(false);
     }

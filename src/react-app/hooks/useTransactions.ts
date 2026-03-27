@@ -110,7 +110,6 @@ export function useTransactions(startDate?: string, endDate?: string) {
         setChartData(Array.isArray(chart) ? chart : []);
       }
     } catch (error) {
-      console.error("Error fetching transactions:", error);
       setTransactions([]);
       setSummary(EMPTY_SUMMARY);
     } finally {

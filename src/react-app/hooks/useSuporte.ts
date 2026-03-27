@@ -125,7 +125,6 @@ export function useSuporte(patientId: number | string | null) {
         structured: data?.structured || EMPTY_SUPORTE.structured,
       });
     } catch (err) {
-      console.error("Erro useSuporte:", err);
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       setSuporte(EMPTY_SUPORTE);
     } finally {

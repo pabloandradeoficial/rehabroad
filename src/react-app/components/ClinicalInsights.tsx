@@ -39,7 +39,6 @@ export default function ClinicalInsights({ painLocation, chiefComplaint }: Clini
           setData(result);
         }
       } catch (error) {
-        console.error("Failed to fetch clinical insights:", error);
       } finally {
         setLoading(false);
       }

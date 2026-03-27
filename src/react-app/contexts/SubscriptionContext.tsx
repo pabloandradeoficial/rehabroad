@@ -92,7 +92,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       const data = await parseJsonSafely<Subscription>(res);
       setSubscription(data ?? null);
     } catch (error) {
-      console.error("[subscription] Error fetching subscription:", error);
       setSubscription(null);
     } finally {
       setSubscriptionLoading(false);
@@ -121,7 +120,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       await fetchSubscription();
       return true;
     } catch (error) {
-      console.error("[subscription] Error activating plan:", error);
       return false;
     }
   }, [fetchSubscription]);

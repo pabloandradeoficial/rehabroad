@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
+import { useToast } from "@/react-app/components/ui/microinteractions";
 import {
   BookOpen,
   Trophy,
@@ -147,6 +148,7 @@ export default function StudentDashboard({
   onProgressUpdate,
 }: StudentDashboardProps = {}) {
   const { user } = useAppAuth();
+  const toast = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>("dashboard");
   const [selectedCase, setSelectedCase] = useState<ClinicalCase | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -196,8 +198,6 @@ export default function StudentDashboard({
         if ((error as Error).name === "AbortError") {
           return;
         }
-
-        console.error("Error loading student ranking:", error);
 
         if (!controller.signal.aborted) {
           setRanking([]);
@@ -307,8 +307,6 @@ export default function StudentDashboard({
               }
             }
           } catch (error) {
-            console.error("Error saving progress:", error);
-
             if (retries > 0) {
               window.setTimeout(() => {
                 void postProgress(retries - 1);
@@ -339,7 +337,7 @@ export default function StudentDashboard({
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
     } else {
       await navigator.clipboard.writeText(message);
-      alert("Copiado!");
+      toast.showSuccess("Copiado!");
     }
 
     setShowShareDialog(false);

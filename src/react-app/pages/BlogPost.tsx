@@ -15,6 +15,7 @@ import {
   BookOpen
 } from "lucide-react";
 import { useEffect } from "react";
+import { useToast } from "@/react-app/components/ui/microinteractions";
 
 // Map blog post slugs/categories to mini cases
 const postToCaseMapping: Record<string, string> = {
@@ -109,6 +110,7 @@ function generateArticleSchema(post: {
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const toast = useToast();
   const post = slug ? getBlogPostBySlug(slug) : undefined;
 
   useEffect(() => {
@@ -226,7 +228,7 @@ export default function BlogPostPage() {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert("Link copiado!");
+      toast.showSuccess("Link copiado!");
     }
   };
 

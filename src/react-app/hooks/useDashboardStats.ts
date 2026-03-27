@@ -80,7 +80,6 @@ export function useDashboardStats() {
 
       setRecentActivities(Array.isArray(data?.recentActivities) ? data.recentActivities : []);
     } catch (err) {
-      console.error("Error fetching dashboard stats:", err);
       setStats({
         totalPatients: 0,
         totalEvaluations: 0,

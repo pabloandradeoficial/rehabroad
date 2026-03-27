@@ -202,8 +202,8 @@ function migrateGuestProgressToUser(userId: string) {
 
     localStorage.removeItem(GUEST_PROGRESS_KEY);
     localStorage.removeItem(GUEST_STREAK_KEY);
-  } catch (error) {
-    console.error("Error migrating guest student progress:", error);
+  } catch {
+    // migration failure is non-critical — guest data simply isn't carried over
   }
 }
 
@@ -468,7 +468,7 @@ export default function StudentHub() {
                 cases_completed: deltaCases,
                 cases_correct: deltaCorrect,
               }),
-            }).catch(console.error);
+            }).catch(() => { /* non-critical progress sync */ });
           }
 
           setProgress({
@@ -503,7 +503,7 @@ export default function StudentHub() {
           });
         }
       } catch (e) {
-        console.error("Error fetching progress:", e);
+        void e; // background fetch — fall back to local progress
         const { localCases, localCorrect, localStreak } = readLocalProgress(
           localProgressKey,
           localStreakKey
@@ -556,8 +556,8 @@ export default function StudentHub() {
         credentials: "include",
         body: JSON.stringify({ module_visited: moduleId }),
       });
-    } catch (e) {
-      console.error("Error tracking module:", e);
+    } catch {
+      // non-critical module tracking
     }
   };
 
@@ -582,8 +582,8 @@ export default function StudentHub() {
     try {
       localStorage.setItem("loginMode", "student");
       await loginWithGoogle();
-    } catch (e) {
-      console.error("Error starting student login:", e);
+    } catch {
+      // login failure surfaced by Google OAuth
     }
   };
 
@@ -638,8 +638,8 @@ export default function StudentHub() {
       if (res.ok) {
         await fetchProgress();
       }
-    } catch (e) {
-      console.error("Error updating progress:", e);
+    } catch {
+      // progress update failure — local state already reflects result
     }
   };
 

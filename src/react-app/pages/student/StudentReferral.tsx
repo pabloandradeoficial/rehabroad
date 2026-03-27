@@ -57,7 +57,6 @@ O RehabRoad Estudante tem:
         localStorage.setItem("loginMode", "student");
         await loginWithGoogle();
       } catch (error) {
-        console.error("Error starting student login from referral:", error);
         setEmailError("Não foi possível iniciar o login agora.");
       }
       return;
@@ -86,7 +85,6 @@ O RehabRoad Estudante tem:
 
       setEmailError("Não foi possível enviar o convite agora.");
     } catch (error) {
-      console.error("Error sending referral email:", error);
       setEmailError("Não foi possível enviar o convite agora.");
     } finally {
       setSending(false);

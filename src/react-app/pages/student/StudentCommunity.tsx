@@ -21,6 +21,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
+import { useToast } from "@/react-app/components/ui/microinteractions";
 
 interface Post {
   id: number;
@@ -86,6 +87,7 @@ interface Props {
 
 export default function StudentCommunity({ onBack }: Props) {
   const { user, loginWithGoogle } = useAppAuth();
+  const toast = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -120,8 +122,8 @@ export default function StudentCommunity({ onBack }: Props) {
     try {
       localStorage.setItem("loginMode", "student");
       await loginWithGoogle();
-    } catch (e) {
-      console.error("Error starting student login:", e);
+    } catch {
+      // login failure surfaced by Google OAuth
     }
   };
 
@@ -137,8 +139,8 @@ export default function StudentCommunity({ onBack }: Props) {
         const data = await res.json();
         setPosts(data.posts || []);
       }
-    } catch (e) {
-      console.error("Error fetching posts:", e);
+    } catch {
+      // silent — posts list simply stays empty
     } finally {
       setLoading(false);
     }
@@ -167,8 +169,8 @@ export default function StudentCommunity({ onBack }: Props) {
         setSelectedPost(data.post);
         setComments(data.comments || []);
       }
-    } catch (e) {
-      console.error("Error fetching post:", e);
+    } catch {
+      // silent — post detail simply stays empty
     }
   };
 
@@ -197,8 +199,8 @@ export default function StudentCommunity({ onBack }: Props) {
         setNewPostContent("");
         await fetchPosts();
       }
-    } catch (e) {
-      console.error("Error creating post:", e);
+    } catch {
+      toast.showError("Erro ao publicar. Tente novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -226,8 +228,8 @@ export default function StudentCommunity({ onBack }: Props) {
         setNewComment("");
         await fetchPostDetails(selectedPost.id);
       }
-    } catch (e) {
-      console.error("Error adding comment:", e);
+    } catch {
+      toast.showError("Erro ao adicionar comentário. Tente novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -252,8 +254,8 @@ export default function StudentCommunity({ onBack }: Props) {
         setEditContent("");
         await fetchPostDetails(selectedPost.id);
       }
-    } catch (e) {
-      console.error("Error editing comment:", e);
+    } catch {
+      toast.showError("Erro ao editar comentário. Tente novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -273,8 +275,8 @@ export default function StudentCommunity({ onBack }: Props) {
         setShowDeleteConfirm(null);
         await fetchPostDetails(selectedPost.id);
       }
-    } catch (e) {
-      console.error("Error deleting comment:", e);
+    } catch {
+      toast.showError("Erro ao excluir comentário. Tente novamente.");
     }
   };
 
@@ -289,8 +291,8 @@ export default function StudentCommunity({ onBack }: Props) {
         setSelectedPost(null);
         await fetchPosts();
       }
-    } catch (e) {
-      console.error("Error deleting post:", e);
+    } catch {
+      toast.showError("Erro ao excluir post. Tente novamente.");
     }
   };
 
@@ -316,8 +318,8 @@ export default function StudentCommunity({ onBack }: Props) {
           await fetchPostDetails(postId);
         }
       }
-    } catch (e) {
-      console.error("Error liking post:", e);
+    } catch {
+      // silent — like UI state already updated optimistically
     }
   };
 
@@ -345,8 +347,8 @@ export default function StudentCommunity({ onBack }: Props) {
           await fetchPostDetails(selectedPost.id);
         }
       }
-    } catch (e) {
-      console.error("Error liking comment:", e);
+    } catch {
+      // silent — like UI state already updated optimistically
     }
   };
 
@@ -364,8 +366,8 @@ export default function StudentCommunity({ onBack }: Props) {
       if (res.ok) {
         await fetchPostDetails(selectedPost.id);
       }
-    } catch (e) {
-      console.error("Error marking solution:", e);
+    } catch {
+      toast.showError("Erro ao marcar solução. Tente novamente.");
     }
   };
 
