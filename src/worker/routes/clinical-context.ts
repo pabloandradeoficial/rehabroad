@@ -150,7 +150,19 @@ clinicalContextRouter.get("/clinical-context/:patient_id", authMiddleware, async
       currentPainLevel,
       painTrend,
       proceduresUsed,
-      lastPatientResponse: lastEvolution?.patient_response ?? null,
+      lastPatientResponse: (() => {
+        const raw = lastEvolution?.patient_response ?? null;
+        if (!raw) return null;
+        const map: Record<string, string> = {
+          positive: "Positiva",
+          negative: "Negativa",
+          neutral: "Neutra",
+          improving: "Melhorando",
+          worsening: "Piorando",
+          stable: "Estável",
+        };
+        return map[raw] ?? raw;
+      })(),
       averagePainLast3Sessions,
     },
     clinicalFlags: {

@@ -914,8 +914,8 @@ function NeuroFluxContent() {
                 <CardContent className="p-5 space-y-4">
                   {/* Search input */}
                   {!selectedPatient ? (
-                    <div ref={searchRef} className="relative">
-                      <div className="relative">
+                    <div ref={searchRef} className="relative w-full">
+                      <div className="relative w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           placeholder="Buscar paciente pelo nome..."
@@ -925,7 +925,7 @@ function NeuroFluxContent() {
                             setShowDropdown(true);
                           }}
                           onFocus={() => setShowDropdown(true)}
-                          className="pl-10 h-12 bg-white/[0.02] border-white/10 focus:border-violet-500/50 rounded-xl"
+                          className="pl-10 h-12 w-full bg-white/[0.02] border-white/10 focus:border-violet-500/50 rounded-xl"
                           disabled={patientsLoading}
                         />
                         {patientsLoading && (
