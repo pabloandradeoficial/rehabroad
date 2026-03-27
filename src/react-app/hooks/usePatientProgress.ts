@@ -45,7 +45,8 @@ export function usePatientProgress(patientId: string | undefined) {
     setLoading(true);
     setError(null);
     apiFetch(`/api/patients/${patientId}/progress`)
-      .then((data) => setProgress(data as PatientProgress))
+      .then((r) => r.json())
+      .then((data: PatientProgress) => setProgress(data))
       .catch((err) => setError(err instanceof Error ? err.message : "Erro ao carregar progresso"))
       .finally(() => setLoading(false));
   }, [patientId]);
