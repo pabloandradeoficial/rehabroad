@@ -466,8 +466,9 @@ export default function PatientDetailPage() {
             <Tabs defaultValue="evaluations" className="w-full">
               <div className="p-4 border-b border-border">
                 <TabsList className="w-full md:w-auto bg-muted border border-border p-1.5 rounded-xl">
-                  <TabsTrigger 
-                    value="evaluations" 
+                  <TabsTrigger
+                    value="evaluations"
+                    data-onboarding="evaluations-tab"
                     className="flex-1 md:flex-none gap-2 px-6 py-2.5 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-emerald-500 data-[state=active]:text-white transition-all font-semibold text-muted-foreground data-[state=active]:shadow-lg"
                   >
                     <ClipboardList className="w-4 h-4" />
@@ -942,7 +943,7 @@ export default function PatientDetailPage() {
             </DialogHeader>
             {/* ── Scribe ── */}
             {!editingEvolution && (
-              <div className="pb-2">
+              <div className="pb-2" data-onboarding="scribe-btn">
                 <ScribeButton
                   patientId={patient.id}
                   onResult={(result: ScribeResult) => {

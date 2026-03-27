@@ -490,6 +490,7 @@ export default function PainelPage() {
               </div>
 
               <Button
+                data-onboarding="new-patient-btn"
                 onClick={openNewPatientDialog}
                 className="gap-2 h-10 bg-gradient-to-r from-primary to-emerald-500 hover:opacity-90 shadow-sm font-semibold text-white border-0"
               >

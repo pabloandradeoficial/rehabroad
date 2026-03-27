@@ -26,6 +26,10 @@ import { BetaCountdownBanner } from "@/react-app/components/BetaCountdownBanner"
 import { useLanguage } from "@/react-app/contexts/LanguageContext";
 import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
+import { useProductTour } from "@/react-app/hooks/useProductTour";
+import { OnboardingTooltip } from "@/react-app/components/OnboardingTooltip";
+import { OnboardingWelcome } from "@/react-app/components/OnboardingWelcome";
+import { OnboardingComplete } from "@/react-app/components/OnboardingComplete";
 
 const RehabFriendChat = lazy(() => import("@/react-app/components/RehabFriendChat"));
 
@@ -57,7 +61,48 @@ export default function DashboardLayout() {
     return false;
   });
 
-  const { logout } = useAppAuth();
+  const { logout, user } = useAppAuth();
+  const tour = useProductTour();
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [tourRunning, setTourRunning] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
+
+  // Show welcome modal when tour activates
+  useEffect(() => {
+    if (tour.isActive && !tourRunning && !showComplete) {
+      setShowWelcome(true);
+    }
+  }, [tour.isActive, tourRunning, showComplete]);
+
+  const handleStartTour = () => {
+    setShowWelcome(false);
+    setTourRunning(true);
+  };
+
+  const handleSkipWelcome = () => {
+    setShowWelcome(false);
+    tour.skip();
+  };
+
+  const handleTourNext = () => {
+    if (tour.currentStep === tour.totalSteps - 1) {
+      tour.complete();
+      setTourRunning(false);
+      setShowComplete(true);
+    } else {
+      tour.next();
+    }
+  };
+
+  const handleSkipTour = () => {
+    tour.skip();
+    setTourRunning(false);
+  };
+
+  const handleRestartTour = () => {
+    setShowComplete(false);
+    tour.restart();
+  };
   const { language, setLanguage } = useLanguage();
   const {
     isFreeLimited,
@@ -166,6 +211,7 @@ export default function DashboardLayout() {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
         collapsed={sidebarCollapsed}
+        onRestartTour={handleRestartTour}
       />
 
       {/* Desktop Sidebar Toggle Button */}
@@ -270,6 +316,7 @@ export default function DashboardLayout() {
       {isPremium && (
         <button
           type="button"
+          data-onboarding="rehab-friend-btn"
           onClick={() => setRehabFriendOpen(true)}
           className={cn(
             "fixed z-[39] flex items-center gap-2 rounded-full shadow-lg transition-all duration-200",
@@ -290,6 +337,28 @@ export default function DashboardLayout() {
           onClose={() => setRehabFriendOpen(false)}
         />
       </Suspense>
+
+      {/* Product Tour */}
+      {showWelcome && (
+        <OnboardingWelcome
+          userName={user?.user_metadata?.name || user?.email?.split("@")[0]}
+          onStart={handleStartTour}
+          onSkip={handleSkipWelcome}
+        />
+      )}
+      {tourRunning && tour.currentStepData && (
+        <OnboardingTooltip
+          step={tour.currentStepData}
+          currentStep={tour.currentStep}
+          totalSteps={tour.totalSteps}
+          onNext={handleTourNext}
+          onPrevious={tour.previous}
+          onSkip={handleSkipTour}
+        />
+      )}
+      {showComplete && (
+        <OnboardingComplete onClose={() => setShowComplete(false)} />
+      )}
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[40] bg-slate-900/95 backdrop-blur-xl border-t border-white/5 flex items-stretch safe-area-inset-bottom">

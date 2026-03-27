@@ -21,6 +21,7 @@ import {
   DollarSign,
   Gift,
   GraduationCap,
+  MapPin,
 } from "lucide-react";
 import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
@@ -30,15 +31,15 @@ import { Button } from "@/react-app/components/ui/button";
 const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
 
 const navItems = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", premium: false },
-  { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", premium: false },
-  { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", premium: false },
-  { to: "/dashboard/caminho", icon: Route, label: "Caminho", premium: true },
-  { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", premium: true },
-  { to: "/dashboard/testes", icon: ClipboardCheck, label: "Testes", premium: true },
-  { to: "/dashboard/alertas", icon: Bell, label: "Indicadores", premium: true },
-  { to: "/dashboard/exportacao", icon: FileText, label: "Exportação", premium: true },
-  { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", premium: true },
+  { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", premium: false, dataOnboarding: undefined },
+  { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", premium: false, dataOnboarding: undefined },
+  { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", premium: false, dataOnboarding: undefined },
+  { to: "/dashboard/caminho", icon: Route, label: "Caminho", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", premium: true, dataOnboarding: "apoio-clinico-link" },
+  { to: "/dashboard/testes", icon: ClipboardCheck, label: "Testes", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/alertas", icon: Bell, label: "Indicadores", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/exportacao", icon: FileText, label: "Exportação", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", premium: true, dataOnboarding: undefined },
 ];
 
 const specialItems = [
@@ -49,9 +50,10 @@ const specialItems = [
 interface SidebarProps {
   className?: string;
   collapsed?: boolean;
+  onRestartTour?: () => void;
 }
 
-export default function Sidebar({ className, collapsed = false }: SidebarProps) {
+export default function Sidebar({ className, collapsed = false, onRestartTour }: SidebarProps) {
   const { user, logout } = useAppAuth();
   const { isPremium } = useSubscription();
 
@@ -110,6 +112,7 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
 
       <div className={cn(collapsed ? "p-2" : "p-4")}>
         <div
+          data-onboarding="user-profile"
           className={cn(
             "flex items-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors",
             collapsed ? "p-2 justify-center" : "gap-3 p-3"
@@ -167,6 +170,7 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
                 to={item.to}
                 end={item.to === "/dashboard"}
                 title={collapsed ? item.label : undefined}
+                {...(item.dataOnboarding ? { "data-onboarding": item.dataOnboarding } : {})}
                 className={({ isActive }) =>
                   cn(
                     "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
@@ -384,7 +388,26 @@ export default function Sidebar({ className, collapsed = false }: SidebarProps) 
       </div>
 
       <div className={cn("border-t border-white/5", collapsed ? "p-2" : "p-3")}>
-        <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-end")}>
+        <div className={cn("flex items-center", collapsed ? "flex-col gap-1 justify-center" : "justify-between")}>
+          {onRestartTour && !collapsed && (
+            <button
+              onClick={onRestartTour}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-slate-500 hover:text-teal-400 hover:bg-teal-500/10 transition-colors"
+              title="Rever tour guiado"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Rever tour</span>
+            </button>
+          )}
+          {onRestartTour && collapsed && (
+            <button
+              onClick={onRestartTour}
+              className="p-2 rounded-lg text-slate-500 hover:text-teal-400 hover:bg-teal-500/10 transition-colors"
+              title="Rever tour guiado"
+            >
+              <MapPin className="w-4 h-4" />
+            </button>
+          )}
           <Button
             variant="ghost"
             size="icon"
