@@ -167,30 +167,27 @@ function SelectionButton({ selected, onClick, children, description, isAutoFille
       type="button"
       onClick={onClick}
       className={cn(
-        "relative px-4 py-3 rounded-xl border-2 text-sm font-semibold transition-all duration-150 overflow-hidden text-left",
+        "relative px-4 py-3 rounded-xl border text-sm font-semibold transition-all duration-200 overflow-hidden text-left",
         selected
-          ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white border-violet-500 shadow-lg shadow-violet-500/20"
-          : "bg-white/[0.02] text-foreground border-white/10 hover:border-violet-500/40 hover:bg-violet-500/5",
+          ? "bg-violet-50 dark:bg-violet-500/10 text-violet-900 dark:text-violet-200 border-violet-500 shadow-sm"
+          : "bg-white dark:bg-white/[0.03] text-foreground border-gray-200 dark:border-white/10 hover:border-violet-400 dark:hover:border-violet-500/40 hover:bg-violet-50/60 dark:hover:bg-violet-500/5",
         description && "flex flex-col gap-1",
         className
       )}
     >
-      {selected && (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.15),transparent)]" />
-      )}
       <span className="relative flex items-center gap-1.5">
-        {selected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
         {children}
-        {isAutoFilled && selected && (
-          <span className="ml-auto">
-            <FileText className="w-3 h-3 text-amber-300 shrink-0" />
+        {selected && (
+          <span className="ml-auto pl-1 flex items-center gap-1 shrink-0">
+            {isAutoFilled && <FileText className="w-3 h-3 text-amber-500" />}
+            <CheckCircle2 className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
           </span>
         )}
       </span>
       {description && (
         <p className={cn(
           "text-xs font-normal relative",
-          selected ? "text-violet-100" : "text-muted-foreground"
+          selected ? "text-violet-700 dark:text-violet-300" : "text-muted-foreground"
         )}>
           {description}
         </p>
@@ -537,6 +534,7 @@ function NeuroFluxContent() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patientLatestEval, setPatientLatestEval] = useState<Evaluation | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -602,9 +600,10 @@ function NeuroFluxContent() {
     try {
       const evalsRes = await apiFetch(`/api/patients/${patient.id}/evaluations`);
       const evals: Evaluation[] = evalsRes.ok ? ((await evalsRes.json()) as Evaluation[]) : [];
-      const latestEval = evals[0] ?? null;
+      const latestEvalData = evals[0] ?? null;
+      setPatientLatestEval(latestEvalData);
 
-      const { data: mapped, autoFilled } = mapPatientToNeuroflux(patient, latestEval);
+      const { data: mapped, autoFilled } = mapPatientToNeuroflux(patient, latestEvalData);
       setFormData({ ...EMPTY_FORM, ...mapped });
       setAutoFilledFields(autoFilled);
     } catch {
@@ -614,12 +613,21 @@ function NeuroFluxContent() {
     }
   }, []);
 
-  // ── Clear patient
+  // ── Clear patient (full reset — used on mode switch to free)
   const handleClearPatient = useCallback(() => {
     setSelectedPatient(null);
+    setPatientLatestEval(null);
     setSearch("");
     setFormData(EMPTY_FORM);
     setAutoFilledFields(new Set());
+    setRecommendations(null);
+  }, []);
+
+  // ── Trocar patient — reopens search without wiping form yet
+  const handleTrocarPatient = useCallback(() => {
+    setSelectedPatient(null);
+    setPatientLatestEval(null);
+    setSearch("");
     setRecommendations(null);
   }, []);
 
@@ -639,11 +647,14 @@ function NeuroFluxContent() {
 
   // ── Mode switch
   const handleModeSwitch = useCallback((newMode: Mode) => {
+    if (newMode === "free" && (autoFilledFields.size > 0 || formData.diagnosis.trim() !== "")) {
+      if (!window.confirm("Limpar dados do paciente?")) return;
+    }
     setMode(newMode);
     if (newMode === "free") {
       handleClearPatient();
     }
-  }, [handleClearPatient]);
+  }, [handleClearPatient, autoFilledFields.size, formData.diagnosis]);
 
   // ── Field update helper
   const setField = useCallback(<K extends keyof ClinicalData>(key: K, value: ClinicalData[K]) => {
@@ -915,39 +926,55 @@ function NeuroFluxContent() {
                     </div>
                   ) : (
                     /* Selected patient card */
-                    <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center shrink-0">
-                          <span className="text-sm font-black text-violet-500">
-                            {selectedPatient.name.charAt(0).toUpperCase()}
-                          </span>
+                    <div className="p-4 rounded-xl bg-gray-50 dark:bg-violet-500/10 border border-violet-500/25 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center shrink-0">
+                            <span className="text-sm font-black text-violet-500">
+                              {selectedPatient.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm text-foreground flex items-center gap-2">
+                              {selectedPatient.name}
+                              {detailLoading && (
+                                <span className="w-3.5 h-3.5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin inline-block" />
+                              )}
+                            </p>
+                            {!detailLoading && (
+                              <>
+                                {(patientLatestEval?.chief_complaint || selectedPatient.notes) && (
+                                  <p className="text-xs text-muted-foreground truncate max-w-[240px] mt-0.5">
+                                    Diagnóstico: {patientLatestEval?.chief_complaint ?? selectedPatient.notes}
+                                  </p>
+                                )}
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Última consulta:{" "}
+                                  {new Date(patientLatestEval?.created_at ?? selectedPatient.created_at).toLocaleDateString("pt-BR", {
+                                    day: "2-digit", month: "2-digit", year: "numeric",
+                                  })}
+                                </p>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-sm text-foreground">{selectedPatient.name}</p>
-                          {selectedPatient.notes && (
-                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">{selectedPatient.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {detailLoading && (
-                          <div className="w-4 h-4 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-                        )}
-                        {autoFilledFields.size > 0 && !detailLoading && (
-                          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-xs gap-1 shrink-0">
-                            <FileText className="w-3 h-3" />
-                            {autoFilledFields.size} campo{autoFilledFields.size !== 1 ? "s" : ""} pré-preenchido{autoFilledFields.size !== 1 ? "s" : ""}
-                          </Badge>
-                        )}
                         <button
                           type="button"
-                          onClick={handleClearPatient}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors border border-white/10"
+                          onClick={handleTrocarPatient}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 transition-colors border border-violet-500/25 shrink-0"
                         >
                           <RotateCcw className="w-3 h-3" />
-                          Limpar
+                          Trocar
                         </button>
                       </div>
+                      {autoFilledFields.size > 0 && !detailLoading && (
+                        <div className="flex items-center gap-1.5 pt-1 border-t border-violet-500/15">
+                          <FileText className="w-3 h-3 text-amber-500 shrink-0" />
+                          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                            {autoFilledFields.size} campo{autoFilledFields.size !== 1 ? "s" : ""} pré-preenchido{autoFilledFields.size !== 1 ? "s" : ""} do prontuário
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -982,7 +1009,7 @@ function NeuroFluxContent() {
                   {/* ── Coluna esquerda ── */}
                   <div className="space-y-8">
                     {/* 1. Diagnóstico */}
-                    <div className="space-y-3">
+                    <div className="bg-white dark:bg-white/[0.02] border border-violet-500/20 rounded-xl p-5 shadow-sm space-y-3">
                       <Label className="text-sm font-bold flex items-center flex-wrap gap-1">
                         <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">1</span>
                         <span className="flex items-center gap-1">
@@ -1007,7 +1034,7 @@ function NeuroFluxContent() {
                     </div>
 
                     {/* 3. Estado Fisiopatológico */}
-                    <div className="space-y-3">
+                    <div className="bg-white dark:bg-white/[0.02] border border-violet-500/20 rounded-xl p-5 shadow-sm space-y-3">
                       <Label className="text-sm font-bold flex items-center flex-wrap gap-1">
                         <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">3</span>
                         <span className="flex items-center gap-1">
@@ -1041,7 +1068,7 @@ function NeuroFluxContent() {
                     </div>
 
                     {/* 5. Objetivo Terapêutico */}
-                    <div className="space-y-3">
+                    <div className="bg-white dark:bg-white/[0.02] border border-violet-500/20 rounded-xl p-5 shadow-sm space-y-3">
                       <Label className="text-sm font-bold flex items-center gap-1">
                         <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">5</span>
                         <span className="flex items-center gap-1">
@@ -1066,7 +1093,7 @@ function NeuroFluxContent() {
                   {/* ── Coluna direita ── */}
                   <div className="space-y-8">
                     {/* 2. Tecido Predominante */}
-                    <div className="space-y-3">
+                    <div className="bg-white dark:bg-white/[0.02] border border-violet-500/20 rounded-xl p-5 shadow-sm space-y-3">
                       <Label className="text-sm font-bold flex items-center flex-wrap gap-1">
                         <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">2</span>
                         <span className="flex items-center gap-1">
@@ -1094,7 +1121,7 @@ function NeuroFluxContent() {
                     </div>
 
                     {/* 4. Fase da Lesão */}
-                    <div className="space-y-3">
+                    <div className="bg-white dark:bg-white/[0.02] border border-violet-500/20 rounded-xl p-5 shadow-sm space-y-3">
                       <Label className="text-sm font-bold flex items-center gap-1">
                         <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">4</span>
                         <span className="flex items-center gap-1">
@@ -1121,7 +1148,7 @@ function NeuroFluxContent() {
                     </div>
 
                     {/* 6. Irritabilidade */}
-                    <div className="space-y-3">
+                    <div className="bg-white dark:bg-white/[0.02] border border-violet-500/20 rounded-xl p-5 shadow-sm space-y-3">
                       <Label className="text-sm font-bold flex items-center flex-wrap gap-1">
                         <span className="w-6 h-6 rounded-lg bg-violet-500 text-white text-xs flex items-center justify-center font-bold shrink-0">6</span>
                         <span className="flex items-center gap-1">
