@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
   ArrowRight, Check, ChevronDown, Star,
-  Mic, MessageSquare, Home, BarChart3, Zap, Map,
-  FileText, Clock, Shield, Users, Building2, GraduationCap,
+  Mic, MessageSquare, Home as HomeIcon, BarChart3, Zap, Map,
+  Clock, Building2, GraduationCap,
   UserCheck, AlertTriangle, ClipboardList, Smartphone, X,
 } from "lucide-react";
 import { useLanguage } from "@/react-app/contexts/LanguageContext";
@@ -58,7 +58,7 @@ const FEATURES = [
     desc: "Dite o resumo da sessão em 1 minuto. O sistema gera a evolução completa automaticamente.",
   },
   {
-    icon: Home,
+    icon: HomeIcon,
     color: "text-emerald-600",
     bg: "bg-emerald-50",
     border: "border-emerald-100",
