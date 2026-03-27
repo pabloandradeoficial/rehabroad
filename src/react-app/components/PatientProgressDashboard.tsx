@@ -10,7 +10,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
-  type ValueType,
 } from "recharts";
 import { usePatientProgress } from "@/react-app/hooks/usePatientProgress";
 import { Spinner } from "@/react-app/components/ui/microinteractions";
@@ -162,7 +161,7 @@ export default function PatientProgressDashboard({ patientId }: Props) {
               />
               <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} ticks={[0, 2, 4, 6, 8, 10]} />
               <Tooltip
-                formatter={(val: ValueType) => [`${val}/10`, "Dor"]}
+                formatter={(val: string | number | (string | number)[]) => [`${val}/10`, "Dor"]}
                 labelFormatter={(l) => `Sessão ${l}`}
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
               />
@@ -195,7 +194,7 @@ export default function PatientProgressDashboard({ patientId }: Props) {
               <XAxis dataKey="session" tick={{ fontSize: 11 }} tickFormatter={(v) => `S${v}`} />
               <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} ticks={[0, 5, 8, 10]} />
               <Tooltip
-                formatter={(val: ValueType) => {
+                formatter={(val: string | number | (string | number)[]) => {
                   const n = typeof val === "number" ? val : 0;
                   return [n >= 7 ? "Positiva" : n >= 4 ? "Neutra" : "Negativa", "Resposta"];
                 }}
