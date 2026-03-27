@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Dumbbell, ChevronRight, Clock, Repeat, Calendar, AlertTriangle, Lightbulb, CheckCircle2, X, User, Send, Sparkles, BookOpen, Target, MessageCircle, Grid3X3, List } from "lucide-react";
+import { Search, Dumbbell, ChevronRight, Clock, Repeat, Calendar, AlertTriangle, Lightbulb, CheckCircle2, X, User, Send, Sparkles, BookOpen, Target, MessageCircle, Grid3X3, List, Brain } from "lucide-react";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
 import { Button } from "@/react-app/components/ui/button";
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageTransition, useToast } from "@/react-app/components/ui/microinteractions";
 import { exercises, exerciseCategories, getExercisesByCategory, searchExercises, type Exercise } from "@/data/exercises";
 import { usePatients } from "@/react-app/hooks/usePatients";
+import { useClinicalContext } from "@/react-app/hooks/useClinicalContext";
+import { useExerciseRecommendations } from "@/react-app/hooks/useExerciseRecommendations";
 import { cn } from "@/react-app/lib/utils";
 import { openWhatsApp, createExercisePrescriptionMessage } from "@/react-app/lib/whatsapp";
 import PremiumGate from "@/react-app/components/PremiumGate";
@@ -29,14 +31,19 @@ function ExerciciosContent() {
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const [prescriptionNotes, setPrescriptionNotes] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [contextPatientId, setContextPatientId] = useState<string>("");
   const { patients } = usePatients();
   const toast = useToast();
+
+  const { context: clinicalContext } = useClinicalContext(contextPatientId || null);
+  const recommendations = useExerciseRecommendations(clinicalContext, exercises);
 
   const filteredExercises = useMemo(() => {
     if (searchQuery.trim()) return searchExercises(searchQuery);
     if (selectedCategory) return getExercisesByCategory(selectedCategory);
+    if (contextPatientId && recommendations.contextUsed) return recommendations.recommended;
     return exercises;
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, contextPatientId, recommendations]);
 
   const openExerciseDetail = (exercise: Exercise) => {
     setSelectedExercise(exercise);
@@ -177,6 +184,54 @@ function ExerciciosContent() {
           </Card>
         </motion.div>
 
+        {/* Patient Context Filter */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <Card className="border-0 shadow-xl overflow-hidden">
+            <CardContent className="p-4 md:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0">
+                    <Brain className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Filtrar por paciente</p>
+                    <p className="text-xs text-muted-foreground">Exercícios adaptados ao quadro clínico</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={contextPatientId}
+                    onValueChange={(val) => {
+                      setContextPatientId(val);
+                      setSearchQuery("");
+                      setSelectedCategory(null);
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[220px] h-10 text-sm border-white/10 bg-white/[0.02]">
+                      <SelectValue placeholder="Selecionar paciente..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {patients.map((p) => (
+                        <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {contextPatientId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setContextPatientId("")}
+                      className="h-10 w-10 p-0 text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Categories */}
         {!searchQuery && (
           <motion.div
@@ -235,10 +290,63 @@ function ExerciciosContent() {
           </motion.div>
         )}
 
+        {/* Context Banner */}
+        <AnimatePresence>
+          {contextPatientId && clinicalContext && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-violet-500/10 to-purple-500/5 border border-violet-500/20">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center shrink-0">
+                    <Target className="w-4 h-4 text-violet-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm text-foreground">
+                      Filtrado para {clinicalContext.patient.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {clinicalContext.clinicalFlags.isChronic
+                        ? "Fase crônica"
+                        : clinicalContext.clinicalFlags.isSubacute
+                        ? "Fase subaguda"
+                        : "Fase aguda"}
+                      {clinicalContext.evolutionSummary.currentPainLevel != null &&
+                        ` · Dor ${clinicalContext.evolutionSummary.currentPainLevel}/10`}
+                      {" · "}
+                      {clinicalContext.evolutionSummary.painTrend === "improving"
+                        ? "↓ Melhorando"
+                        : clinicalContext.evolutionSummary.painTrend === "worsening"
+                        ? "↑ Piorando"
+                        : "→ Estável"}
+                    </p>
+                    <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5">
+                      Mostrando {recommendations.recommended.length} de{" "}
+                      {recommendations.totalAvailable} exercícios adequados ao quadro
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setContextPatientId("")}
+                  className="shrink-0 gap-1.5 border-violet-500/25 text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 text-xs h-8"
+                >
+                  <X className="w-3 h-3" />
+                  Ver todos os exercícios
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Results Header */}
         <div className="flex items-center justify-between px-1">
           <p className="text-sm text-muted-foreground">
-            <span className="font-bold text-foreground">{filteredExercises.length}</span> exercício{filteredExercises.length !== 1 ? "s" : ""} 
+            <span className="font-bold text-foreground">{filteredExercises.length}</span> exercício{filteredExercises.length !== 1 ? "s" : ""}
             {selectedCategory && (
               <span> em <strong className="text-primary">{exerciseCategories.find(c => c.id === selectedCategory)?.name}</strong></span>
             )}

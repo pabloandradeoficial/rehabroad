@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Route, CheckCircle2, AlertCircle, Save, Sparkles, Target, Zap, Shield, ChevronRight, Check, Wand2 } from "lucide-react";
+import { Route, CheckCircle2, AlertCircle, Save, Sparkles, Target, Zap, Shield, ChevronRight, Check, Wand2, BookOpen } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Checkbox } from "@/react-app/components/ui/checkbox";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePatients } from "@/react-app/hooks/usePatients";
 import { useCaminho, type CaminhoFormData } from "@/react-app/hooks/useCaminho";
 import { useSuporte } from "@/react-app/hooks/useSuporte";
+import { useClinicalContext, buildClinicalSummary } from "@/react-app/hooks/useClinicalContext";
 import PremiumGate from "@/react-app/components/PremiumGate";
 import ClinicalSummary from "@/react-app/components/ClinicalSummary";
 import { motion, AnimatePresence } from "framer-motion";
@@ -394,6 +395,8 @@ function CaminhoContent() {
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const { caminho, loading: caminhoLoading, saveCaminho } = useCaminho(selectedPatientId || null);
   const { suporte, loading: suporteLoading } = useSuporte(selectedPatientId || null);
+  const { context: clinicalCtx } = useClinicalContext(selectedPatientId || null);
+  const [showDataSource, setShowDataSource] = useState(false);
   const [saving, setSaving] = useState(false);
   const [openStep, setOpenStep] = useState<number | null>(null);
   const toast = useToast();
@@ -823,11 +826,54 @@ function CaminhoContent() {
 
         {/* Clinical Summary */}
         <motion.div variants={itemVariants}>
-          <ClinicalSummary 
-            patientId={selectedPatientId} 
-            patientName={selectedPatient?.name} 
+          <ClinicalSummary
+            patientId={selectedPatientId}
+            patientName={selectedPatient?.name}
           />
         </motion.div>
+
+        {/* Base de dados usada para análise */}
+        {clinicalCtx && (
+          <motion.div variants={itemVariants}>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-xl shadow-lg">
+              <button
+                onClick={() => setShowDataSource(!showDataSource)}
+                className="w-full p-4 flex items-center gap-4 text-left hover:bg-white/[0.02] transition-colors"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500/10 to-slate-500/5 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground text-sm">Base de dados usada para análise</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {showDataSource ? "Clique para recolher" : "Ver dados clínicos que alimentam as sugestões"}
+                  </p>
+                </div>
+                <motion.div animate={{ rotate: showDataSource ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </motion.div>
+              </button>
+
+              <AnimatePresence>
+                {showDataSource && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4 pt-2 border-t border-white/5">
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed bg-white/[0.02] rounded-xl p-4 border border-white/5 overflow-x-auto">
+                        {buildClinicalSummary(clinicalCtx)}
+                      </pre>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
 
         {/* Steps */}
         {stepConfig.map((step, index) => (

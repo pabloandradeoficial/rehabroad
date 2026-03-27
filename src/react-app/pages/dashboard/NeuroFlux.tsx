@@ -17,6 +17,7 @@ import { cn } from "@/react-app/lib/utils";
 import { getRecommendations, type ClinicalData, type Recommendation } from "@/react-app/data/neurofluxData";
 import { useNeuroflux } from "@/react-app/hooks/useNeuroflux";
 import { apiFetch } from "@/react-app/lib/api";
+import type { ClinicalContext } from "@/react-app/hooks/useClinicalContext";
 import { PageTransition } from "@/react-app/components/ui/microinteractions";
 
 // ─────────────────────────────────────────────
@@ -535,6 +536,8 @@ function NeuroFluxContent() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [patientLatestEval, setPatientLatestEval] = useState<Evaluation | null>(null);
+  const [patientClinicalContext, setPatientClinicalContext] = useState<ClinicalContext | null>(null);
+  const [contextAlerts, setContextAlerts] = useState<string[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -598,14 +601,60 @@ function NeuroFluxContent() {
     setRecommendations(null);
 
     try {
-      const evalsRes = await apiFetch(`/api/patients/${patient.id}/evaluations`);
+      // Fetch evaluations + clinical context in parallel
+      const [evalsRes, ctxRes] = await Promise.all([
+        apiFetch(`/api/patients/${patient.id}/evaluations`),
+        apiFetch(`/api/clinical-context/${patient.id}`),
+      ]);
+
       const evals: Evaluation[] = evalsRes.ok ? ((await evalsRes.json()) as Evaluation[]) : [];
       const latestEvalData = evals[0] ?? null;
       setPatientLatestEval(latestEvalData);
 
+      const ctx: ClinicalContext | null = ctxRes.ok ? ((await ctxRes.json()) as ClinicalContext) : null;
+      setPatientClinicalContext(ctx);
+
+      // Base auto-fill from evaluation
       const { data: mapped, autoFilled } = mapPatientToNeuroflux(patient, latestEvalData);
-      setFormData({ ...EMPTY_FORM, ...mapped });
-      setAutoFilledFields(autoFilled);
+
+      // Smart overrides from clinical context
+      const overrides: Partial<ClinicalData> = {};
+      const overriddenFields = new Set<keyof ClinicalData>();
+      const alerts: string[] = [];
+
+      if (ctx) {
+        const { clinicalFlags, evolutionSummary } = ctx;
+
+        // High pain + acute → force irritability Alta + phase Aguda
+        if (clinicalFlags.highPain && clinicalFlags.isAcute) {
+          overrides.irritability = "Alta";
+          overrides.phase = "Aguda";
+          overriddenFields.add("irritability");
+          overriddenFields.add("phase");
+          alerts.push("Parâmetros ajustados para dor aguda intensa");
+        } else if (clinicalFlags.isSubacute && !mapped.phase) {
+          overrides.phase = "Subaguda";
+          overriddenFields.add("phase");
+        } else if (clinicalFlags.isChronic && !mapped.phase) {
+          overrides.phase = "Crônica";
+          overriddenFields.add("phase");
+          // Chronic + low pain + many sessions → suggest bioestimulação
+          if (!clinicalFlags.highPain && evolutionSummary.totalSessions > 10) {
+            overrides.objective = "Bioestimulação";
+            overriddenFields.add("objective");
+            alerts.push("Fase crônica avançada: foco em reparação tecidual");
+          }
+        }
+
+        // Not improving for 5+ sessions
+        if (clinicalFlags.notImproving && evolutionSummary.totalSessions >= 5) {
+          alerts.push("Sem melhora significativa após 5+ sessões. Considere alternar modalidade.");
+        }
+      }
+
+      setContextAlerts(alerts);
+      setFormData({ ...EMPTY_FORM, ...mapped, ...overrides });
+      setAutoFilledFields(new Set([...autoFilled, ...overriddenFields]));
     } catch {
       // non-blocking
     } finally {
@@ -617,6 +666,8 @@ function NeuroFluxContent() {
   const handleClearPatient = useCallback(() => {
     setSelectedPatient(null);
     setPatientLatestEval(null);
+    setPatientClinicalContext(null);
+    setContextAlerts([]);
     setSearch("");
     setFormData(EMPTY_FORM);
     setAutoFilledFields(new Set());
@@ -627,6 +678,8 @@ function NeuroFluxContent() {
   const handleTrocarPatient = useCallback(() => {
     setSelectedPatient(null);
     setPatientLatestEval(null);
+    setPatientClinicalContext(null);
+    setContextAlerts([]);
     setSearch("");
     setRecommendations(null);
   }, []);
@@ -977,6 +1030,123 @@ function NeuroFluxContent() {
                       )}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── SEÇÃO B2: Clinical context card ────────── */}
+        <AnimatePresence>
+          {mode === "patient" && selectedPatient && patientClinicalContext && !detailLoading && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              <Card className="border-0 shadow-xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-slate-900 via-indigo-900/40 to-slate-900 text-white p-5 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+                      <Activity className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold">Contexto clínico</CardTitle>
+                      <p className="text-xs text-white/60 mt-0.5">Dados clínicos que orientaram os campos abaixo</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-5 space-y-3">
+                  {/* Metrics row */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 text-center">
+                      <p className="text-lg font-black text-foreground">
+                        {patientClinicalContext.evolutionSummary.totalSessions}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sessões</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 text-center">
+                      <p className="text-lg font-black text-foreground">
+                        {patientClinicalContext.evolutionSummary.initialPainLevel != null
+                          ? `${patientClinicalContext.evolutionSummary.initialPainLevel}/10`
+                          : "—"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Dor inicial</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 text-center">
+                      <p className="text-lg font-black text-foreground">
+                        {patientClinicalContext.evolutionSummary.currentPainLevel != null
+                          ? `${patientClinicalContext.evolutionSummary.currentPainLevel}/10`
+                          : "—"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Dor atual</p>
+                    </div>
+                  </div>
+
+                  {/* Trend */}
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-white/[0.02] border border-white/10">
+                    <span className="text-sm text-muted-foreground">Tendência:</span>
+                    <span className={cn(
+                      "text-sm font-semibold",
+                      patientClinicalContext.evolutionSummary.painTrend === "improving"
+                        ? "text-emerald-500"
+                        : patientClinicalContext.evolutionSummary.painTrend === "worsening"
+                        ? "text-rose-500"
+                        : "text-amber-500"
+                    )}>
+                      {patientClinicalContext.evolutionSummary.painTrend === "improving"
+                        ? "↓ Melhorando"
+                        : patientClinicalContext.evolutionSummary.painTrend === "worsening"
+                        ? "↑ Piorando"
+                        : "→ Estável"}
+                    </span>
+                    {patientClinicalContext.clinicalFlags.fewSessions && (
+                      <span className="text-xs text-muted-foreground ml-auto">(poucas sessões)</span>
+                    )}
+                  </div>
+
+                  {/* Procedures */}
+                  {patientClinicalContext.evolutionSummary.proceduresUsed.length > 0 && (
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
+                      <p className="text-xs text-muted-foreground mb-1.5">Procedimentos recentes:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {patientClinicalContext.evolutionSummary.proceduresUsed.slice(0, 6).map((proc, i) => (
+                          <Badge key={i} variant="outline" className="text-[10px] h-5 border-white/10 text-muted-foreground">
+                            {proc}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No evaluation notice */}
+                  {!patientClinicalContext.latestEvaluation && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                      <p className="text-xs text-amber-600 dark:text-amber-400">
+                        Cadastre uma avaliação para ativar sugestões personalizadas
+                      </p>
+                    </div>
+                  )}
+
+                  {/* No evolutions notice */}
+                  {patientClinicalContext.clinicalFlags.fewSessions && patientClinicalContext.latestEvaluation && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                      <AlertTriangle className="w-4 h-4 text-blue-500 shrink-0" />
+                      <p className="text-xs text-blue-600 dark:text-blue-400">
+                        Sem histórico de sessões — sugestões baseadas apenas na avaliação inicial
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Smart adjustment alerts */}
+                  {contextAlerts.map((alert, i) => (
+                    <div key={i} className="flex items-start gap-2 p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
+                      <Sparkles className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-violet-600 dark:text-violet-400">{alert}</p>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </motion.div>
