@@ -1320,7 +1320,7 @@ patientsRouter.get("/patients/:patientId/clinical-summary", authMiddleware, asyn
 });
 
 // GET /api/patients/:id/progress
-patientsRouter.get("/:id/progress", authMiddleware, async (c) => {
+patientsRouter.get("/patients/:id/progress", authMiddleware, async (c) => {
   const user = c.get("user" as never) as { id: string };
   const patientId = c.req.param("id");
 
