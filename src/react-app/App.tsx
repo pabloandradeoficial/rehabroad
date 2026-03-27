@@ -56,6 +56,9 @@ const IndicacaoPage = lazy(
   () => import("@/react-app/pages/dashboard/Indicacao")
 );
 
+const HepPatientPortalPage = lazy(
+  () => import("@/react-app/pages/HepPatientPortal")
+);
 const TermosDeUsoPage = lazy(
   () => import("@/react-app/pages/legal/TermosDeUso")
 );
@@ -209,6 +212,12 @@ export default function App() {
                       />
                       <Route path="indicacao" element={<IndicacaoPage />} />
                     </Route>
+
+                    {/* Public HEP patient portal — no auth required */}
+                    <Route
+                      path="/hep/:token"
+                      element={<HepPatientPortalPage />}
+                    />
 
                     <Route
                       path="/termos-de-uso"

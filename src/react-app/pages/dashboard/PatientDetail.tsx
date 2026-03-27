@@ -27,6 +27,7 @@ import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
 import ClinicalInsights from "@/react-app/components/ClinicalInsights";
 import { HighlightedADM } from "@/react-app/lib/admHighlight";
 import PatientProgressDashboard from "@/react-app/components/PatientProgressDashboard";
+import HepPlanManager from "@/react-app/components/HepPlanManager";
 
 const termosParaRegiao: Record<string, string> = {
   "pescoço": "cervical", "cervical": "cervical", "nuca": "cervical",
@@ -488,6 +489,12 @@ export default function PatientDetailPage() {
                     <Activity className="w-4 h-4" />
                     Progresso
                   </TabsTrigger>
+                  <TabsTrigger
+                    value="hep"
+                    className="flex-1 md:flex-none gap-2 px-6 py-2.5 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white transition-all font-semibold text-muted-foreground data-[state=active]:shadow-lg"
+                  >
+                    🏠 Plano Domiciliar
+                  </TabsTrigger>
                 </TabsList>
               </div>
 
@@ -819,6 +826,17 @@ export default function PatientDetailPage() {
                   </div>
                 </div>
                 <PatientProgressDashboard patientId={id!} />
+              </TabsContent>
+
+              {/* === HEP TAB === */}
+              <TabsContent value="hep" className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold">Plano de Exercícios Domiciliares</h2>
+                    <p className="text-sm text-muted-foreground">Prescreva exercícios para o paciente realizar entre as sessões</p>
+                  </div>
+                </div>
+                <HepPlanManager patientId={patient.id} />
               </TabsContent>
             </Tabs>
           </Card>

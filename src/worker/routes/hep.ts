@@ -385,6 +385,56 @@ hepRouter.get("/plans/:id/adherence", authMiddleware, async (c) => {
 });
 
 // ─────────────────────────────────────────────
+// VISÃO GERAL — todos os pacientes com HEP
+// ─────────────────────────────────────────────
+
+// GET /api/hep/overview
+// Returns adherence summary for all active HEP plans of the current user
+hepRouter.get("/overview", authMiddleware, async (c) => {
+  const user = c.get("user" as never) as { id: string };
+
+  const { results: plans } = await c.env.DB.prepare(
+    `SELECT id, patient_id, title, status FROM hep_plans WHERE user_id = ? AND status = 'active'`
+  )
+    .bind(user.id)
+    .all<{ id: number; patient_id: number; title: string; status: string }>();
+
+  if (!plans || plans.length === 0) {
+    return c.json({ overview: [] });
+  }
+
+  const planIds = plans.map((p) => p.id);
+  const placeholders = planIds.map(() => "?").join(",");
+
+  const { results: allCheckins } = await c.env.DB.prepare(
+    `SELECT plan_id, completed, pain_level, checked_at FROM hep_checkins WHERE plan_id IN (${placeholders}) ORDER BY checked_at DESC`
+  )
+    .bind(...planIds)
+    .all<{ plan_id: number; completed: number; pain_level: number | null; checked_at: string }>();
+
+  const overview = plans.map((plan) => {
+    const checkins = (allCheckins ?? []).filter((c) => c.plan_id === plan.id);
+    const total = checkins.length;
+    const completed = checkins.filter((c) => c.completed === 1).length;
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const lastCheckin = checkins[0]?.checked_at ?? null;
+    const status = computeAdherenceStatus(rate, lastCheckin);
+
+    return {
+      patientId: plan.patient_id,
+      planId: plan.id,
+      planTitle: plan.title,
+      adherenceRate: rate,
+      totalCheckins: total,
+      lastCheckin,
+      status,
+    };
+  });
+
+  return c.json({ overview });
+});
+
+// ─────────────────────────────────────────────
 // PORTAL DO PACIENTE — rotas públicas (sem auth)
 // ─────────────────────────────────────────────
 

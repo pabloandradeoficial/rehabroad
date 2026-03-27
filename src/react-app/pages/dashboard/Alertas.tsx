@@ -8,6 +8,8 @@ import { useAlertasOverview } from "@/react-app/hooks/useAlertas";
 import PremiumGate from "@/react-app/components/PremiumGate";
 import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
 import { PatientAvatar } from "@/react-app/components/PatientAvatar";
+import { useHepOverview } from "@/react-app/hooks/useHep";
+import { AdherenceBadge } from "@/react-app/components/HepPlanManager";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -58,6 +60,7 @@ const statusConfig = {
 function AlertasContent() {
   const navigate = useNavigate();
   const { overview, loading, refetch } = useAlertasOverview();
+  const { overview: hepOverview, loading: hepLoading } = useHepOverview();
 
   const stats = {
     green: overview.filter(o => o.status === "green").length,
@@ -261,6 +264,53 @@ function AlertasContent() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* HEP Adherence Overview */}
+        {(hepLoading || hepOverview.length > 0) && (
+          <motion.div variants={itemVariants}>
+            <Card className="border border-border shadow-sm bg-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  🏠 Adesão ao Plano Domiciliar
+                </CardTitle>
+                <CardDescription>Acompanhamento dos exercícios prescritos para casa</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {hepLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="animate-pulse bg-muted rounded-xl h-12" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {hepOverview.map((entry) => (
+                      <div
+                        key={entry.planId}
+                        onClick={() => navigate(`/dashboard/paciente/${entry.patientId}`)}
+                        className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted border border-border cursor-pointer transition-colors group"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{entry.planTitle}</p>
+                          {entry.lastCheckin && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Último check-in:{" "}
+                              {new Date(entry.lastCheckin).toLocaleDateString("pt-BR", {
+                                day: "2-digit",
+                                month: "short",
+                              })}
+                            </p>
+                          )}
+                        </div>
+                        <AdherenceBadge rate={entry.adherenceRate} status={entry.status} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Disclaimer */}
         <motion.p variants={itemVariants} className="text-xs text-center text-muted-foreground px-4">
