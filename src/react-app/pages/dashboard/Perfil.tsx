@@ -42,7 +42,7 @@ export default function Perfil() {
   const [saved, setSaved] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  const userName = user?.user_metadata?.name || user?.name || user?.email?.split("@")[0] || "Fisioterapeuta";
+  const userName = user?.user_metadata?.name || user?.email?.split("@")[0] || "Fisioterapeuta";
   const userEmail = user?.email || "";
 
   // Effective avatar: custom upload takes priority over Google photo
