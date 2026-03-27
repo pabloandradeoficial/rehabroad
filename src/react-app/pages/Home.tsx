@@ -143,11 +143,13 @@ export default function Home() {
       {/* ── SEÇÃO 1: NAV ─────────────────────────────────────────── */}
       <header className={`fixed top-0 left-0 right-0 z-50 bg-white transition-all duration-200 ${scrolled ? "shadow-md" : ""}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
+          <Link to="/" className="flex items-center gap-2 shrink-0 no-underline">
+            <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" className="w-5 h-5">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
             </div>
-            <span className="text-lg font-black tracking-tight">REHABROAD</span>
+            <span className="font-bold text-gray-900 text-xl tracking-tight">REHABROAD</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-gray-600">
@@ -786,7 +788,9 @@ export default function Home() {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-teal-500 flex items-center justify-center">
-              <Zap className="w-3.5 h-3.5 text-white" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" className="w-4 h-4">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
             </div>
             <span className="text-sm font-black text-white">REHABROAD</span>
             <span className="text-xs text-gray-600 ml-2 hidden sm:block">O copiloto clínico da fisioterapia</span>
