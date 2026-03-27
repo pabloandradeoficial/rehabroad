@@ -525,7 +525,9 @@ const EMPTY_FORM: ClinicalData = {
 
 function NeuroFluxContent() {
   // Mode
-  const [mode, setMode] = useState<Mode>("free");
+  const [mode, setMode] = useState<Mode>(
+    () => (localStorage.getItem("neuroflux-mode") as Mode | null) ?? "free"
+  );
 
   // Patient search
   const [allPatients, setAllPatients] = useState<Patient[]>([]);
@@ -552,6 +554,21 @@ function NeuroFluxContent() {
   const { data: historyData, loading: historyLoading, saveProgress } = useNeuroflux(
     mode === "patient" ? patientIdStr : undefined
   );
+
+  // ── Restore persisted patient on mount (after patients load)
+  const restoredPatientRef = useRef(false);
+  useEffect(() => {
+    if (allPatients.length > 0 && !restoredPatientRef.current && !selectedPatient) {
+      const savedId = localStorage.getItem("apoio-clinico-patient-id");
+      if (savedId) {
+        const found = allPatients.find((p) => String(p.id) === savedId);
+        if (found) {
+          restoredPatientRef.current = true;
+          void handleSelectPatient(found);
+        }
+      }
+    }
+  }, [allPatients.length, selectedPatient, handleSelectPatient]);
 
   // ── Debounce search
   useEffect(() => {
@@ -595,6 +612,7 @@ function NeuroFluxContent() {
   // ── Select patient and auto-fill form
   const handleSelectPatient = useCallback(async (patient: Patient) => {
     setSelectedPatient(patient);
+    localStorage.setItem("apoio-clinico-patient-id", String(patient.id));
     setSearch(patient.name);
     setShowDropdown(false);
     setDetailLoading(true);
@@ -665,6 +683,7 @@ function NeuroFluxContent() {
   // ── Clear patient (full reset — used on mode switch to free)
   const handleClearPatient = useCallback(() => {
     setSelectedPatient(null);
+    localStorage.removeItem("apoio-clinico-patient-id");
     setPatientLatestEval(null);
     setPatientClinicalContext(null);
     setContextAlerts([]);
@@ -677,6 +696,7 @@ function NeuroFluxContent() {
   // ── Trocar patient — reopens search without wiping form yet
   const handleTrocarPatient = useCallback(() => {
     setSelectedPatient(null);
+    localStorage.removeItem("apoio-clinico-patient-id");
     setPatientLatestEval(null);
     setPatientClinicalContext(null);
     setContextAlerts([]);
@@ -704,6 +724,7 @@ function NeuroFluxContent() {
       if (!window.confirm("Limpar dados do paciente?")) return;
     }
     setMode(newMode);
+    localStorage.setItem("neuroflux-mode", newMode);
     if (newMode === "free") {
       handleClearPatient();
     }
@@ -1000,15 +1021,37 @@ function NeuroFluxContent() {
                               <>
                                 {(patientLatestEval?.chief_complaint || selectedPatient.notes) && (
                                   <p className="text-xs text-muted-foreground truncate max-w-[240px] mt-0.5">
-                                    Diagnóstico: {patientLatestEval?.chief_complaint ?? selectedPatient.notes}
+                                    {patientLatestEval?.chief_complaint ?? selectedPatient.notes}
                                   </p>
                                 )}
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  Última consulta:{" "}
-                                  {new Date(patientLatestEval?.created_at ?? selectedPatient.created_at).toLocaleDateString("pt-BR", {
-                                    day: "2-digit", month: "2-digit", year: "numeric",
-                                  })}
-                                </p>
+                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                  {formData.phase && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                                      {formData.phase}
+                                    </span>
+                                  )}
+                                  {patientClinicalContext?.evolutionSummary.currentPainLevel != null && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                                      <span className="font-semibold text-foreground">{patientClinicalContext.evolutionSummary.currentPainLevel}/10</span>
+                                      {" "}dor
+                                    </span>
+                                  )}
+                                  {patientClinicalContext?.evolutionSummary.painTrend && (
+                                    <span className={cn(
+                                      "text-[10px] font-semibold",
+                                      patientClinicalContext.evolutionSummary.painTrend === "improving" ? "text-emerald-500"
+                                      : patientClinicalContext.evolutionSummary.painTrend === "worsening" ? "text-rose-500"
+                                      : "text-amber-500"
+                                    )}>
+                                      {patientClinicalContext.evolutionSummary.painTrend === "improving" ? "↓" : patientClinicalContext.evolutionSummary.painTrend === "worsening" ? "↑" : "→"}
+                                    </span>
+                                  )}
+                                  {patientClinicalContext?.evolutionSummary.totalSessions != null && (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {patientClinicalContext.evolutionSummary.totalSessions} sessão{patientClinicalContext.evolutionSummary.totalSessions !== 1 ? "ões" : ""}
+                                    </span>
+                                  )}
+                                </div>
                               </>
                             )}
                           </div>

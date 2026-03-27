@@ -24,6 +24,7 @@ import {
   Users,
   ChevronRight,
   Zap,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
@@ -112,6 +113,13 @@ export default function PainelPage() {
   const [saving, setSaving] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [onboardingCollapsed, setOnboardingCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (onboardingProgress.completedCount >= 4) {
+      setOnboardingCollapsed(true);
+    }
+  }, [onboardingProgress.completedCount]);
 
   const pacientesFiltrados = patients.filter(
     (p) =>
@@ -492,15 +500,52 @@ export default function PainelPage() {
           </div>
         </motion.div>
 
+        {stats.red > 0 && (
+          <motion.div variants={itemVariants}>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/alertas")}
+              className="w-full flex items-center gap-3 px-5 py-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-left hover:bg-rose-500/15 transition-colors"
+            >
+              <div className="w-9 h-9 rounded-lg bg-rose-500 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-rose-700 dark:text-rose-400">
+                  {stats.red} paciente{stats.red !== 1 ? "s" : ""} precisam de atenção imediata
+                </p>
+                <p className="text-xs text-rose-600/70 dark:text-rose-400/70 mt-0.5">
+                  Clique para ver os alertas críticos
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-rose-500 shrink-0" />
+            </button>
+          </motion.div>
+        )}
+
         {shouldShowOnboarding && (
           <motion.div variants={itemVariants}>
-            <OnboardingChecklist
-              progress={onboardingProgress}
-              onDismiss={dismissOnboarding}
-              showReportPrompt={showReportPrompt}
-              onDismissReportPrompt={dismissReportPrompt}
-              firstEvaluationPatientId={firstEvaluationPatientId}
-            />
+            {onboardingCollapsed ? (
+              <button
+                type="button"
+                onClick={() => setOnboardingCollapsed(false)}
+                className="w-full flex items-center gap-3 px-5 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-left hover:bg-emerald-500/15 transition-colors"
+              >
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  Configuração quase completa — {onboardingProgress.completedCount}/{onboardingProgress.totalSteps} passos concluídos
+                </p>
+                <ChevronRight className="w-4 h-4 text-emerald-500 ml-auto shrink-0" />
+              </button>
+            ) : (
+              <OnboardingChecklist
+                progress={onboardingProgress}
+                onDismiss={dismissOnboarding}
+                showReportPrompt={showReportPrompt}
+                onDismissReportPrompt={dismissReportPrompt}
+                firstEvaluationPatientId={firstEvaluationPatientId}
+              />
+            )}
           </motion.div>
         )}
 
@@ -518,12 +563,22 @@ export default function PainelPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             {[
               {
+                value: stats.red,
+                label: "Alertas Ativos",
+                icon: AlertTriangle,
+                gradient: stats.red > 0 ? "from-rose-500 to-red-600" : "from-slate-400 to-slate-500",
+                accent: stats.red > 0 ? "border-t-rose-500" : "border-t-slate-400",
+                text: stats.red > 0 ? "text-rose-600 dark:text-rose-400 font-black" : "text-muted-foreground",
+                onClick: stats.red > 0 ? () => navigate("/dashboard/alertas") : undefined,
+              },
+              {
                 value: dashboardStats.totalPatients,
                 label: "Total Pacientes",
                 icon: Users,
                 gradient: "from-primary to-emerald-500",
                 accent: "border-t-primary",
                 text: "text-primary",
+                onClick: undefined,
               },
               {
                 value: dashboardStats.totalEvaluations,
@@ -532,6 +587,7 @@ export default function PainelPage() {
                 gradient: "from-violet-500 to-purple-500",
                 accent: "border-t-violet-500",
                 text: "text-violet-600",
+                onClick: undefined,
               },
               {
                 value: dashboardStats.totalEvolutions,
@@ -540,20 +596,15 @@ export default function PainelPage() {
                 gradient: "from-emerald-400 to-teal-500",
                 accent: "border-t-emerald-500",
                 text: "text-emerald-600",
-              },
-              {
-                value: stats.red,
-                label: "Alertas Ativos",
-                icon: Activity,
-                gradient: "from-rose-500 to-orange-500",
-                accent: "border-t-rose-500",
-                text: "text-rose-600",
+                onClick: undefined,
               },
             ].map((kpi, index) => (
               <motion.div
                 key={index}
                 whileHover={{ y: -2, scale: 1.01 }}
                 transition={{ type: "spring", stiffness: 300 }}
+                onClick={kpi.onClick}
+                style={kpi.onClick ? { cursor: "pointer" } : undefined}
               >
                 <Card className={`relative overflow-hidden border border-border border-t-2 ${kpi.accent} shadow-sm bg-card`}>
                   <CardContent className="p-3 sm:p-5 relative">
@@ -935,7 +986,7 @@ export default function PainelPage() {
                         ).toLocaleDateString("pt-BR")}
                       </div>
 
-                      <Badge variant="outline" className={`hidden lg:flex ${colors.badge}`}>
+                      <Badge variant="outline" className={`shrink-0 ${colors.badge} ${status === "red" ? "font-semibold" : ""}`}>
                         {statusLabel}
                       </Badge>
 

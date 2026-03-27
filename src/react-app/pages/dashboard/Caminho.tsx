@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Route, CheckCircle2, AlertCircle, Save, Sparkles, Target, Zap, Shield, ChevronRight, Check, Wand2, BookOpen } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
@@ -392,7 +392,14 @@ function PremiumStep({ step, stepNumber, selected, onChange, isOpen, onToggle, i
 
 function CaminhoContent() {
   const { patients, loading: patientsLoading } = usePatients();
-  const [selectedPatientId, setSelectedPatientId] = useState<string>("");
+  const [selectedPatientId, _setRawPatientId] = useState<string>(
+    () => localStorage.getItem("caminho-patient") ?? ""
+  );
+  const setSelectedPatientId = useCallback((id: string) => {
+    _setRawPatientId(id);
+    if (id) localStorage.setItem("caminho-patient", id);
+    else localStorage.removeItem("caminho-patient");
+  }, []);
   const { caminho, loading: caminhoLoading, saveCaminho } = useCaminho(selectedPatientId || null);
   const { suporte, loading: suporteLoading } = useSuporte(selectedPatientId || null);
   const { context: clinicalCtx } = useClinicalContext(selectedPatientId || null);
@@ -598,124 +605,36 @@ function CaminhoContent() {
   if (!selectedPatientId) {
     return (
       <PageTransition>
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-6"
-        >
-          {/* Imperial Header */}
-          <motion.div variants={itemVariants} className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-violet-500/5 rounded-3xl blur-xl" />
-            <div className="relative p-6 md:p-8 rounded-3xl bg-gradient-to-br from-card via-card/95 to-card/90 border border-white/10 shadow-2xl overflow-hidden">
-              <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-              <div className="flex items-center gap-5">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary to-emerald-500 rounded-2xl blur-lg opacity-40" />
-                  <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-primary to-emerald-500 flex items-center justify-center shadow-xl">
-                    <Route className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
-                    Caminho Clínico
-                  </h1>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Documentação estruturada para apoio ao raciocínio clínico
-                  </p>
-                </div>
-              </div>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6 p-8 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary to-emerald-500 rounded-2xl blur-lg opacity-30" />
+            <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-primary to-emerald-500 flex items-center justify-center shadow-xl">
+              <Route className="w-8 h-8 text-white" />
             </div>
-          </motion.div>
-
-          {/* Patient Selection Card */}
-          <motion.div variants={itemVariants}>
-            <Card className="relative overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-xl">
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-500/[0.03] to-primary/[0.03]" />
-              <CardHeader className="relative pb-4">
-                <CardTitle className="text-lg font-semibold">Selecione um Paciente</CardTitle>
-                <CardDescription>Escolha o prontuário para documentação clínica</CardDescription>
-              </CardHeader>
-              <CardContent className="relative">
-                <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
-                  <SelectTrigger className="w-full max-w-md h-12 bg-white/[0.03] border-white/10 focus:border-primary/50">
-                    <SelectValue placeholder="Selecione um paciente..." />
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                    {patientsLoading ? (
-                      <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                    ) : patients.length === 0 ? (
-                      <SelectItem value="empty" disabled>Nenhum paciente cadastrado</SelectItem>
-                    ) : (
-                      patients.map(patient => (
-                        <SelectItem key={patient.id} value={patient.id.toString()}>
-                          {patient.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Info Cards Grid */}
-          <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-4">
-            <Card className="relative overflow-hidden border border-emerald-500/20 shadow-lg bg-gradient-to-br from-emerald-500/[0.05] to-transparent">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-3 font-semibold">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  Sobre esta Ferramenta
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Organização do raciocínio clínico
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Documentação complementar
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Registros estruturados
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden border border-amber-500/20 shadow-lg bg-gradient-to-br from-amber-500/[0.05] to-transparent">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-3 font-semibold">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center">
-                    <AlertCircle className="w-5 h-5 text-amber-500" />
-                  </div>
-                  Responsabilidade
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    Não substitui avaliação presencial
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    Decisão clínica é do fisioterapeuta
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    Red flags requerem avaliação criteriosa
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-foreground">Caminho Clínico</h2>
+            <p className="text-sm text-muted-foreground">Selecione um paciente para começar a documentação</p>
+          </div>
+          <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
+            <SelectTrigger className="w-full max-w-xs h-11">
+              <SelectValue placeholder="Selecione um paciente..." />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {patientsLoading ? (
+                <SelectItem value="loading" disabled>Carregando...</SelectItem>
+              ) : patients.length === 0 ? (
+                <SelectItem value="empty" disabled>Nenhum paciente cadastrado</SelectItem>
+              ) : (
+                patients.map(patient => (
+                  <SelectItem key={patient.id} value={patient.id.toString()}>
+                    {patient.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
       </PageTransition>
     );
   }
