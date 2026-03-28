@@ -104,6 +104,9 @@ export default function AuthCallbackPage() {
         window.history.replaceState({}, document.title, window.location.pathname);
 
         const loginMode = localStorage.getItem("loginMode");
+        // Clear immediately so stale values cannot affect future sessions
+        localStorage.removeItem("loginMode");
+
         if (loginMode === "student") {
           window.location.replace("/estudante");
           return;

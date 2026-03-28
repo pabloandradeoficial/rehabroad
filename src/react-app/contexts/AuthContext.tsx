@@ -85,7 +85,11 @@ export function AppAuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!isMounted) return;
       applySession(nextSession ?? null);
-      setIsPending(false);
+      // Do NOT call setIsPending(false) here.
+      // isPending is controlled solely by refreshSession() so that
+      // INITIAL_SESSION(null) — fired by Supabase before the real session
+      // is visible — cannot prematurely unblock the route tree with
+      // user=null, which would send ProtectedDashboard to /login mid-load.
     });
 
     return () => {
