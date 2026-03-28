@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router";
+import { NavLink } from "react-router";
 import {
   Users,
   Calendar,
@@ -53,8 +53,6 @@ export function MobileSidebar({ onOpenRehabFriend }: MobileSidebarProps) {
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("sidebar_collapsed") === "true";
   });
-  const location = useLocation();
-
   const toggle = () => {
     const next = !collapsed;
     setCollapsed(next);
