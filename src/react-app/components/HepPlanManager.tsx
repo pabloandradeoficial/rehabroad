@@ -273,9 +273,10 @@ function ExerciseDialog({ open, onClose, onSave, initial, title }: ExerciseDialo
 
 interface HepPlanManagerProps {
   patientId: number;
+  patientPhone?: string | null;
 }
 
-export default function HepPlanManager({ patientId }: HepPlanManagerProps) {
+export default function HepPlanManager({ patientId, patientPhone }: HepPlanManagerProps) {
   const toast = useToast();
   const { plan, exercises, adherence, loading, error, createPlan, addExercise, updateExercise, removeExercise, generateToken, refreshAdherence, refetch } =
     useHepPlan(patientId);
@@ -617,14 +618,28 @@ export default function HepPlanManager({ patientId }: HepPlanManagerProps) {
         </p>
 
         {accessUrl ? (
-          <div className="flex items-center gap-2">
-            <code className="flex-1 text-xs bg-muted rounded-lg px-3 py-2 text-muted-foreground truncate">
-              {accessUrl}
-            </code>
-            <Button size="sm" variant="outline" onClick={handleCopyLink} className="gap-1.5 flex-shrink-0">
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "Copiado!" : "Copiar"}
-            </Button>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs bg-muted rounded-lg px-3 py-2 text-muted-foreground truncate">
+                {accessUrl}
+              </code>
+              <Button size="sm" variant="outline" onClick={handleCopyLink} className="gap-1.5 flex-shrink-0">
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? "Copiado!" : "Copiar"}
+              </Button>
+            </div>
+            {patientPhone && plan && (
+              <a
+                href={`https://wa.me/${patientPhone.replace(/\D/g, "").replace(/^0/, "").replace(/^(?!55)(\d{10,11})$/, "55$1")}?text=${encodeURIComponent(
+                  `Olá! 👋\n\nSeu plano de exercícios domiciliares está pronto no Rehabroad.\n\n📋 *Plano:* ${plan.title}\n🔗 *Acesse aqui:* ${accessUrl}\n\nRegistre seus exercícios diariamente pelo link acima. Acompanho sua evolução em tempo real! 💪`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white rounded-xl px-4 py-2 text-sm font-medium transition-colors w-full"
+              >
+                <span>📱</span> Enviar via WhatsApp
+              </a>
+            )}
           </div>
         ) : (
           <Button

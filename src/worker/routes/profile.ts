@@ -13,6 +13,18 @@ profileRouter.get("/profile", authMiddleware, async (c) => {
     .bind(user!.id)
     .first();
 
+  // Keep email + name in sync so cron jobs can look them up without auth
+  await c.env.DB.prepare(
+    `INSERT INTO user_profiles (id, email, name, updated_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       email      = excluded.email,
+       name       = excluded.name,
+       updated_at = excluded.updated_at`
+  )
+    .bind(user!.id, user!.email ?? null, user!.name ?? null, new Date().toISOString())
+    .run();
+
   return c.json({
     id: user!.id,
     email: user!.email,

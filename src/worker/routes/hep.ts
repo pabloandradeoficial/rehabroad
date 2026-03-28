@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { authMiddleware, getInsertedId, getAppBaseUrl } from "../lib/helpers";
+import { sendEmail, emailTemplates } from "../lib/email";
 
 export const hepRouter = new Hono<{ Bindings: Env }>();
 
@@ -535,6 +536,81 @@ hepRouter.post("/patient/:token/checkin", async (c) => {
   const checkin = await c.env.DB.prepare(`SELECT * FROM hep_checkins WHERE id = ?`)
     .bind(newId)
     .first();
+
+  // ── Send emails asynchronously (fire-and-forget) ──────────────────────────
+  if (c.env.RESEND_API_KEY) {
+    const resendKey = c.env.RESEND_API_KEY;
+
+    const emailWork = (async () => {
+      try {
+        const plan = await c.env.DB.prepare(
+          `SELECT hp.id, hp.title,
+                  p.name  AS patient_name, p.email AS patient_email,
+                  up.name AS physio_name,  up.email AS physio_email
+           FROM hep_plans hp
+           JOIN patients p        ON hp.patient_id = p.id
+           LEFT JOIN user_profiles up ON up.id = hp.user_id
+           WHERE hp.id = ?`
+        ).bind(planId).first<{
+          id: number; title: string;
+          patient_name: string; patient_email: string | null;
+          physio_name: string | null; physio_email: string | null;
+        }>();
+
+        if (!plan) return;
+
+        const [exercisesRes, todayCheckinsRes] = await Promise.all([
+          c.env.DB.prepare(
+            `SELECT exercise_name AS name, sets, reps, frequency
+             FROM hep_exercises WHERE plan_id = ? ORDER BY order_index`
+          ).bind(planId).all<{ name: string; sets: number | null; reps: string | null; frequency: string | null }>(),
+          c.env.DB.prepare(
+            `SELECT completed FROM hep_checkins
+             WHERE plan_id = ? AND DATE(checked_at) = DATE('now')`
+          ).bind(planId).all<{ completed: number }>(),
+        ]);
+
+        const totalExercises = exercisesRes.results.length;
+        const completedToday = todayCheckinsRes.results.filter((r) => r.completed === 1).length;
+        const adherenceRate = totalExercises > 0
+          ? Math.round((completedToday / totalExercises) * 100)
+          : 0;
+
+        const checkinUrl = `https://rehabroad.com.br/hep/${token}`;
+        const dashboardUrl = `https://rehabroad.com.br/dashboard`;
+
+        // Email 1: confirmação para o paciente
+        if (plan.patient_email) {
+          const tmpl = emailTemplates.hepCheckinConfirmation({
+            patientName: plan.patient_name,
+            completedCount: completedToday,
+            totalCount: totalExercises || 1,
+            checkinUrl,
+          });
+          await sendEmail({ to: plan.patient_email, ...tmpl }, resendKey);
+        }
+
+        // Email 2: notificação para o fisio
+        if (plan.physio_email) {
+          const tmpl = emailTemplates.hepCheckinNotification({
+            physioName: plan.physio_name ?? "Fisioterapeuta",
+            patientName: plan.patient_name,
+            completedCount: completedToday,
+            totalCount: totalExercises || 1,
+            adherenceRate,
+            painLevel: body.pain_level,
+            dashboardUrl,
+          });
+          await sendEmail({ to: plan.physio_email, ...tmpl }, resendKey);
+        }
+      } catch {
+        // silently ignore — email failure must never break the checkin response
+      }
+    })();
+
+    // ctx.waitUntil not available on this router; emails are best-effort
+    void emailWork;
+  }
 
   return c.json({ checkin, success: true }, 201);
 });

@@ -11,3 +11,6 @@ database_id = "7dbc4d24-0ca8-48e0-9883-ab93ab28d6af"
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "rehabroad-files"
+
+[triggers]
+crons = ["0 12 * * *"]

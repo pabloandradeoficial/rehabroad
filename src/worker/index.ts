@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { getSEOForRoute, injectSEOTags } from "./seo";
+import { sendEmail, emailTemplates } from "./lib/email";
 
 import { authRouter } from "./routes/auth";
 import { subscriptionRouter } from "./routes/subscription";
@@ -133,4 +134,104 @@ app.route("/api/scribe", scribeRouter);
 // Misc routes: sitemap.xml, robots.txt, PDF downloads, /api/contato, /api/leads, /api/track-view
 app.route("/", miscRouter);
 
-export default app;
+// ============================================
+// CRON JOB — daily HEP reminders + low-adherence alerts
+// ============================================
+
+async function sendDailyHepReminders(env: Env) {
+  if (!env.RESEND_API_KEY) return;
+
+  // Busca todos os planos ativos com pacientes que têm email
+  const activePlans = await env.DB.prepare(`
+    SELECT hp.id, hp.title, hp.patient_id,
+           p.name  AS patient_name,  p.email AS patient_email,
+           hat.token
+    FROM hep_plans hp
+    JOIN patients p            ON hp.patient_id = p.id
+    JOIN hep_access_tokens hat ON hat.plan_id = hp.id
+    WHERE hp.status = 'active'
+    AND p.email IS NOT NULL AND p.email != ''
+    AND (hat.expires_at IS NULL OR hat.expires_at > datetime('now'))
+  `).all<{
+    id: number; title: string; patient_id: number;
+    patient_name: string; patient_email: string;
+    token: string;
+  }>();
+
+  for (const plan of activePlans.results) {
+    // Pula se paciente já fez check-in hoje
+    const todayCheckin = await env.DB.prepare(
+      `SELECT COUNT(*) AS count FROM hep_checkins
+       WHERE plan_id = ? AND DATE(checked_at) = DATE('now')`
+    ).bind(plan.id).first<{ count: number }>();
+
+    if (todayCheckin && todayCheckin.count > 0) continue;
+
+    const exercises = await env.DB.prepare(
+      `SELECT exercise_name AS name, sets, reps, frequency
+       FROM hep_exercises WHERE plan_id = ? ORDER BY order_index LIMIT 5`
+    ).bind(plan.id).all<{ name: string; sets: number | null; reps: string | null; frequency: string | null }>();
+
+    const checkinUrl = `https://rehabroad.com.br/hep/${plan.token}`;
+
+    const tmpl = emailTemplates.hepReminder({
+      patientName: plan.patient_name,
+      planTitle: plan.title,
+      exercises: exercises.results,
+      checkinUrl,
+    });
+
+    await sendEmail({ to: plan.patient_email, ...tmpl }, env.RESEND_API_KEY);
+  }
+
+  // ── Alerta de baixa adesão (últimos 3 dias) ──────────────────────────────
+  const lowAdherencePlans = await env.DB.prepare(`
+    SELECT
+      hp.id, hp.patient_id, hp.user_id,
+      p.name  AS patient_name,
+      up.name  AS physio_name, up.email AS physio_email,
+      COUNT(hc.id)                                        AS total_checkins,
+      SUM(CASE WHEN hc.completed = 1 THEN 1 ELSE 0 END)  AS completed_checkins
+    FROM hep_plans hp
+    JOIN patients p            ON hp.patient_id = p.id
+    LEFT JOIN user_profiles up ON up.id = hp.user_id
+    LEFT JOIN hep_checkins hc  ON hc.plan_id = hp.id
+      AND hc.checked_at >= datetime('now', '-3 days')
+    WHERE hp.status = 'active'
+    AND up.email IS NOT NULL
+    GROUP BY hp.id
+    HAVING total_checkins >= 3
+      AND (CAST(completed_checkins AS FLOAT) / total_checkins) < 0.5
+  `).all<{
+    id: number; patient_id: number; user_id: string;
+    patient_name: string;
+    physio_name: string | null; physio_email: string;
+    total_checkins: number; completed_checkins: number;
+  }>();
+
+  for (const plan of lowAdherencePlans.results) {
+    const adherenceRate = plan.total_checkins > 0
+      ? Math.round((plan.completed_checkins / plan.total_checkins) * 100)
+      : 0;
+
+    const tmpl = emailTemplates.hepLowAdherenceAlert({
+      physioName: plan.physio_name ?? "Fisioterapeuta",
+      patientName: plan.patient_name,
+      adherenceRate,
+      daysChecked: 3,
+      dashboardUrl: "https://rehabroad.com.br/dashboard",
+    });
+
+    await sendEmail({ to: plan.physio_email, ...tmpl }, env.RESEND_API_KEY);
+  }
+}
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    return app.fetch(request, env, ctx);
+  },
+
+  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+    await sendDailyHepReminders(env);
+  },
+};

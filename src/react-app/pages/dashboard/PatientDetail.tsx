@@ -841,7 +841,7 @@ export default function PatientDetailPage() {
                     <p className="text-sm text-muted-foreground">Prescreva exercícios para o paciente realizar entre as sessões</p>
                   </div>
                 </div>
-                <HepPlanManager patientId={patient.id} />
+                <HepPlanManager patientId={patient.id} patientPhone={patient.phone} />
               </TabsContent>
             </Tabs>
           </Card>
