@@ -13,4 +13,4 @@ binding = "R2_BUCKET"
 bucket_name = "rehabroad-files"
 
 [triggers]
-crons = ["0 12 * * *"]
+crons = ["0 12 * * *", "0 9 * * 1", "0 23 * * *"]

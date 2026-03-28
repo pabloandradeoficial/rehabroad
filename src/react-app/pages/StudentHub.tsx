@@ -30,6 +30,10 @@ import {
   Copy,
   X,
   Globe,
+  Brain,
+  Lock,
+  Award,
+  Briefcase,
 } from "lucide-react";
 import {
   WeeklyProgressChart,
@@ -52,6 +56,8 @@ import StudentReferral from "./student/StudentReferral";
 import ElectrotherapyModule from "./student/ElectrotherapyModule";
 import BiomechanicsModule from "./student/BiomechanicsModule";
 import AnamneseModule from "./student/AnamneseModule";
+import FlashcardsModule from "./student/FlashcardsModule";
+import AnamneseSimulator from "./student/AnamneseSimulator";
 import { useLanguage } from "@/react-app/contexts/LanguageContext";
 
 type ModuleType =
@@ -67,7 +73,9 @@ type ModuleType =
   | "referral"
   | "electrotherapy"
   | "biomechanics"
-  | "anamnese";
+  | "anamnese"
+  | "flashcards"
+  | "anamnese-simulator";
 
 interface ModuleCard {
   id: ModuleType;
@@ -89,6 +97,17 @@ interface StudentProgress {
   daily_challenge_date: string | null;
   daily_challenge_case_id: string | null;
   avatar_url: string | null;
+  estagio_atual: string | null;
+  ponte_pro_shown: number;
+}
+
+interface RegionProgress {
+  regiao: string;
+  casos_resolvidos: number;
+  casos_total: number;
+  acertos: number;
+  dominio_percent: number;
+  status: "locked" | "in_progress" | "dominated";
 }
 
 interface StoredCaseProgress {
@@ -301,6 +320,22 @@ const supportModules: ModuleCard[] = [
     gradient: "from-pink-500 to-purple-500",
     iconBg: "bg-gradient-to-br from-pink-500 to-purple-500",
   },
+  {
+    id: "flashcards",
+    title: "Flashcards",
+    description: "Revise testes ortopédicos com cartões de estudo",
+    icon: <Brain className="w-5 h-5" />,
+    gradient: "from-cyan-500 to-teal-500",
+    iconBg: "bg-gradient-to-br from-cyan-500 to-teal-500",
+  },
+  {
+    id: "anamnese-simulator",
+    title: "Simulador de Anamnese",
+    description: "Pratique entrevista clínica com paciente simulado por IA",
+    icon: <MessageCircle className="w-5 h-5" />,
+    gradient: "from-violet-500 to-indigo-500",
+    iconBg: "bg-gradient-to-br from-violet-500 to-indigo-500",
+  },
 ];
 
 export default function StudentHub() {
@@ -311,6 +346,9 @@ export default function StudentHub() {
   const [loadingProgress, setLoadingProgress] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
+  const [regionProgress, setRegionProgress] = useState<RegionProgress[]>([]);
+  const [showInternshipModal, setShowInternshipModal] = useState(false);
+  const [showProBridge, setShowProBridge] = useState(false);
 
   const displayName =
     user?.user_metadata?.name || user?.email?.split("@")[0] || "Estudante";
@@ -375,6 +413,60 @@ export default function StudentHub() {
       }
     }
   }, [overallProgress, celebrationDismissed]);
+
+  // Show internship modal once for users with 5+ cases
+  useEffect(() => {
+    if (!user || !progress) return;
+    if ((progress.cases_completed || 0) >= 5 && !progress.estagio_atual) {
+      const seen = localStorage.getItem(`rehabroad_internship_modal_${user.id}`);
+      if (!seen) {
+        setShowInternshipModal(true);
+        localStorage.setItem(`rehabroad_internship_modal_${user.id}`, "true");
+      }
+    }
+  }, [user, progress]);
+
+  // Show pro bridge after 10+ cases or after dominating a region
+  useEffect(() => {
+    if (!user || !progress) return;
+    if (progress.ponte_pro_shown) return;
+    const dominated = regionProgress.some((r) => r.status === "dominated");
+    if ((progress.cases_completed || 0) >= 10 || dominated) {
+      setShowProBridge(true);
+    }
+  }, [user, progress, regionProgress]);
+
+  const handleInternshipSelect = async (estagio: string) => {
+    setShowInternshipModal(false);
+    if (!user) return;
+    try {
+      await fetch("/api/student/progress/estagio", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ estagio_atual: estagio }),
+      });
+      if (progress) setProgress({ ...progress, estagio_atual: estagio });
+    } catch {
+      // non-critical
+    }
+  };
+
+  const handleDismissProBridge = async () => {
+    setShowProBridge(false);
+    if (!user) return;
+    try {
+      await fetch("/api/student/progress/ponte-pro", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({}),
+      });
+      if (progress) setProgress({ ...progress, ponte_pro_shown: 1 });
+    } catch {
+      // non-critical
+    }
+  };
 
   const handleShareWhatsApp = () => {
     const text = `🏆 Completei 100% do treinamento clínico no REHABROAD Estudante!\n\nTreinei raciocínio clínico com casos reais, testes ortopédicos e muito mais. Recomendo para todo estudante de fisio!\n\n👉 https://rehabroad.com.br/estudante`;
@@ -541,6 +633,19 @@ export default function StudentHub() {
     }
 
     setLoadingProgress(false);
+
+    // Fetch region progress (authenticated only, non-critical)
+    if (userId) {
+      try {
+        const res = await fetch("/api/student/region-progress", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json() as { regions: RegionProgress[] };
+          setRegionProgress(data.regions || []);
+        }
+      } catch {
+        // non-critical
+      }
+    }
   }, [user?.id]);
 
   useEffect(() => {
@@ -701,6 +806,12 @@ export default function StudentHub() {
           )}
           {activeModule === "anamnese" && (
             <AnamneseModule onBack={handleBack} />
+          )}
+          {activeModule === "flashcards" && (
+            <FlashcardsModule onBack={handleBack} />
+          )}
+          {activeModule === "anamnese-simulator" && (
+            <AnamneseSimulator onBack={handleBack} />
           )}
           {activeModule === "cases" && (
             <div className="min-h-screen bg-slate-50">
@@ -934,6 +1045,55 @@ export default function StudentHub() {
         )}
       </AnimatePresence>
 
+      {/* Internship Mode Modal */}
+      <AnimatePresence>
+        {showInternshipModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center">
+                  <Briefcase className="w-6 h-6 text-violet-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Modo Estágio</h3>
+                  <p className="text-xs text-slate-500">Personaliza os casos para seu nível</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 mb-4">
+                Em qual fase do estágio você está? Vamos priorizar casos relevantes para você.
+              </p>
+              <div className="space-y-2">
+                {["Pré-estágio", "Estágio básico (1º período)", "Estágio intermediário (2º período)", "Estágio avançado / internato"].map((estagio) => (
+                  <button
+                    key={estagio}
+                    onClick={() => void handleInternshipSelect(estagio)}
+                    className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-violet-400 hover:bg-violet-50 transition-colors text-sm font-medium text-slate-700"
+                  >
+                    {estagio}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowInternshipModal(false)}
+                className="w-full mt-3 text-xs text-slate-400 hover:text-slate-600"
+              >
+                Pular por enquanto
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -1101,6 +1261,85 @@ export default function StudentHub() {
               color="rose"
             />
           </div>
+        )}
+
+        {/* Region Journey — shown when user has any region progress */}
+        {user && regionProgress.length > 0 && (
+          <Card className="border-0 shadow-sm bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Award className="w-4 h-4 text-teal-600" />
+                <span className="text-sm font-bold text-slate-900">Sua Jornada Clínica</span>
+              </div>
+              <div className="space-y-2">
+                {regionProgress.map((r) => (
+                  <div key={r.regiao} className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      r.status === "dominated" ? "bg-emerald-500" :
+                      r.status === "in_progress" ? "bg-teal-500" : "bg-slate-200"
+                    }`}>
+                      {r.status === "dominated"
+                        ? <Trophy className="w-3 h-3 text-white" />
+                        : r.status === "in_progress"
+                        ? <TrendingUp className="w-3 h-3 text-white" />
+                        : <Lock className="w-3 h-3 text-slate-400" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-xs font-medium text-slate-700 capitalize truncate">
+                          {r.regiao.replace("_", " ")}
+                        </span>
+                        <span className="text-xs text-slate-500 ml-2 flex-shrink-0">{r.dominio_percent}%</span>
+                      </div>
+                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            r.status === "dominated"
+                              ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                              : "bg-gradient-to-r from-teal-400 to-teal-500"
+                          }`}
+                          style={{ width: `${r.dominio_percent}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pro Bridge Banner */}
+        {showProBridge && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative bg-gradient-to-r from-teal-600 to-emerald-600 rounded-xl p-4 shadow-lg overflow-hidden"
+          >
+            <button
+              onClick={() => void handleDismissProBridge()}
+              className="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors"
+            >
+              <X className="w-4 h-4 text-white/70" />
+            </button>
+            <div className="pr-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-4 h-4 text-yellow-300" />
+                <span className="text-white font-bold text-sm">Você está evoluindo rápido!</span>
+              </div>
+              <p className="text-white/80 text-xs mb-3">
+                Fisioterapeutas Pro usam o Rehabroad para prontuário, IA diagnóstica e muito mais.
+              </p>
+              <a
+                href="/login"
+                onClick={() => localStorage.setItem("loginMode", "professional")}
+                className="inline-flex items-center gap-1.5 bg-white text-teal-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white/90 transition-colors"
+              >
+                Conhecer o Plano Pro
+                <ChevronRight className="w-3 h-3" />
+              </a>
+            </div>
+          </motion.div>
         )}
 
         {currentStreak > 0 && (

@@ -19,6 +19,8 @@ import { patientPortalRouter } from "./routes/patient-portal";
 import { rehabFriendRouter } from "./routes/rehab-friend";
 import { scribeRouter } from "./routes/scribe";
 import { profileRouter } from "./routes/profile";
+import { studentCasesRouter, generateWeeklyCases } from "./routes/student-cases";
+import { studentAnamneseRouter } from "./routes/student-anamnese";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -120,6 +122,8 @@ app.route("/api", adminRouter);
 
 // Student routes: /api/student/*
 app.route("/api/student", studentRouter);
+app.route("/api/student", studentCasesRouter);
+app.route("/api/student", studentAnamneseRouter);
 
 // NeuroFlux routes: /api/neuroflux
 app.route("/api/neuroflux", neurofluxRouter);
@@ -228,12 +232,71 @@ async function sendDailyHepReminders(env: Env) {
   }
 }
 
+async function sendStreakRiskEmails(env: Env) {
+  if (!env.RESEND_API_KEY) return;
+
+  // Students with streak >= 3 who haven't studied today
+  const today = new Date().toISOString().split("T")[0];
+  const { results } = await env.DB.prepare(`
+    SELECT user_email, user_name, streak
+    FROM student_progress
+    WHERE streak >= 3
+      AND (last_streak_date IS NULL OR last_streak_date < ?)
+      AND user_email IS NOT NULL AND user_email != ''
+    LIMIT 200
+  `).bind(today).all<{ user_email: string; user_name: string; streak: number }>();
+
+  for (const student of results) {
+    const name = student.user_name?.split(" ")[0] || "Estudante";
+    await sendEmail({
+      to: student.user_email,
+      subject: `⚠️ Sua sequência de ${student.streak} dias está em risco!`,
+      html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.08);">
+    <div style="background:linear-gradient(135deg,#f97316,#ea580c);padding:32px 24px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:8px;">🔥</div>
+      <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">${student.streak} dias seguidos em risco!</h1>
+    </div>
+    <div style="padding:24px;text-align:center;">
+      <p style="color:#374151;font-size:15px;">
+        Olá, <strong>${name}</strong>! Você ainda não estudou hoje.<br>
+        Não perca sua sequência de <strong>${student.streak} dias</strong>!
+      </p>
+      <div style="margin:20px 0;">
+        <a href="https://rehabroad.com.br/estudante"
+           style="background:#f97316;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:600;font-size:15px;display:inline-block;">
+          🏃 Resolver caso agora
+        </a>
+      </div>
+      <p style="color:#9ca3af;font-size:12px;">Leva apenas 5 minutos para manter sua sequência!</p>
+    </div>
+    <div style="background:#f9fafb;padding:16px 24px;text-align:center;border-top:1px solid #f3f4f6;">
+      <p style="color:#9ca3af;font-size:11px;margin:0;">Rehabroad · Plataforma de Estudantes de Fisioterapia</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    }, env.RESEND_API_KEY);
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     return app.fetch(request, env, ctx);
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
-    await sendDailyHepReminders(env);
+  async scheduled(event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+    const cron = event.cron;
+
+    if (cron === "0 12 * * *") {
+      await sendDailyHepReminders(env);
+    } else if (cron === "0 9 * * 1") {
+      await generateWeeklyCases(env, 3);
+    } else if (cron === "0 23 * * *") {
+      await sendStreakRiskEmails(env);
+    }
   },
 };
