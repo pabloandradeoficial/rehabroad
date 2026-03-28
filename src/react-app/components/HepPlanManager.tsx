@@ -275,6 +275,7 @@ function ExerciseDialog({ open, onClose, onSave, initial, title }: ExerciseDialo
 interface HepPlanManagerProps {
   patientId: number;
   patientPhone?: string | null;
+  patientEmail?: string | null;
 }
 
 // ─────────────────────────────────────────────
@@ -310,7 +311,7 @@ function getPlanSectionValue(plan: NonNullable<ReturnType<typeof useHepPlan>["pl
   return plan.metas ?? "";
 }
 
-export default function HepPlanManager({ patientId, patientPhone }: HepPlanManagerProps) {
+export default function HepPlanManager({ patientId, patientPhone, patientEmail }: HepPlanManagerProps) {
   const toast = useToast();
   const { plan, exercises, adherence, unreadComments, loading, error, createPlan, addExercise, updateExercise, removeExercise, generateToken, refreshAdherence, patchPlanSections, markCommentRead, refetch } =
     useHepPlan(patientId);
@@ -320,9 +321,7 @@ export default function HepPlanManager({ patientId, patientPhone }: HepPlanManag
   const [editingExercise, setEditingExercise] = useState<HepExercise | null>(null);
   const [createForm, setCreateForm] = useState({ title: "", description: "" });
   const [creating, setCreating] = useState(false);
-  const [accessUrl, setAccessUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [generatingLink, setGeneratingLink] = useState(false);
 
   // ── Section editors ──
   const [sectionValues, setSectionValues] = useState<Record<SectionKey, string>>({
@@ -413,24 +412,11 @@ export default function HepPlanManager({ patientId, patientPhone }: HepPlanManag
     }
   };
 
-  // ── Generate access link ──
-  const handleGenerateLink = async () => {
-    if (!plan) return;
-    setGeneratingLink(true);
-    try {
-      const result = await generateToken(plan.id);
-      if (result) setAccessUrl(result.accessUrl);
-    } catch {
-      toast.showError("Erro ao gerar link de acesso.");
-    } finally {
-      setGeneratingLink(false);
-    }
-  };
+  // ── Copy portal link ──
+  const shareLink = `${typeof window !== "undefined" ? window.location.origin : "https://rehabroad.com.br"}/login`;
 
-  // ── Copy link ──
   const handleCopyLink = () => {
-    if (!accessUrl) return;
-    navigator.clipboard.writeText(accessUrl);
+    navigator.clipboard.writeText(shareLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast.showSuccess("Link copiado!");
@@ -819,26 +805,32 @@ export default function HepPlanManager({ patientId, patientPhone }: HepPlanManag
           <Link className="w-4 h-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">Compartilhar com o Paciente</span>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Gere um link que o paciente usa para registrar os exercícios sem precisar de conta.
-          Válido por 30 dias.
-        </p>
 
-        {accessUrl ? (
-          <div className="space-y-2">
+        {!patientEmail ? (
+          <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+            ⚠️ Cadastre o email do paciente no prontuário para que ele possa acessar o portal.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground">
+              O paciente acessa com o Google usando o email cadastrado:{" "}
+              <span className="font-medium text-foreground">{patientEmail}</span>
+            </p>
+
             <div className="flex items-center gap-2">
               <code className="flex-1 text-xs bg-muted rounded-lg px-3 py-2 text-muted-foreground truncate">
-                {accessUrl}
+                {shareLink}
               </code>
               <Button size="sm" variant="outline" onClick={handleCopyLink} className="gap-1.5 flex-shrink-0">
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? "Copiado!" : "Copiar"}
               </Button>
             </div>
-            {patientPhone && plan && (
+
+            {patientPhone && (
               <a
                 href={`https://wa.me/${patientPhone.replace(/\D/g, "").replace(/^0/, "").replace(/^(?!55)(\d{10,11})$/, "55$1")}?text=${encodeURIComponent(
-                  `Olá! 👋\n\nSeu plano de exercícios domiciliares está pronto no Rehabroad.\n\n📋 *Plano:* ${plan.title}\n🔗 *Acesse aqui:* ${accessUrl}\n\nRegistre seus exercícios diariamente pelo link acima. Acompanho sua evolução em tempo real! 💪`
+                  `Olá! Seu plano de tratamento está disponível no Rehabroad.\n\nAcesse: ${shareLink}\n\nClique em "Paciente" e entre com o Google usando este email: ${patientEmail}\n\nSeus exercícios e orientações estão te esperando! 💪`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -847,22 +839,7 @@ export default function HepPlanManager({ patientId, patientPhone }: HepPlanManag
                 <span>📱</span> Enviar via WhatsApp
               </a>
             )}
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void handleGenerateLink()}
-            disabled={generatingLink}
-            className="gap-2"
-          >
-            {generatingLink ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <ChevronRight className="w-3.5 h-3.5" />
-            )}
-            {generatingLink ? "Gerando..." : "Gerar Link de Acesso"}
-          </Button>
+          </>
         )}
       </div>
 
