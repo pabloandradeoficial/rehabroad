@@ -22,6 +22,7 @@ import {
   Gift,
   GraduationCap,
   MapPin,
+  Home,
 } from "lucide-react";
 import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
@@ -33,17 +34,18 @@ const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
 const navItems = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", premium: false, dataOnboarding: undefined },
   { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", premium: false, dataOnboarding: undefined },
-  { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", premium: false, dataOnboarding: undefined },
-  { to: "/dashboard/caminho", icon: Route, label: "Caminho", premium: true, dataOnboarding: undefined },
   { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", premium: true, dataOnboarding: "apoio-clinico-link" },
-  { to: "/dashboard/testes", icon: ClipboardCheck, label: "Testes", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/caminho", icon: Route, label: "Caminho", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", premium: false, dataOnboarding: undefined },
   { to: "/dashboard/alertas", icon: Bell, label: "Indicadores", premium: true, dataOnboarding: undefined },
   { to: "/dashboard/exportacao", icon: FileText, label: "Exportação", premium: true, dataOnboarding: undefined },
-  { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/testes", icon: ClipboardCheck, label: "Testes", premium: true, dataOnboarding: undefined },
 ];
 
 const specialItems = [
   { to: "/dashboard/neuroflux", icon: Brain, label: "NeuroFlux", color: "violet", premium: true },
+  { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", color: "teal", premium: true },
+  { to: "/dashboard/hep", icon: Home, label: "Plano Domiciliar", color: "teal", premium: true },
   { to: "/dashboard/forum", icon: Users, label: "Comunidade", color: "teal", premium: false },
 ];
 
@@ -156,7 +158,8 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
         </NavLink>
       </div>
 
-      <nav className={cn("flex-1 overflow-y-auto scrollbar-thin", collapsed ? "px-2" : "px-3")}>
+      <div className="relative flex-1 overflow-hidden">
+      <nav className={cn("h-full overflow-y-auto overscroll-contain scrollbar-thin", collapsed ? "px-2" : "px-3")}>
         {!collapsed && (
           <div className="mb-2">
             <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -339,6 +342,8 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
           )}
         </ul>
       </nav>
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-950 to-transparent" />
+      </div>
 
       <div className={cn(collapsed ? "p-2" : "p-3")}>
         <NavLink

@@ -59,7 +59,7 @@ function DialogContent({
         data-slot="dialog-content"
         onOpenAutoFocus={preventAutoFocus ? (e) => e.preventDefault() : undefined}
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ring-foreground/5 grid max-w-[calc(100%-2rem)] gap-6 rounded-4xl p-6 pb-10 lg:pb-6 text-sm ring-1 duration-100 sm:max-w-md fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[46] w-full overflow-y-auto max-h-[90vh]",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ring-foreground/5 grid max-w-[calc(100%-2rem)] gap-6 rounded-4xl p-6 pb-10 lg:pb-6 text-sm ring-1 duration-100 sm:max-w-md fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[46] w-full overflow-y-auto max-h-[90vh] max-sm:left-0 max-sm:right-0 max-sm:bottom-0 max-sm:top-auto max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-t-3xl max-sm:rounded-b-none max-sm:max-w-full max-sm:max-h-[85dvh] max-sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]",
           className
         )}
         {...props}

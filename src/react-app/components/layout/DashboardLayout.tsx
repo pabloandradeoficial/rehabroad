@@ -13,9 +13,9 @@ import {
   CreditCard,
   LayoutDashboard,
   Calendar,
-  DollarSign,
+  HeartPulse,
   Route,
-  Users,
+  Home,
   Bot,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
@@ -36,9 +36,9 @@ const RehabFriendChat = lazy(() => import("@/react-app/components/RehabFriendCha
 const BOTTOM_NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", end: true },
   { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", end: false },
-  { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", end: false },
+  { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", end: false },
   { to: "/dashboard/caminho", icon: Route, label: "Caminho", end: false },
-  { to: "/dashboard/forum", icon: Users, label: "Comunidade", end: false },
+  { to: "/dashboard/hep", icon: Home, label: "HEP", end: false },
 ];
 
 // Pages that expired users can still access
@@ -147,7 +147,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-[40] h-16 bg-slate-900/95 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <Sidebar
         className={cn(
-          "fixed top-0 left-0 z-[40] h-screen transition-all duration-300 ease-out lg:translate-x-0",
+          "fixed top-0 left-0 z-[40] h-dvh transition-all duration-300 ease-out lg:translate-x-0",
           sidebarCollapsed ? "lg:w-20" : "lg:w-64",
           "w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -239,7 +239,7 @@ export default function DashboardLayout() {
       {/* Main Content */}
       <main
         className={cn(
-          "min-h-screen pt-16 lg:pt-0 pb-16 lg:pb-0 flex flex-col transition-all duration-300",
+          "min-h-dvh pt-16 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0 flex flex-col transition-all duration-300",
           sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
         )}
       >
@@ -321,7 +321,8 @@ export default function DashboardLayout() {
           className={cn(
             "fixed z-[39] flex items-center gap-2 rounded-full shadow-lg transition-all duration-200",
             "bg-gradient-to-br from-primary to-primary/80 text-white hover:scale-105 active:scale-95",
-            "bottom-20 right-4 lg:bottom-6 lg:right-6 px-4 py-3"
+            "right-4 lg:bottom-6 lg:right-6 px-4 py-3",
+            "bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6"
           )}
           title="Rehab Friend — Assistente IA"
         >
@@ -361,7 +362,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[40] bg-slate-900/95 backdrop-blur-xl border-t border-white/5 flex items-stretch safe-area-inset-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[40] bg-slate-900/95 backdrop-blur-xl border-t border-white/5 flex items-stretch" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {BOTTOM_NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
