@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { useToast } from "@/react-app/components/ui/microinteractions";
 import { apiFetch } from "@/react-app/lib/api";
 import { Button } from "@/react-app/components/ui/button";
@@ -141,7 +142,7 @@ export default function Forum() {
   }, [fetchPosts]);
 
   async function handleCreatePost() {
-    if (!newPostForm.title.trim() || !newPostForm.content.trim()) {
+    if (!newPostForm.title.trim() || newPostForm.title.trim().length < 5 || !newPostForm.content.trim()) {
       toast.showError("Preencha título e conteúdo");
       return;
     }
@@ -428,10 +429,24 @@ export default function Forum() {
   });
 
   return (
-    <PageTransition>
+    <>
+      <div className="md:hidden">
+        <MobileHeader
+          actions={
+            <button
+              onClick={() => setShowNewPost(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-violet-600 text-white active:bg-violet-700"
+              aria-label="Nova discussão"
+            >
+              <Plus size={18} />
+            </button>
+          }
+        />
+      </div>
+      <PageTransition>
       <div className="space-y-5">
-        {/* ── Standardized Header ── */}
-        <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
+        {/* ── Standardized Header — hidden on mobile (MobileHeader takes over) ── */}
+        <div className="hidden md:block relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500" />
           <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
@@ -466,6 +481,18 @@ export default function Forum() {
               className="pl-10"
             />
           </div>
+        </div>
+
+        {/* ── Mobile Search (visible only when hero header is hidden) ── */}
+        <div className="md:hidden relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Buscar discussões..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            inputMode="search"
+          />
         </div>
 
         {/* ── Category Tabs ── */}
@@ -544,7 +571,7 @@ export default function Forum() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ delay: index * 0.04, duration: 0.25 }}
                     onClick={() => void openPost(post)}
-                    className="bg-card border rounded-xl p-5 cursor-pointer hover:shadow-md hover:border-violet-300 dark:hover:border-violet-700 transition-all group"
+                    className="bg-card border rounded-xl p-5 cursor-pointer hover:shadow-md hover:border-violet-300 dark:hover:border-violet-700 transition-all group active:scale-[0.98] active:opacity-80 select-none"
                   >
                     <div className="flex gap-4">
                       {/* Author avatar */}
@@ -575,7 +602,7 @@ export default function Forum() {
                         </div>
 
                         {/* Title */}
-                        <h3 className="font-semibold text-base leading-snug group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                        <h3 className="font-semibold text-base leading-snug group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-2" title={post.title}>
                           {post.title}
                         </h3>
 
@@ -640,7 +667,7 @@ export default function Forum() {
           }
         }}
       >
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {editingPost ? (
@@ -710,7 +737,7 @@ export default function Forum() {
               </Button>
               <Button
                 onClick={editingPost ? () => void handleEditPost() : () => void handleCreatePost()}
-                disabled={submitting || !newPostForm.title.trim() || !newPostForm.content.trim()}
+                disabled={submitting || newPostForm.title.trim().length < 5 || !newPostForm.content.trim()}
                 className="bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90"
               >
                 {submitting ? (
@@ -925,5 +952,6 @@ export default function Forum() {
         </DialogContent>
       </Dialog>
     </PageTransition>
+    </>
   );
 }

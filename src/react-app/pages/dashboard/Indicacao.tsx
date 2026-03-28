@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Gift, Mail, Link2, Copy, MessageCircle, Check, Users, Share2, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
@@ -68,7 +69,11 @@ Teste grátis por 30 dias: ${referralLink}`;
   };
 
   return (
-    <PageTransition>
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PageTransition>
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
@@ -259,5 +264,6 @@ Teste grátis por 30 dias: ${referralLink}`;
         </div>
       </div>
     </PageTransition>
+    </>
   );
 }

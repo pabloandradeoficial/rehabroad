@@ -9,6 +9,7 @@ import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
 import { cn } from "@/react-app/lib/utils";
 import { motion } from "framer-motion";
 import { PageTransition, Spinner, useToast } from "@/react-app/components/ui/microinteractions";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 
 const benefits = [
   "Ferramenta de apoio à organização do raciocínio clínico",
@@ -186,8 +187,12 @@ export default function PlanoPage() {
   const selectedPlanData = plans.find(p => p.id === selectedPlan);
 
   return (
-    <PageTransition>
-    <div className="max-w-5xl mx-auto">
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PageTransition>
+      <div className="max-w-5xl mx-auto">
       {/* Header */}
       <motion.div 
         className="mb-8"
@@ -632,5 +637,6 @@ export default function PlanoPage() {
       </div>
     </div>
     </PageTransition>
+    </>
   );
 }

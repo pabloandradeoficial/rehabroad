@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { useParams, useNavigate, Link } from "react-router";
 import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, Phone, Mail, FileText, Plus, Loader2, Activity, CheckCircle, ClipboardList, Clock, Lightbulb, ExternalLink, Pencil, Heart, TrendingUp, Stethoscope, AlertCircle, MessageCircle, Bell, Send, Trash2, Dumbbell, Sparkles, ChevronRight } from "lucide-react";
@@ -264,7 +265,11 @@ export default function PatientDetailPage() {
   const colors = statusColors[currentStatus];
 
   return (
-    <PageTransition>
+    <>
+      <div className="md:hidden">
+        <MobileHeader showBack />
+      </div>
+      <PageTransition>
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         
         {/* === HEADER LIMPO === */}
@@ -309,7 +314,7 @@ export default function PatientDetailPage() {
                   </div>
                   
                   <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">{patient.name}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground truncate" title={patient.name}>{patient.name}</h1>
                     <p className="text-sm text-muted-foreground mt-1">Prontuário Eletrônico</p>
                   </div>
                 </div>
@@ -849,7 +854,7 @@ export default function PatientDetailPage() {
 
         {/* === EVALUATION DIALOG === */}
         <Dialog open={evalDialogOpen} onOpenChange={(open) => { setEvalDialogOpen(open); if (!open) setEditingEvaluation(null); }}>
-          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto border-primary/20">
+          <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto border-primary/20">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
@@ -931,7 +936,7 @@ export default function PatientDetailPage() {
 
         {/* === EVOLUTION DIALOG === */}
         <Dialog open={evolDialogOpen} onOpenChange={setEvolDialogOpen}>
-          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto border-emerald-500/20">
+          <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto border-emerald-500/20">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
@@ -1035,7 +1040,7 @@ export default function PatientDetailPage() {
 
         {/* === REMINDER DIALOG === */}
         <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-md max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Bell className="w-5 h-5 text-amber-500" />
@@ -1144,7 +1149,7 @@ export default function PatientDetailPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-red-500 flex items-center gap-2">
                 <Trash2 className="w-5 h-5" />
@@ -1173,6 +1178,7 @@ export default function PatientDetailPage() {
 
       </motion.div>
     </PageTransition>
+    </>
   );
 }
 

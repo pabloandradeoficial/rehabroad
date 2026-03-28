@@ -155,7 +155,7 @@ export default function PainelPage() {
   };
 
   const handleSave = async () => {
-    if (!formData.name.trim()) return;
+    if (!formData.name.trim() || formData.name.trim().length < 3) return;
     setSaving(true);
     try {
       if (editingPatient) {
@@ -372,7 +372,7 @@ export default function PainelPage() {
         </motion.div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto border-primary/20">
+          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto border-primary/20">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
@@ -415,6 +415,7 @@ export default function PainelPage() {
                     value={formData.phone || ""}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="(00) 00000-0000"
+                    inputMode="tel"
                     className="h-11"
                   />
                 </div>
@@ -981,7 +982,7 @@ export default function PainelPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-foreground truncate">
+                          <h3 className="font-bold text-foreground truncate" title={paciente.name}>
                             {paciente.name}
                           </h3>
                           {paciente.birth_date && (
@@ -1060,7 +1061,7 @@ export default function PainelPage() {
         </motion.div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto border-primary/20">
+          <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto border-primary/20">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
@@ -1109,6 +1110,7 @@ export default function PainelPage() {
                     value={formData.phone || ""}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="(00) 00000-0000"
+                    inputMode="tel"
                     className="h-11"
                   />
                 </div>
@@ -1152,7 +1154,7 @@ export default function PainelPage() {
         </Dialog>
 
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto border-destructive/20">
+          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto border-destructive/20">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl text-destructive">
                 <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">

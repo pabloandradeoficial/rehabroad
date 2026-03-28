@@ -514,7 +514,7 @@ function ExerciciosContent() {
 
         {/* Exercise Detail Dialog */}
         <Dialog open={exerciseDetailOpen} onOpenChange={(open) => { if (!open) closeExerciseDetail(); }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
             {selectedExercise && (
               <>
                 <DialogHeader>
@@ -657,7 +657,7 @@ function ExerciciosContent() {
 
         {/* Prescribe Dialog */}
         <Dialog open={prescribeDialogOpen} onOpenChange={(open) => { setPrescribeDialogOpen(open); if (!open) setSelectedExercise(null); }}>
-          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-teal-500 flex items-center justify-center shadow-lg">

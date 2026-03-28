@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Stethoscope, 
@@ -634,8 +635,13 @@ function TestesInteligentesContent() {
 
 export default function TestesInteligentesPage() {
   return (
-    <PremiumGate moduleName="Testes Inteligentes">
-      <TestesInteligentesContent />
-    </PremiumGate>
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PremiumGate moduleName="Testes Inteligentes">
+        <TestesInteligentesContent />
+      </PremiumGate>
+    </>
   );
 }

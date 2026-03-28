@@ -39,7 +39,7 @@ const BOTTOM_NAV: BottomNavItem[] = [
   { icon: Users, label: "Prontuário", href: "/dashboard", end: true },
   { icon: Calendar, label: "Agenda", href: "/dashboard/agenda" },
   { icon: HeartPulse, label: "Apoio", href: "/dashboard/suporte" },
-  { icon: MessageCircle, label: "Rehab AI", href: null, action: "rehab-friend" },
+  { icon: MessageCircle, label: "IA", href: null, action: "rehab-friend" },
   { icon: Menu, label: "Mais", href: null, action: "more-menu" },
 ];
 
@@ -116,7 +116,7 @@ export function MobileLayout({ children, onOpenRehabFriend }: MobileLayoutProps)
       {/* ── Main scroll area ─────────────────────────────────────────────── */}
       <main
         className="flex-1 overflow-y-auto overflow-x-hidden"
-        style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}
+        style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}
       >
         {children}
       </main>
@@ -126,7 +126,7 @@ export function MobileLayout({ children, onOpenRehabFriend }: MobileLayoutProps)
         className="fixed bottom-0 left-0 right-0 z-[40] bg-slate-900/95 border-t border-white/5"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        <div className="flex items-center justify-around h-14">
+        <div className="flex items-center h-16">
           {BOTTOM_NAV.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
@@ -136,10 +136,10 @@ export function MobileLayout({ children, onOpenRehabFriend }: MobileLayoutProps)
                 <button
                   key="rehab-friend"
                   onClick={onOpenRehabFriend}
-                  className="flex flex-col items-center gap-0.5 px-3 py-2 min-w-[60px]"
+                  className="flex-1 flex flex-col items-center gap-0.5 py-2 active:opacity-70 transition-opacity"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <Icon size={16} className="text-white" />
+                  <div className="w-7 h-7 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <Icon size={14} className="text-white" />
                   </div>
                   <span className="text-[10px] text-violet-400 font-medium">{item.label}</span>
                 </button>
@@ -151,10 +151,10 @@ export function MobileLayout({ children, onOpenRehabFriend }: MobileLayoutProps)
                 <button
                   key="more"
                   onClick={() => setShowMoreMenu(true)}
-                  className="flex flex-col items-center gap-0.5 px-3 py-2 min-w-[60px]"
+                  className="flex-1 flex flex-col items-center gap-0.5 py-2 active:opacity-70 transition-opacity"
                 >
-                  <Icon size={22} className="text-slate-400" />
-                  <span className="text-[10px] text-slate-400">Mais</span>
+                  <Icon size={20} className="text-slate-400" />
+                  <span className="text-[10px] text-slate-400 font-medium">Mais</span>
                 </button>
               );
             }
@@ -163,10 +163,10 @@ export function MobileLayout({ children, onOpenRehabFriend }: MobileLayoutProps)
               <Link
                 key={item.href}
                 to={item.href!}
-                className="flex flex-col items-center gap-0.5 px-3 py-2 min-w-[60px]"
+                className="flex-1 flex flex-col items-center gap-0.5 py-2 active:opacity-70 transition-opacity"
               >
                 <Icon
-                  size={22}
+                  size={20}
                   className={active ? "text-teal-400" : "text-slate-400"}
                   strokeWidth={active ? 2.5 : 1.5}
                 />

@@ -6,6 +6,7 @@ import { Badge } from "@/react-app/components/ui/badge";
 import { Button } from "@/react-app/components/ui/button";
 import { useAlertasOverview } from "@/react-app/hooks/useAlertas";
 import PremiumGate from "@/react-app/components/PremiumGate";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
 import { PatientAvatar } from "@/react-app/components/PatientAvatar";
 import { useHepOverview } from "@/react-app/hooks/useHep";
@@ -323,8 +324,13 @@ function AlertasContent() {
 
 export default function AlertasPage() {
   return (
-    <PremiumGate moduleName="Indicadores">
-      <AlertasContent />
-    </PremiumGate>
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PremiumGate moduleName="Indicadores">
+        <AlertasContent />
+      </PremiumGate>
+    </>
   );
 }

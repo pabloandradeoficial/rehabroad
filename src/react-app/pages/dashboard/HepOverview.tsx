@@ -1,4 +1,5 @@
 import { useHepOverview } from "@/react-app/hooks/useHep";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { useNavigate } from "react-router";
 import { Home, TrendingUp, Clock, AlertTriangle, CheckCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
@@ -55,7 +56,11 @@ export default function HepOverview() {
   const redCount = overview.filter((e) => e.status === "red").length;
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -192,5 +197,6 @@ export default function HepOverview() {
         </div>
       )}
     </div>
+    </>
   );
 }

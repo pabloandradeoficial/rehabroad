@@ -620,7 +620,7 @@ export default function FinanceiroPage() {
 
         {/* New/Edit Transaction Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-md max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingTransaction ? "Editar Transação" : "Nova Transação"}
@@ -798,7 +798,7 @@ export default function FinanceiroPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-sm max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Excluir Transação</DialogTitle>
             </DialogHeader>

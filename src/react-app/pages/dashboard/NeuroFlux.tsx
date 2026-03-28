@@ -1415,7 +1415,7 @@ function NeuroFluxContent() {
 
         {/* ── SEÇÃO D: Botão mobile (sticky) ── */}
         {!recommendations && (
-          <div className="md:hidden fixed bottom-16 left-0 right-0 z-30 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-xl border-t border-white/10">
+          <div className="md:hidden fixed left-0 right-0 z-30 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-xl border-t border-white/10" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}>
             {generateButton}
           </div>
         )}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Input } from "@/react-app/components/ui/input";
@@ -103,7 +104,11 @@ export default function ContatoSuportePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <div className="space-y-6">
       <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500" />
         <div className="relative flex items-start gap-4">
@@ -297,5 +302,6 @@ export default function ContatoSuportePage() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }

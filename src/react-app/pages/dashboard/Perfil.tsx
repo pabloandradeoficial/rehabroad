@@ -6,6 +6,7 @@ import { Input } from "@/react-app/components/ui/input";
 import { Label } from "@/react-app/components/ui/label";
 import { Textarea } from "@/react-app/components/ui/textarea";
 import { PageTransition, Spinner, useToast } from "@/react-app/components/ui/microinteractions";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import { apiFetch } from "@/react-app/lib/api";
 
@@ -162,7 +163,11 @@ export default function Perfil() {
   }
 
   return (
-    <PageTransition>
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PageTransition>
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Page header */}
         <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
@@ -389,5 +394,6 @@ export default function Perfil() {
         </div>
       </div>
     </PageTransition>
+    </>
   );
 }

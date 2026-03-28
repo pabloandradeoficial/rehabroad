@@ -39,6 +39,7 @@ import {
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import PremiumGate from "@/react-app/components/PremiumGate";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import {
   PageTransition,
   Spinner,
@@ -880,8 +881,13 @@ function ExportacaoContent() {
 
 export default function ExportacaoPage() {
   return (
-    <PremiumGate moduleName="Exportação">
-      <ExportacaoContent />
-    </PremiumGate>
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PremiumGate moduleName="Exportação">
+        <ExportacaoContent />
+      </PremiumGate>
+    </>
   );
 }
