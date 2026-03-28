@@ -14,7 +14,6 @@ import {
   LogOut,
   Flame,
   MessageCircle,
-  Target,
   TrendingUp,
   Home,
   Grid3X3,
@@ -39,7 +38,6 @@ import {
   WeeklyProgressChart,
   StreakCalendar,
   StudentAvatar,
-  CircularStatCard,
 } from "@/react-app/components/StudentProgressWidgets";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
