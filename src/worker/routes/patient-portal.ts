@@ -64,8 +64,19 @@ type PatientCommentRow = {
 // ── Helper: find patient by authenticated user's email ────────────────────────
 
 async function findPatientByEmail(db: D1Database, email: string): Promise<PatientRow | null> {
+  // If multiple patients share the same email, prefer the one with an active HEP plan,
+  // then fall back to the most recently created one.
   return db
-    .prepare("SELECT id, name, patient_notes, user_id FROM patients WHERE LOWER(email) = LOWER(?) LIMIT 1")
+    .prepare(`
+      SELECT p.id, p.name, p.patient_notes, p.user_id
+      FROM patients p
+      WHERE LOWER(p.email) = LOWER(?)
+      ORDER BY (
+        SELECT COUNT(*) FROM hep_plans hp
+        WHERE hp.patient_id = p.id AND hp.status = 'active'
+      ) DESC, p.id DESC
+      LIMIT 1
+    `)
     .bind(email)
     .first<PatientRow>();
 }
