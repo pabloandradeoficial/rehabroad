@@ -12,8 +12,11 @@ import {
   BookOpen,
   User,
   Activity,
+  CreditCard,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/react-app/lib/utils";
+import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
 // ── Nav data ──────────────────────────────────────────────────────────────────
 
@@ -34,7 +37,11 @@ const iaItems = [
 
 const communityItems = [
   { to: "/dashboard/forum", icon: BookOpen, label: "Comunidade", end: false },
-  { to: "/dashboard/perfil", icon: User, label: "Meu Perfil", end: false },
+];
+
+const accountItems = [
+  { to: "/dashboard/plano", icon: CreditCard, label: "Planos e Preços", end: false },
+  { to: "/dashboard/perfil", icon: User, label: "Perfil", end: false },
 ];
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -46,6 +53,14 @@ interface MobileSidebarProps {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function MobileSidebar({ collapsed }: MobileSidebarProps) {
+  const { logout } = useAppAuth();
+
+  const handleLogout = async () => {
+    localStorage.removeItem("loginMode");
+    await logout();
+    window.location.href = "/login";
+  };
+
   const navLinkClass = (isActive: boolean) =>
     cn(
       "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
@@ -153,11 +168,11 @@ export function MobileSidebar({ collapsed }: MobileSidebarProps) {
           ))}
         </ul>
 
-        {/* Section: Conta */}
+        {/* Section: Comunidade */}
         {!collapsed && (
           <div className="mt-5 mb-2">
             <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-              Conta
+              Comunidade
             </span>
           </div>
         )}
@@ -175,6 +190,43 @@ export function MobileSidebar({ collapsed }: MobileSidebarProps) {
               </NavLink>
             </li>
           ))}
+        </ul>
+
+        {/* Section: Conta */}
+        {!collapsed && (
+          <div className="mt-5 mb-2">
+            <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              Conta
+            </span>
+          </div>
+        )}
+        {collapsed && <div className="mt-3" />}
+        <ul className="space-y-0.5">
+          {accountItems.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) => navLinkClass(isActive)}
+              >
+                <item.icon className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+                {!collapsed && <span className="flex-1">{item.label}</span>}
+              </NavLink>
+            </li>
+          ))}
+          <li>
+            <button
+              onClick={handleLogout}
+              className={cn(
+                "w-full group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
+                "text-red-500 hover:bg-red-500/10 active:bg-red-500/20"
+              )}
+            >
+              <LogOut className="w-[18px] h-[18px] flex-shrink-0" />
+              {!collapsed && <span className="flex-1">Sair da conta</span>}
+            </button>
+          </li>
         </ul>
       </nav>
 
