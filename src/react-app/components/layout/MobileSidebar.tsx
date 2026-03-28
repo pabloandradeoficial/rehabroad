@@ -74,7 +74,7 @@ export function MobileSidebar() {
   return (
     <aside
       className={cn(
-        "relative flex-shrink-0 flex flex-col h-full overflow-hidden",
+        "relative flex-shrink-0 flex flex-col h-full",
         "bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950",
         "border-r border-white/5"
       )}
