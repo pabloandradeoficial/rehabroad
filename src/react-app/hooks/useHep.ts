@@ -131,6 +131,15 @@ export function useHepPlan(patientId: number | undefined) {
     void fetchPlan();
   }, [fetchPlan]);
 
+  // Poll adherence every 30 seconds while a plan is active
+  useEffect(() => {
+    if (!plan?.id) return;
+    const interval = setInterval(() => {
+      void fetchAdherence(plan.id);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [plan?.id, fetchAdherence]);
+
   const createPlan = useCallback(
     async (title: string, description?: string): Promise<HepPlan | null> => {
       if (!patientId) return null;

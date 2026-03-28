@@ -19,6 +19,22 @@ const benefits = [
   "Exportação de relatórios profissionais em PDF"
 ];
 
+const featuresIncluidas = [
+  "✓ Prontuário completo",
+  "✓ Apoio Clínico com IA",
+  "✓ NeuroFlux eletroterapia",
+  "✓ Caminho Clínico",
+  "✓ Exercícios filtrados por quadro clínico",
+  "✓ Dashboard de progresso",
+  "✓ Agenda + Financeiro",
+  "✓ Exportação PDF",
+  "✓ Testes clínicos validados",
+  "✓ Comunidade de fisioterapeutas",
+  "✓ Rehab Friend (IA)",
+  "✓ Scribe Clínico",
+  "✓ Plano Domiciliar (HEP)",
+];
+
 const modules = [
   { name: "Caminho", icon: Route, description: "Documentação complementar estruturada" },
   { name: "Apoio Clínico", icon: HeartPulse, description: "Pontos de atenção ao raciocínio clínico" },
@@ -32,30 +48,39 @@ const plans = [
   {
     id: "monthly",
     name: "Mensal",
-    price: 29,
+    price: 97,
+    priceLabel: "97",
     period: "/mês",
-    description: "Cobrança mensal recorrente",
+    subtitle: "Cobrança mensal recorrente",
+    description: "Acesso completo · Cancele quando quiser",
     highlight: false,
-    savings: null
+    savings: null,
+    perks: ["Rehab Friend (15 msgs/dia)", "Scribe Clínico", "Plano Domiciliar (HEP)", "Suporte prioritário"],
   },
   {
     id: "semestral",
     name: "Semestral",
-    price: 149,
-    period: "/6 meses",
-    description: "Pague uma vez, use por 6 meses",
+    price: 77,
+    priceLabel: "77",
+    period: "/mês",
+    subtitle: "R$ 462 cobrado a cada 6 meses",
+    description: "Equivale a 2 meses grátis",
     highlight: true,
-    savings: "Economia de R$ 25"
+    savings: "Economia de R$ 120/ano",
+    perks: ["Tudo do Mensal", "2 meses grátis por semestre", "Prioridade em novidades"],
   },
   {
     id: "annual",
     name: "Anual",
-    price: 279,
-    period: "/ano",
-    description: "Melhor custo-benefício",
+    price: 67,
+    priceLabel: "67",
+    period: "/mês",
+    subtitle: "R$ 804 cobrado anualmente",
+    description: "Equivale a 4 meses grátis",
     highlight: false,
-    savings: "Economia de R$ 69"
-  }
+    savings: "Economia de R$ 360/ano",
+    perks: ["Tudo do Semestral", "4 meses grátis por ano", "Suporte VIP", "Atualizações vitalícias"],
+  },
 ];
 
 export default function PlanoPage() {
@@ -231,8 +256,8 @@ export default function PlanoPage() {
                 Período Beta Ativo
               </p>
               <p className="text-sm text-muted-foreground">
-                {trialDaysRemaining === 0 
-                  ? "Último dia do período beta - aproveite todos os recursos!" 
+                {trialDaysRemaining === 0
+                  ? "Último dia do período beta - aproveite todos os recursos!"
                   : `${trialDaysRemaining} ${trialDaysRemaining === 1 ? "dia restante" : "dias restantes"} de acesso completo`
                 }
               </p>
@@ -243,6 +268,18 @@ export default function PlanoPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Trial nudge banner */}
+      {!isPremium && (
+        <div className="bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 rounded-xl p-4 text-center mb-8">
+          <p className="text-teal-800 dark:text-teal-300 font-medium">
+            🎉 Você está no período de teste gratuito de 30 dias
+          </p>
+          <p className="text-teal-600 dark:text-teal-400 text-sm mt-1">
+            Escolha um plano antes do período terminar para continuar tendo acesso.
+          </p>
+        </div>
       )}
 
       {/* Error Message */}
@@ -331,29 +368,39 @@ export default function PlanoPage() {
                       "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
                       selectedPlan === plan.id
                         ? "border-primary bg-primary"
-                      : "border-muted-foreground/30"
-                  )}>
-                    {selectedPlan === plan.id && (
-                      <Check className="w-3 h-3 text-primary-foreground" />
-                    )}
-                  </div>
+                        : "border-muted-foreground/30"
+                    )}>
+                      {selectedPlan === plan.id && (
+                        <Check className="w-3 h-3 text-primary-foreground" />
+                      )}
+                    </div>
                   )}
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-3">
                   <div className="flex items-baseline gap-1">
                     <span className="text-sm text-muted-foreground">R$</span>
-                    <span className="text-4xl font-bold text-foreground">{plan.price}</span>
+                    <span className="text-4xl font-bold text-foreground">{plan.priceLabel}</span>
                     <span className="text-muted-foreground">{plan.period}</span>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{plan.subtitle}</p>
                   <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
                 </div>
 
                 {plan.savings && (
-                  <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                  <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 mb-3">
                     {plan.savings}
                   </Badge>
                 )}
+
+                <ul className="space-y-1 mt-2">
+                  {plan.perks.map((perk) => (
+                    <li key={perk} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+                      {perk}
+                    </li>
+                  ))}
+                </ul>
               </CardContent>
             </Card>
           ))}
@@ -418,7 +465,6 @@ export default function PlanoPage() {
             <div className="flex-shrink-0 text-center md:text-right">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-4 border border-white/20">
                 <p className="text-white/70 text-xs uppercase tracking-wide mb-1">Valor incluído</p>
-                <p className="text-white text-sm line-through opacity-60">R$ 49/mês</p>
                 <p className="text-amber-300 font-bold text-xl">GRÁTIS</p>
                 <p className="text-white/80 text-xs mt-1">em todos os planos</p>
               </div>
@@ -461,10 +507,22 @@ export default function PlanoPage() {
           </CardHeader>
 
           <CardContent className="relative">
-            <div className={cn("space-y-4", !isPremium && "mb-6")}>
+            {/* All-inclusive features list */}
+            <div className="mb-5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                Tudo incluído em todos os planos
+              </p>
+              <div className="grid grid-cols-1 gap-1.5">
+                {featuresIncluidas.map((feature) => (
+                  <span key={feature} className="text-sm text-foreground/80">{feature}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className={cn("space-y-3 border-t border-border pt-4", !isPremium && "mb-6")}>
               {benefits.map((benefit, index) => (
                 <div key={index} className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
                   <span className="text-sm text-foreground">{benefit}</span>
                 </div>
               ))}
@@ -570,26 +628,6 @@ export default function PlanoPage() {
             </Card>
           ))}
 
-          {/* Free Features */}
-          <div className="mt-6 pt-6 border-t border-border">
-            <h4 className="font-semibold text-foreground mb-3">
-              Recursos Gratuitos (sempre disponíveis)
-            </h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-500" />
-                Prontuário eletrônico completo
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-500" />
-                Registros de avaliação e evolução
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-500" />
-                Organização e acompanhamento clínico
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
     </div>

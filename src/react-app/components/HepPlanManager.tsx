@@ -11,6 +11,7 @@ import {
   Loader2,
   AlertCircle,
   Dumbbell,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
@@ -276,7 +277,7 @@ interface HepPlanManagerProps {
 
 export default function HepPlanManager({ patientId }: HepPlanManagerProps) {
   const toast = useToast();
-  const { plan, exercises, adherence, loading, error, createPlan, addExercise, updateExercise, removeExercise, generateToken, refetch } =
+  const { plan, exercises, adherence, loading, error, createPlan, addExercise, updateExercise, removeExercise, generateToken, refreshAdherence, refetch } =
     useHepPlan(patientId);
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -565,7 +566,17 @@ export default function HepPlanManager({ patientId }: HepPlanManagerProps) {
         <div className="rounded-xl border border-border p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-foreground">Adesão ao Plano</span>
-            <AdherenceBadge rate={adherence.adherenceRate} status={adherence.status} />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => void refreshAdherence()}
+                className="text-xs text-muted-foreground hover:text-teal-600 flex items-center gap-1 transition-colors"
+                title="Atualizar adesão"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Atualizar
+              </button>
+              <AdherenceBadge rate={adherence.adherenceRate} status={adherence.status} />
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">
