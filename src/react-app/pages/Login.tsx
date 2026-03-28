@@ -255,6 +255,15 @@ export default function LoginPage() {
                     Política de Privacidade
                   </a>
                 </p>
+
+                <div className="mt-6 p-4 rounded-xl border border-blue-500/20 bg-blue-500/5">
+                  <p className="text-xs font-semibold text-blue-400 mb-1">
+                    Acesso para Pacientes
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Se você é paciente e recebeu um plano de exercícios do seu fisioterapeuta, faça login com o mesmo e-mail cadastrado no consultório. Você será redirecionado automaticamente para o seu portal.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

@@ -15,6 +15,7 @@ import { miscRouter } from "./routes/misc";
 import { neurofluxRouter } from "./routes/neuroflux";
 import { clinicalContextRouter } from "./routes/clinical-context";
 import { hepRouter } from "./routes/hep";
+import { patientPortalRouter } from "./routes/patient-portal";
 import { rehabFriendRouter } from "./routes/rehab-friend";
 import { scribeRouter } from "./routes/scribe";
 import { profileRouter } from "./routes/profile";
@@ -130,6 +131,7 @@ app.route("/api", clinicalContextRouter);
 app.route("/api/hep", hepRouter);
 app.route("/api/rehab-friend", rehabFriendRouter);
 app.route("/api/scribe", scribeRouter);
+app.route("/api", patientPortalRouter);
 
 // Misc routes: sitemap.xml, robots.txt, PDF downloads, /api/contato, /api/leads, /api/track-view
 app.route("/", miscRouter);

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Activity, Loader2 } from "lucide-react";
 import { supabase } from "@/react-app/lib/supabase";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
+import { apiFetch } from "@/react-app/lib/api";
 
 export default function AuthCallbackPage() {
   const { refreshSession } = useAppAuth();
@@ -93,12 +94,29 @@ export default function AuthCallbackPage() {
 
         if (!isMounted) return;
 
-        const loginMode = localStorage.getItem("loginMode");
-        const destination =
-          loginMode === "student" ? "/estudante" : "/dashboard";
-
         window.history.replaceState({}, document.title, window.location.pathname);
-        window.location.replace(destination);
+
+        const loginMode = localStorage.getItem("loginMode");
+        if (loginMode === "student") {
+          window.location.replace("/estudante");
+          return;
+        }
+
+        // Check if the user is a registered patient
+        try {
+          const res = await apiFetch("/api/patient-portal/me");
+          if (res.ok) {
+            const data = await res.json() as { isPatient: boolean };
+            if (data.isPatient) {
+              window.location.replace("/patient");
+              return;
+            }
+          }
+        } catch {
+          // fall through to dashboard on error
+        }
+
+        window.location.replace("/dashboard");
       } catch (error) {
         if (!isMounted) return;
 

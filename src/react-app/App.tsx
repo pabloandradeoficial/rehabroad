@@ -61,6 +61,15 @@ const HepOverviewPage = lazy(() => import("@/react-app/pages/dashboard/HepOvervi
 const HepPatientPortalPage = lazy(
   () => import("@/react-app/pages/HepPatientPortal")
 );
+const PatientGuardPage = lazy(
+  () => import("@/react-app/pages/patient/PatientGuard")
+);
+const PatientLayoutPage = lazy(
+  () => import("@/react-app/pages/patient/PatientLayout")
+);
+const PatientDashboardPage = lazy(
+  () => import("@/react-app/pages/patient/PatientDashboard")
+);
 const TermosDeUsoPage = lazy(
   () => import("@/react-app/pages/legal/TermosDeUso")
 );
@@ -221,6 +230,18 @@ export default function App() {
                     <Route
                       path="/hep/:token"
                       element={<HepPatientPortalPage />}
+                    />
+
+                    {/* Authenticated patient portal */}
+                    <Route
+                      path="/patient"
+                      element={
+                        <PatientGuardPage>
+                          <PatientLayoutPage>
+                            <PatientDashboardPage />
+                          </PatientLayoutPage>
+                        </PatientGuardPage>
+                      }
                     />
 
                     <Route
