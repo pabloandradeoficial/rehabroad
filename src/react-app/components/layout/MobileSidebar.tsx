@@ -1,78 +1,44 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router";
 import {
-  Users2,
+  Users,
   Calendar,
   HeartPulse,
   MessageCircle,
-  Zap,
+  Brain,
   Dumbbell,
   Route,
-  BarChart2,
-  FileDown,
-  ClipboardList,
-  Users,
-  UserCircle,
+  DollarSign,
+  FileText,
+  ClipboardCheck,
+  BookOpen,
+  User,
   ChevronLeft,
   Activity,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/react-app/lib/utils";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface SidebarItem {
-  icon: React.ElementType;
-  label: string;
-  href?: string;
-  action?: "rehab-friend";
-  badge?: string;
-  end?: boolean;
-}
-
-interface SidebarSection {
-  title?: string;
-  items: SidebarItem[];
-}
-
 // ── Nav data ──────────────────────────────────────────────────────────────────
 
-const SIDEBAR_SECTIONS: SidebarSection[] = [
-  {
-    items: [
-      { icon: Users2, label: "Prontuário", href: "/dashboard", end: true },
-      { icon: Calendar, label: "Agenda", href: "/dashboard/agenda" },
-      { icon: HeartPulse, label: "Apoio Clínico", href: "/dashboard/suporte" },
-    ],
-  },
-  {
-    title: "Ferramentas IA",
-    items: [
-      { icon: MessageCircle, label: "Rehab Friend", action: "rehab-friend", badge: "IA" },
-      { icon: Zap, label: "NeuroFlux", href: "/dashboard/neuroflux" },
-      { icon: Dumbbell, label: "Exercícios", href: "/dashboard/exercicios" },
-      { icon: Route, label: "Caminho Clínico", href: "/dashboard/caminho" },
-    ],
-  },
-  {
-    title: "Gestão",
-    items: [
-      { icon: BarChart2, label: "Financeiro", href: "/dashboard/financeiro" },
-      { icon: FileDown, label: "Exportar PDF", href: "/dashboard/exportacao" },
-      { icon: ClipboardList, label: "Testes Clínicos", href: "/dashboard/testes" },
-    ],
-  },
-  {
-    title: "Comunidade",
-    items: [
-      { icon: Users, label: "Fórum", href: "/dashboard/forum" },
-    ],
-  },
-  {
-    title: "Conta",
-    items: [
-      { icon: UserCircle, label: "Perfil", href: "/dashboard/perfil" },
-    ],
-  },
+const mainItems = [
+  { to: "/dashboard", icon: Users, label: "Prontuário", end: true },
+  { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", end: false },
+  { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", end: false },
+  { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", end: false },
+  { to: "/dashboard/exportacao", icon: FileText, label: "Exportação", end: false },
+  { to: "/dashboard/testes", icon: ClipboardCheck, label: "Testes", end: false },
+];
+
+const iaItems = [
+  { to: "/dashboard/neuroflux", icon: Brain, label: "NeuroFlux", color: "violet" as const },
+  { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", color: "teal" as const },
+  { to: "/dashboard/caminho", icon: Route, label: "Caminho", color: "teal" as const },
+];
+
+const communityItems = [
+  { to: "/dashboard/forum", icon: BookOpen, label: "Comunidade", end: false },
+  { to: "/dashboard/perfil", icon: User, label: "Meu Perfil", end: false },
 ];
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -95,137 +61,180 @@ export function MobileSidebar({ onOpenRehabFriend }: MobileSidebarProps) {
     localStorage.setItem("sidebar_collapsed", String(next));
   };
 
-  const isActive = (item: SidebarItem): boolean => {
-    if (!item.href) return false;
-    if (item.end) return location.pathname === item.href;
-    return location.pathname.startsWith(item.href);
-  };
+  const navLinkClass = (isActive: boolean) =>
+    cn(
+      "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+      collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
+      isActive
+        ? "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
+        : "text-slate-400 hover:text-white hover:bg-white/5"
+    );
+
+  const iaLinkClass = (isActive: boolean, color: "violet" | "teal") =>
+    cn(
+      "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+      collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
+      isActive
+        ? color === "violet"
+          ? "bg-gradient-to-r from-violet-500/20 to-purple-500/10 text-violet-400 border-l-2 border-violet-400"
+          : "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
+        : "text-slate-400 hover:text-white hover:bg-white/5"
+    );
+
+  const rehabFriendActive = false; // action button, never "active"
 
   return (
     <aside
-      className="relative flex-shrink-0 bg-[#0d1117] border-r border-white/[0.06] flex flex-col overflow-hidden"
+      className={cn(
+        "relative flex-shrink-0 flex flex-col h-full overflow-hidden",
+        "bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950",
+        "border-r border-white/5"
+      )}
       style={{
         width: collapsed ? 48 : 200,
         transition: "width 0.25s ease",
       }}
     >
-      {/* ── Brand ────────────────────────────────────────────────────────── */}
-      <div
-        className={cn(
-          "flex items-center h-12 border-b border-white/[0.06] flex-shrink-0",
-          collapsed ? "px-3 justify-center" : "px-3 gap-2"
-        )}
-      >
-        <div className="w-6 h-6 rounded-md bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center flex-shrink-0">
-          <Activity className="w-3.5 h-3.5 text-white" />
+      {/* ── Brand ─────────────────────────────────────────────────────────── */}
+      <div className={cn("border-b border-white/5", collapsed ? "p-3" : "px-4 py-3")}>
+        <div className="flex items-center gap-3">
+          <div className="relative flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-teal-500/25">
+              <Activity className="w-4 h-4 text-white" />
+            </div>
+            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+          </div>
+          {!collapsed && (
+            <div>
+              <h1 className="font-bold text-white tracking-tight text-sm leading-tight">REHABROAD</h1>
+              <p className="text-[10px] text-slate-400 font-medium">Copiloto Clínico</p>
+            </div>
+          )}
         </div>
-        {!collapsed && (
-          <span className="text-[11px] font-bold text-white/80 tracking-wider uppercase whitespace-nowrap">
-            Rehabroad
-          </span>
-        )}
       </div>
 
       {/* ── Nav ──────────────────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 scrollbar-none">
-        {SIDEBAR_SECTIONS.map((section, sIdx) => (
-          <div key={sIdx}>
-            {/* Divider between sections */}
-            {sIdx > 0 && (
-              <div className="h-px bg-white/[0.06] my-1.5 mx-3" />
-            )}
+      <nav className={cn("flex-1 overflow-y-auto overscroll-contain scrollbar-thin py-2", collapsed ? "px-2" : "px-3")}>
 
-            {/* Section label */}
-            {!collapsed && section.title && (
-              <div className="px-3 pt-2 pb-1 text-[10px] text-white/30 uppercase tracking-widest font-semibold select-none">
-                {section.title}
-              </div>
-            )}
-
-            {/* Items */}
-            {section.items.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item);
-
-              // Rehab Friend — action button
-              if (item.action === "rehab-friend") {
-                return (
-                  <button
-                    key="rehab-friend"
-                    onClick={onOpenRehabFriend}
-                    className={cn(
-                      "w-full flex items-center transition-colors duration-100",
-                      "hover:bg-white/5 active:bg-white/10",
-                      collapsed ? "px-3 py-2.5 justify-center" : "px-3 py-2.5 gap-3"
-                    )}
-                  >
-                    <Icon className="w-5 h-5 flex-shrink-0 text-violet-400" />
-                    {!collapsed && (
-                      <>
-                        <span className="text-sm whitespace-nowrap text-white/60">
-                          {item.label}
-                        </span>
-                        {item.badge && (
-                          <span className="ml-auto text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                            {item.badge}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </button>
-                );
-              }
-
-              // Regular nav link
-              return (
-                <NavLink
-                  key={item.href}
-                  to={item.href!}
-                  end={item.end}
-                  className={cn(
-                    "flex items-center transition-colors duration-100",
-                    "hover:bg-white/5 active:bg-white/10",
-                    collapsed ? "px-3 py-2.5 justify-center" : "px-3 py-2.5 gap-3",
-                    active && "bg-primary/10 border-r-2 border-primary"
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      "w-5 h-5 flex-shrink-0",
-                      active ? "text-primary" : "text-white/50"
-                    )}
-                  />
-                  {!collapsed && (
-                    <>
-                      <span
-                        className={cn(
-                          "text-sm whitespace-nowrap",
-                          active ? "text-white font-medium" : "text-white/60"
-                        )}
-                      >
-                        {item.label}
-                      </span>
-                      {item.badge && (
-                        <span className="ml-auto text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
-                    </>
-                  )}
-                </NavLink>
-              );
-            })}
+        {/* Section: Menu Principal */}
+        {!collapsed && (
+          <div className="mb-2">
+            <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              Menu Principal
+            </span>
           </div>
-        ))}
+        )}
+        <ul className="space-y-0.5">
+          {mainItems.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) => navLinkClass(isActive)}
+              >
+                <item.icon className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+                {!collapsed && <span className="flex-1">{item.label}</span>}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+
+        {/* Section: Ferramentas IA */}
+        {!collapsed && (
+          <div className="mt-5 mb-2">
+            <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              Ferramentas IA
+            </span>
+          </div>
+        )}
+        {collapsed && <div className="mt-3" />}
+        <ul className="space-y-1">
+          {/* Rehab Friend — action button */}
+          <li>
+            <button
+              onClick={onOpenRehabFriend}
+              className={cn(
+                "w-full group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
+                rehabFriendActive
+                  ? "bg-gradient-to-r from-violet-500/20 to-purple-500/10 text-violet-400 border-l-2 border-violet-400"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <div className={cn(
+                "rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 flex-shrink-0",
+                collapsed ? "w-6 h-6" : "w-7 h-7",
+                "bg-gradient-to-br from-violet-500/30 to-purple-600/30"
+              )}>
+                <MessageCircle className={cn(collapsed ? "w-3.5 h-3.5" : "w-4 h-4")} />
+              </div>
+              {!collapsed && (
+                <>
+                  <span className="flex-1">Rehab Friend</span>
+                  <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                </>
+              )}
+            </button>
+          </li>
+
+          {/* IA route items */}
+          {iaItems.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                className={({ isActive }) => iaLinkClass(isActive, item.color)}
+              >
+                <div className={cn(
+                  "rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 flex-shrink-0",
+                  collapsed ? "w-6 h-6" : "w-7 h-7",
+                  item.color === "violet"
+                    ? "bg-gradient-to-br from-violet-500/30 to-purple-600/30"
+                    : "bg-gradient-to-br from-teal-500/30 to-emerald-600/30"
+                )}>
+                  <item.icon className={cn(collapsed ? "w-3.5 h-3.5" : "w-4 h-4")} />
+                </div>
+                {!collapsed && <span className="flex-1">{item.label}</span>}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+
+        {/* Section: Comunidade & Conta */}
+        {!collapsed && (
+          <div className="mt-5 mb-2">
+            <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              Conta
+            </span>
+          </div>
+        )}
+        {collapsed && <div className="mt-3" />}
+        <ul className="space-y-0.5">
+          {communityItems.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) => navLinkClass(isActive)}
+              >
+                <item.icon className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+                {!collapsed && <span className="flex-1">{item.label}</span>}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
       </nav>
+
+      {/* ── Fade gradient (matches desktop) ───────────────────────────────── */}
+      <div className="pointer-events-none absolute bottom-10 left-0 right-0 h-8 bg-gradient-to-t from-slate-950 to-transparent" />
 
       {/* ── Toggle button ─────────────────────────────────────────────────── */}
       <button
         onClick={toggle}
         className={cn(
           "absolute -right-3.5 top-1/2 -translate-y-1/2 z-10",
-          "w-7 h-7 rounded-full bg-primary flex items-center justify-center",
-          "shadow-lg shadow-primary/30 transition-all duration-200",
+          "w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500",
+          "flex items-center justify-center",
+          "shadow-lg shadow-teal-500/30 transition-all duration-200",
           "hover:scale-110 active:scale-95"
         )}
         aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
