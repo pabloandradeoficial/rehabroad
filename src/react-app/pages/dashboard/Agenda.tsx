@@ -21,6 +21,7 @@ import {
   Repeat,
 } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
 import { Label } from "@/react-app/components/ui/label";
@@ -585,7 +586,21 @@ export default function AgendaPage() {
   }
 
   return (
-    <PageTransition>
+    <>
+      <div className="md:hidden">
+        <MobileHeader
+          actions={
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-teal-500 text-white active:bg-teal-600"
+              aria-label="Novo agendamento"
+            >
+              <Plus size={18} />
+            </button>
+          }
+        />
+      </div>
+      <PageTransition>
       <div className="space-y-6">
         <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
@@ -1373,6 +1388,7 @@ export default function AgendaPage() {
         </Dialog>
       </div>
     </PageTransition>
+    </>
   );
 }
 

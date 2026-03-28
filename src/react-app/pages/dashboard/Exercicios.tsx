@@ -15,6 +15,7 @@ import { useExerciseRecommendations } from "@/react-app/hooks/useExerciseRecomme
 import { cn } from "@/react-app/lib/utils";
 import { openWhatsApp, createExercisePrescriptionMessage } from "@/react-app/lib/whatsapp";
 import PremiumGate from "@/react-app/components/PremiumGate";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 
 const difficultyConfig = {
   iniciante: { bg: "bg-emerald-500/15", text: "text-emerald-500", border: "border-emerald-500/30", gradient: "from-emerald-500 to-emerald-600" },
@@ -762,8 +763,13 @@ function ExerciciosContent() {
 
 export default function ExerciciosPage() {
   return (
-    <PremiumGate moduleName="Exercícios">
-      <ExerciciosContent />
-    </PremiumGate>
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PremiumGate moduleName="Exercícios">
+        <ExerciciosContent />
+      </PremiumGate>
+    </>
   );
 }

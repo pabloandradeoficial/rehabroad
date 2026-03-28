@@ -73,13 +73,13 @@ function DialogContent({
           "w-full max-h-[90dvh]",
           "rounded-t-2xl rounded-b-none",
 
-          // ── Desktop (sm+): centered modal ────────────────────────────────
-          "sm:bottom-auto sm:right-auto",
-          "sm:left-[50%] sm:top-[50%]",
-          "sm:translate-x-[-50%] sm:translate-y-[-50%]",
-          "sm:w-[calc(100%-2rem)] sm:max-w-lg",
-          "sm:rounded-xl",
-          "sm:max-h-[90vh]",
+          // ── Desktop (md+): centered modal ────────────────────────────────
+          "md:bottom-auto md:right-auto",
+          "md:left-[50%] md:top-[50%]",
+          "md:translate-x-[-50%] md:translate-y-[-50%]",
+          "md:w-[calc(100%-2rem)] md:max-w-lg",
+          "md:rounded-xl",
+          "md:max-h-[90vh]",
 
           // Visual
           "bg-background ring-1 ring-foreground/5 shadow-2xl",
@@ -92,16 +92,16 @@ function DialogContent({
           // Mobile animation: slide from bottom
           "data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
 
-          // Desktop animation: zoom (overrides slide at sm+)
-          "sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:zoom-out-95",
-          "sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:slide-out-to-bottom-0",
+          // Desktop animation: zoom (overrides slide at md+)
+          "md:data-[state=open]:zoom-in-95 md:data-[state=closed]:zoom-out-95",
+          "md:data-[state=open]:slide-in-from-bottom-0 md:data-[state=closed]:slide-out-to-bottom-0",
 
           className,
         )}
         {...props}
       >
         {/* Drag handle — mobile only */}
-        <div className="sm:hidden flex justify-center pt-3 pb-0 flex-shrink-0">
+        <div className="md:hidden flex justify-center pt-3 pb-0 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-foreground/20" />
         </div>
 
@@ -149,7 +149,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "gap-2 flex flex-col-reverse sm:flex-row sm:justify-end mt-4",
+        "gap-2 flex flex-col-reverse md:flex-row md:justify-end mt-4",
         className,
       )}
       {...props}

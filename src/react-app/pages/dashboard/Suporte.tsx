@@ -36,6 +36,7 @@ import { usePatients } from "@/react-app/hooks/usePatients";
 import { useSuporte, type ClinicalInsight, type DiagnosticHypothesis } from "@/react-app/hooks/useSuporte";
 import { useClinicalContext, type ClinicalAlert } from "@/react-app/hooks/useClinicalContext";
 import PremiumGate from "@/react-app/components/PremiumGate";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { PageTransition } from "@/react-app/components/ui/microinteractions";
 import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
 import { Link } from "react-router";
@@ -774,8 +775,13 @@ function SuporteContent() {
 
 export default function SuportePage() {
   return (
-    <PremiumGate moduleName="Apoio Clínico">
-      <SuporteContent />
-    </PremiumGate>
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PremiumGate moduleName="Apoio Clínico">
+        <SuporteContent />
+      </PremiumGate>
+    </>
   );
 }

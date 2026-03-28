@@ -7,6 +7,7 @@ import {
   Layers, RotateCcw, History, ChevronDown,
 } from "lucide-react";
 import PremiumGate from "@/react-app/components/PremiumGate";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
 import { Label } from "@/react-app/components/ui/label";
@@ -1473,8 +1474,13 @@ function NeuroFluxContent() {
 
 export default function NeuroFlux() {
   return (
-    <PremiumGate moduleName="NeuroFlux">
-      <NeuroFluxContent />
-    </PremiumGate>
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PremiumGate moduleName="NeuroFlux">
+        <NeuroFluxContent />
+      </PremiumGate>
+    </>
   );
 }

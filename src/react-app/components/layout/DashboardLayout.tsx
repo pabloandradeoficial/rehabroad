@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
+import { MobileLayout } from "./MobileLayout";
 import { Button } from "@/react-app/components/ui/button";
 import { cn } from "@/react-app/lib/utils";
 import { BetaCountdownBanner } from "@/react-app/components/BetaCountdownBanner";
@@ -48,6 +49,59 @@ const ALLOWED_PAGES_FOR_EXPIRED = [
   "/dashboard/admin",
 ];
 
+// ── Shared expired-subscription wall ─────────────────────────────────────────
+
+function SubscriptionExpiredWall() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="max-w-lg w-full text-center p-8">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+          <Lock className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+        </div>
+
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
+          Seu período de teste expirou
+        </h1>
+
+        <p className="text-slate-600 dark:text-slate-400 mb-6">
+          Seu trial de 30 dias chegou ao fim. Para continuar usando todas as
+          funcionalidades do REHABROAD, escolha um plano que se adapta às suas
+          necessidades.
+        </p>
+
+        <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-4 mb-6">
+          <div className="flex items-start gap-3 text-left">
+            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="font-medium text-slate-900 dark:text-white mb-1">
+                Seus dados estão seguros
+              </p>
+              <p>
+                Todas as suas avaliações, evoluções e pacientes continuam
+                salvos. Ao assinar, você terá acesso imediato a tudo novamente.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Button
+          onClick={() => (window.location.href = "/dashboard/plano")}
+          className="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-semibold py-6 text-lg rounded-xl shadow-lg shadow-teal-500/20"
+        >
+          <CreditCard className="w-5 h-5 mr-2" />
+          Ver Planos e Assinar
+        </Button>
+
+        <p className="text-xs text-slate-500 mt-4">
+          A partir de R$ 29/mês • Cancele quando quiser
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Layout ────────────────────────────────────────────────────────────────────
+
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rehabFriendOpen, setRehabFriendOpen] = useState(false);
@@ -55,11 +109,22 @@ export default function DashboardLayout() {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("sidebarCollapsed");
       if (saved !== null) return saved === "true";
-      // Default by breakpoint: collapse on mobile/tablet, expand on desktop
       return window.innerWidth < 1024;
     }
     return false;
   });
+
+  // Flash-free mobile detection (< 768px = dedicated MobileLayout)
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const { logout, user } = useAppAuth();
   const tour = useProductTour();
@@ -67,7 +132,6 @@ export default function DashboardLayout() {
   const [tourRunning, setTourRunning] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
 
-  // Show welcome modal when tour activates
   useEffect(() => {
     if (tour.isActive && !tourRunning && !showComplete) {
       setShowWelcome(true);
@@ -103,6 +167,7 @@ export default function DashboardLayout() {
     setShowComplete(false);
     tour.restart();
   };
+
   const { language, setLanguage } = useLanguage();
   const {
     isFreeLimited,
@@ -112,19 +177,14 @@ export default function DashboardLayout() {
   } = useSubscription();
   const location = useLocation();
 
-  // Check if current page is allowed for expired users
   const isAllowedPage = ALLOWED_PAGES_FOR_EXPIRED.some((page) =>
     location.pathname.startsWith(page)
   );
 
-  // Determine if user should be blocked
   const shouldBlockAccess =
-    !subscriptionLoading &&
-    isFreeLimited &&
-    !isAllowedPage &&
-    !isAdmin;
+    !subscriptionLoading && isFreeLimited && !isAllowedPage && !isAdmin;
 
-  // Adjust sidebar default when window resizes, but only if user has no saved preference
+  // Adjust sidebar default when window resizes
   useEffect(() => {
     const handleResize = () => {
       if (localStorage.getItem("sidebarCollapsed") === null) {
@@ -145,6 +205,54 @@ export default function DashboardLayout() {
     await logout();
     window.location.href = "/login";
   };
+
+  // Shared overlays rendered in both branches
+  const sharedOverlays = (
+    <>
+      <Suspense fallback={null}>
+        <RehabFriendChat
+          open={rehabFriendOpen}
+          onClose={() => setRehabFriendOpen(false)}
+        />
+      </Suspense>
+
+      {showWelcome && (
+        <OnboardingWelcome
+          userName={user?.user_metadata?.name || user?.email?.split("@")[0]}
+          onStart={handleStartTour}
+          onSkip={handleSkipWelcome}
+        />
+      )}
+      {tourRunning && tour.currentStepData && (
+        <OnboardingTooltip
+          step={tour.currentStepData}
+          currentStep={tour.currentStep}
+          totalSteps={tour.totalSteps}
+          onNext={handleTourNext}
+          onPrevious={tour.previous}
+          onSkip={handleSkipTour}
+        />
+      )}
+      {showComplete && (
+        <OnboardingComplete onClose={() => setShowComplete(false)} />
+      )}
+    </>
+  );
+
+  // ── Mobile branch (< 768px) ───────────────────────────────────────────────
+
+  if (isMobile) {
+    return (
+      <>
+        <MobileLayout onOpenRehabFriend={() => setRehabFriendOpen(true)}>
+          {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
+        </MobileLayout>
+        {sharedOverlays}
+      </>
+    );
+  }
+
+  // ── Desktop branch (≥ 768px) — UNCHANGED ─────────────────────────────────
 
   return (
     <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
@@ -171,7 +279,6 @@ export default function DashboardLayout() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          {/* Language Toggle */}
           <button
             onClick={() => setLanguage(language === "pt" ? "en" : "pt")}
             className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/10 transition-all"
@@ -246,12 +353,9 @@ export default function DashboardLayout() {
           sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
         )}
       >
-        {/* Beta Retention Banner */}
         <BetaCountdownBanner />
 
-        {/* Content Area with subtle pattern */}
         <div className="flex-1 relative">
-          {/* Subtle grid pattern */}
           <div
             className="absolute inset-0 opacity-[0.015] dark:opacity-[0.02] pointer-events-none"
             style={{
@@ -260,55 +364,7 @@ export default function DashboardLayout() {
           />
 
           <div className="relative p-4 sm:p-6 lg:p-8">
-            {shouldBlockAccess ? (
-              <div className="min-h-[60vh] flex items-center justify-center">
-                <div className="max-w-lg w-full text-center p-8">
-                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                    <Lock className="w-10 h-10 text-amber-600 dark:text-amber-400" />
-                  </div>
-
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
-                    Seu período de teste expirou
-                  </h1>
-
-                  <p className="text-slate-600 dark:text-slate-400 mb-6">
-                    Seu trial de 30 dias chegou ao fim. Para continuar usando
-                    todas as funcionalidades do REHABROAD, escolha um plano que
-                    se adapta às suas necessidades.
-                  </p>
-
-                  <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-4 mb-6">
-                    <div className="flex items-start gap-3 text-left">
-                      <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        <p className="font-medium text-slate-900 dark:text-white mb-1">
-                          Seus dados estão seguros
-                        </p>
-                        <p>
-                          Todas as suas avaliações, evoluções e pacientes
-                          continuam salvos. Ao assinar, você terá acesso imediato
-                          a tudo novamente.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => (window.location.href = "/dashboard/plano")}
-                    className="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-semibold py-6 text-lg rounded-xl shadow-lg shadow-teal-500/20"
-                  >
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Ver Planos e Assinar
-                  </Button>
-
-                  <p className="text-xs text-slate-500 mt-4">
-                    A partir de R$ 29/mês • Cancele quando quiser
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <Outlet />
-            )}
+            {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
           </div>
         </div>
 
@@ -324,9 +380,7 @@ export default function DashboardLayout() {
           className={cn(
             "fixed z-[39] flex items-center gap-2 shadow-lg",
             "bg-gradient-to-br from-primary to-primary/80 text-white",
-            // Desktop: rounded pill in corner
             "lg:bottom-6 lg:right-6 lg:rounded-full lg:px-4 lg:py-3 lg:hover:scale-105 lg:transition-all",
-            // Mobile: full-width bar just above the bottom nav
             "max-lg:left-0 max-lg:right-0 max-lg:rounded-none max-lg:justify-center max-lg:py-2.5 max-lg:px-4",
             "max-lg:bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))]"
           )}
@@ -337,38 +391,13 @@ export default function DashboardLayout() {
         </button>
       )}
 
-      {/* Rehab Friend Chat Drawer */}
-      <Suspense fallback={null}>
-        <RehabFriendChat
-          open={rehabFriendOpen}
-          onClose={() => setRehabFriendOpen(false)}
-        />
-      </Suspense>
-
-      {/* Product Tour */}
-      {showWelcome && (
-        <OnboardingWelcome
-          userName={user?.user_metadata?.name || user?.email?.split("@")[0]}
-          onStart={handleStartTour}
-          onSkip={handleSkipWelcome}
-        />
-      )}
-      {tourRunning && tour.currentStepData && (
-        <OnboardingTooltip
-          step={tour.currentStepData}
-          currentStep={tour.currentStep}
-          totalSteps={tour.totalSteps}
-          onNext={handleTourNext}
-          onPrevious={tour.previous}
-          onSkip={handleSkipTour}
-        />
-      )}
-      {showComplete && (
-        <OnboardingComplete onClose={() => setShowComplete(false)} />
-      )}
+      {sharedOverlays}
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[40] bg-slate-900/95 backdrop-blur-xl border-t border-white/5 flex items-stretch" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[40] bg-slate-900/95 backdrop-blur-xl border-t border-white/5 flex items-stretch"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
         {BOTTOM_NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}

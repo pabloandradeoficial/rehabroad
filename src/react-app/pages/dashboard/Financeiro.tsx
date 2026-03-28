@@ -31,6 +31,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Button } from "@/react-app/components/ui/button";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
 import { Label } from "@/react-app/components/ui/label";
@@ -377,7 +378,21 @@ export default function FinanceiroPage() {
   }
 
   return (
-    <PageTransition>
+    <>
+      <div className="md:hidden">
+        <MobileHeader
+          actions={
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-teal-500 text-white active:bg-teal-600"
+              aria-label="Nova transação"
+            >
+              <Plus size={18} />
+            </button>
+          }
+        />
+      </div>
+      <PageTransition>
       <div className="space-y-6">
         {/* Header */}
         <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
@@ -802,6 +817,7 @@ export default function FinanceiroPage() {
         </Dialog>
       </div>
     </PageTransition>
+    </>
   );
 }
 

@@ -27,6 +27,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
 import { Badge } from "@/react-app/components/ui/badge";
@@ -460,7 +461,21 @@ export default function PainelPage() {
   }
 
   return (
-    <PageTransition>
+    <>
+      <div className="md:hidden">
+        <MobileHeader
+          actions={
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-teal-500 text-white active:bg-teal-600"
+              aria-label="Novo paciente"
+            >
+              <Plus size={18} />
+            </button>
+          }
+        />
+      </div>
+      <PageTransition>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -1163,6 +1178,7 @@ export default function PainelPage() {
         </Dialog>
       </motion.div>
     </PageTransition>
+    </>
   );
 }
 

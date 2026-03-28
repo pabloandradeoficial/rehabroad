@@ -9,6 +9,7 @@ import { useCaminho, type CaminhoFormData } from "@/react-app/hooks/useCaminho";
 import { useSuporte } from "@/react-app/hooks/useSuporte";
 import { useClinicalContext, buildClinicalSummary } from "@/react-app/hooks/useClinicalContext";
 import PremiumGate from "@/react-app/components/PremiumGate";
+import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import ClinicalSummary from "@/react-app/components/ClinicalSummary";
 import { motion, AnimatePresence } from "framer-motion";
 import { Spinner, useToast, PageTransition } from "@/react-app/components/ui/microinteractions";
@@ -840,8 +841,13 @@ function CaminhoContent() {
 
 export default function CaminhoPage() {
   return (
-    <PremiumGate moduleName="Caminho">
-      <CaminhoContent />
-    </PremiumGate>
+    <>
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+      <PremiumGate moduleName="Caminho">
+        <CaminhoContent />
+      </PremiumGate>
+    </>
   );
 }
