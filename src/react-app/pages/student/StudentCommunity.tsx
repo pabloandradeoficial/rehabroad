@@ -413,13 +413,13 @@ export default function StudentCommunity({ onBack }: Props) {
   if (selectedPost) {
     const cat = getCategoryInfo(selectedPost.category);
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-900">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-10">
+        <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-10 backdrop-blur-xl">
           <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
             <button
               onClick={() => setSelectedPost(null)}
-              className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition-colors"
+              className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -434,7 +434,7 @@ export default function StudentCommunity({ onBack }: Props) {
                 onClick={() =>
                   setShowDeleteConfirm({ type: "post", id: selectedPost.id })
                 }
-                className="ml-auto w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-rose-500 hover:bg-rose-100 transition-colors"
+                className="ml-auto w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-rose-400 hover:bg-rose-500/15 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -447,7 +447,7 @@ export default function StudentCommunity({ onBack }: Props) {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm"
+            className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-5 mb-6"
           >
             <div className="flex items-start gap-3 mb-4">
               <div
@@ -458,7 +458,7 @@ export default function StudentCommunity({ onBack }: Props) {
                 {selectedPost.user_name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-slate-900">
+                <p className="font-semibold text-white">
                   {selectedPost.user_name}
                 </p>
                 <p className="text-sm text-slate-500">
@@ -466,27 +466,27 @@ export default function StudentCommunity({ onBack }: Props) {
                 </p>
               </div>
               {selectedPost.solution_comment_id && (
-                <div className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-600 text-sm font-medium flex items-center gap-1.5">
+                <div className="px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-sm font-medium flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
                   Resolvido
                 </div>
               )}
             </div>
 
-            <h2 className="text-xl font-bold text-slate-900 mb-3">
+            <h2 className="text-xl font-bold text-white mb-3">
               {selectedPost.title}
             </h2>
-            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+            <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
               {selectedPost.content}
             </p>
 
-            <div className="flex items-center gap-4 mt-5 pt-4 border-t border-slate-200">
+            <div className="flex items-center gap-4 mt-5 pt-4 border-t border-slate-700/50">
               <button
                 onClick={() => void handleLikePost(selectedPost.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
                   likedPosts.includes(selectedPost.id)
-                    ? "bg-rose-100 text-rose-500"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    ? "bg-rose-500/15 text-rose-400"
+                    : "bg-slate-700/50 text-slate-500 hover:bg-slate-700 hover:text-slate-300"
                 }`}
               >
                 <Heart
@@ -496,7 +496,7 @@ export default function StudentCommunity({ onBack }: Props) {
                 />
                 <span className="font-medium">{selectedPost.likes_count}</span>
               </button>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-500">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-700/50 text-slate-500">
                 <MessageCircle className="w-5 h-5" />
                 <span className="font-medium">{comments.length}</span>
               </div>
@@ -505,9 +505,9 @@ export default function StudentCommunity({ onBack }: Props) {
 
           {/* Comments Section */}
           <div className="flex items-center gap-2 mb-4">
-            <MessageCircle className="w-5 h-5 text-teal-500" />
-            <h3 className="text-lg font-semibold text-slate-900">Respostas</h3>
-            <span className="text-slate-400">({comments.length})</span>
+            <MessageCircle className="w-5 h-5 text-teal-400" />
+            <h3 className="text-lg font-semibold text-white">Respostas</h3>
+            <span className="text-slate-500">({comments.length})</span>
           </div>
 
           <div className="space-y-3">
@@ -517,10 +517,10 @@ export default function StudentCommunity({ onBack }: Props) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`bg-white rounded-xl border p-4 relative shadow-sm ${
+                className={`bg-slate-800/30 rounded-xl p-3 relative border ${
                   comment.is_solution
-                    ? "border-emerald-300 ring-1 ring-emerald-200"
-                    : "border-slate-200"
+                    ? "border-l-2 border-l-emerald-500 bg-emerald-500/5 border-slate-700/50"
+                    : "border-slate-700/50"
                 }`}
               >
                 {comment.is_solution && (
@@ -535,14 +535,14 @@ export default function StudentCommunity({ onBack }: Props) {
                     <textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                      className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
                       rows={3}
                     />
                     <div className="flex gap-2">
                       <Button
                         onClick={() => void handleEditComment()}
                         disabled={submitting || !editContent.trim()}
-                        className="bg-teal-500 hover:bg-teal-600"
+                        className="bg-teal-600 hover:bg-teal-700 text-white"
                       >
                         Salvar
                       </Button>
@@ -552,7 +552,7 @@ export default function StudentCommunity({ onBack }: Props) {
                           setEditingComment(null);
                           setEditContent("");
                         }}
-                        className="text-slate-500 hover:text-slate-700"
+                        className="text-slate-400 hover:text-slate-200"
                       >
                         Cancelar
                       </Button>
@@ -570,23 +570,23 @@ export default function StudentCommunity({ onBack }: Props) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-slate-900">
+                          <span className="font-medium text-white">
                             {comment.user_name}andleEditCom
                           </span>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-500">
                             {formatDate(comment.created_at)}
                           </span>
                           {comment.user_id === user?.id && (
                             <button
                               onClick={() => startEditComment(comment)}
-                              className="text-muted-foreground hover:text-violet-500 transition-colors ml-auto"
+                              className="text-slate-500 hover:text-violet-400 transition-colors ml-auto"
                               title="Editar"
                             >
                               <Pencil className="h-3 w-3" />
                             </button>
                           )}
                         </div>
-                        <p className="text-slate-600 mt-2 whitespace-pre-wrap">
+                        <p className="text-slate-300 mt-2 whitespace-pre-wrap">
                           {comment.content}
                         </p>
 
@@ -595,8 +595,8 @@ export default function StudentCommunity({ onBack }: Props) {
                             onClick={() => void handleLikeComment(comment.id)}
                             className={`flex items-center gap-1.5 text-sm transition-colors ${
                               likedComments.includes(comment.id)
-                                ? "text-rose-500"
-                                : "text-slate-400 hover:text-rose-500"
+                                ? "text-rose-400"
+                                : "text-slate-500 hover:text-slate-300"
                             }`}
                           >
                             <Heart
@@ -613,7 +613,7 @@ export default function StudentCommunity({ onBack }: Props) {
                             !comment.is_solution && (
                               <button
                                 onClick={() => void handleMarkSolution(comment.id)}
-                                className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-emerald-500 transition-colors"
+                                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-emerald-400 transition-colors"
                               >
                                 <CheckCircle2 className="w-4 h-4" />
                                 Marcar solução
@@ -630,7 +630,7 @@ export default function StudentCommunity({ onBack }: Props) {
                                 activeMenu === comment.id ? null : comment.id
                               )
                             }
-                            className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                            className="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-500 hover:bg-slate-700 hover:text-slate-300 transition-colors"
                           >
                             <MoreVertical className="w-4 h-4" />
                           </button>
@@ -641,7 +641,7 @@ export default function StudentCommunity({ onBack }: Props) {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="absolute right-0 top-10 w-36 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden z-10"
+                                className="absolute right-0 top-10 w-36 bg-slate-800 border border-slate-700 shadow-xl rounded-xl overflow-hidden z-10"
                               >
                                 <button
                                   onClick={() => {
@@ -649,7 +649,7 @@ export default function StudentCommunity({ onBack }: Props) {
                                     setEditContent(comment.content);
                                     setActiveMenu(null);
                                   }}
-                                  className="w-full px-4 py-2.5 flex items-center gap-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                                  className="w-full px-4 py-2.5 flex items-center gap-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
                                 >
                                   <Pencil className="w-4 h-4" />
                                   Editar
@@ -662,7 +662,7 @@ export default function StudentCommunity({ onBack }: Props) {
                                     });
                                     setActiveMenu(null);
                                   }}
-                                  className="w-full px-4 py-2.5 flex items-center gap-2 text-sm text-rose-500 hover:bg-rose-50 transition-colors"
+                                  className="w-full px-4 py-2.5 flex items-center gap-2 text-sm text-rose-400 hover:bg-rose-500/10 transition-colors"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   Excluir
@@ -680,13 +680,13 @@ export default function StudentCommunity({ onBack }: Props) {
 
             {comments.length === 0 && (
               <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
-                  <MessageCircle className="w-8 h-8 text-slate-400" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center">
+                  <MessageCircle className="w-8 h-8 text-slate-500" />
                 </div>
-                <p className="text-slate-600 font-medium">
+                <p className="text-slate-400 font-medium">
                   Nenhuma resposta ainda
                 </p>
-                <p className="text-slate-400 text-sm mt-1">
+                <p className="text-slate-500 text-sm mt-1">
                   Seja o primeiro a responder!
                 </p>
               </div>
@@ -695,7 +695,7 @@ export default function StudentCommunity({ onBack }: Props) {
         </div>
 
         {/* Comment Input */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200 p-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 p-4">
           <div className="max-w-2xl mx-auto flex gap-3">
             <input
               type="text"
@@ -703,7 +703,7 @@ export default function StudentCommunity({ onBack }: Props) {
               onChange={(e) => setNewComment(e.target.value)}
               placeholder={user ? "Escreva sua resposta..." : "Faça login para responder"}
               disabled={!user}
-              className="flex-1 px-5 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
+              className="flex-1 px-5 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   void handleAddComment();
@@ -713,7 +713,7 @@ export default function StudentCommunity({ onBack }: Props) {
             <Button
               onClick={() => void handleAddComment()}
               disabled={submitting || !newComment.trim() || !user}
-              className="px-5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 rounded-xl"
+              className="px-5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl"
             >
               <Send className="w-5 h-5" />
             </Button>
@@ -727,35 +727,35 @@ export default function StudentCommunity({ onBack }: Props) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
               onClick={() => setShowDeleteConfirm(null)}
             >
               <motion.div
                 initial={{ scale: 0.95 }}
                 animate={{ scale: 1 }}
                 exit={{ scale: 0.95 }}
-                className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-xl"
+                className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-xl"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-rose-100 flex items-center justify-center">
-                  <Trash2 className="w-6 h-6 text-rose-500" />
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-rose-500/15 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-rose-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 text-center mb-2">
+                <h3 className="text-lg font-semibold text-white text-center mb-2">
                   Excluir {showDeleteConfirm.type === "post" ? "publicação" : "comentário"}?
                 </h3>
-                <p className="text-slate-500 text-center text-sm mb-6">
+                <p className="text-slate-400 text-center text-sm mb-6">
                   Esta ação não pode ser desfeita.
                 </p>
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
-                    className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100"
+                    className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
                     onClick={() => setShowDeleteConfirm(null)}
                   >
                     Cancelar
                   </Button>
                   <Button
-                    className="flex-1 bg-rose-500 hover:bg-rose-600"
+                    className="flex-1 bg-rose-500 hover:bg-rose-600 text-white"
                     onClick={() => {
                       if (showDeleteConfirm.type === "post") {
                         void handleDeletePost(showDeleteConfirm.id);
@@ -777,20 +777,20 @@ export default function StudentCommunity({ onBack }: Props) {
 
   // Main Posts List View
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-900">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-10">
+      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-10 backdrop-blur-xl">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition-colors"
+              className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-slate-900">Comunidade</h1>
-              <p className="text-xs text-slate-500">
+              <h1 className="text-lg font-bold text-white">Comunidade</h1>
+              <p className="text-xs text-slate-400">
                 Conecte-se com outros estudantes
               </p>
             </div>
@@ -808,7 +808,7 @@ export default function StudentCommunity({ onBack }: Props) {
             <Button
               size="sm"
               onClick={() => void startStudentLogin()}
-              className="bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl"
+              className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl"
             >
               <User className="w-4 h-4 mr-1.5" />
               Entrar
@@ -819,17 +819,18 @@ export default function StudentCommunity({ onBack }: Props) {
 
       {/* Hero Banner */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500 via-emerald-500 to-teal-600 p-6 shadow-lg">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-3xl" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-teal-950 border-b border-slate-800 px-4 py-5">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-20 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl" />
           <div className="relative flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center shadow-lg">
-              <Users className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 rounded-2xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center shadow-lg">
+              <Users className="w-7 h-7 text-teal-400" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">
                 Comunidade RehabRoad
               </h2>
-              <p className="text-sm text-white/80">
+              <p className="text-sm text-slate-400">
                 Discussões clínicas entre estudantes e profissionais
               </p>
             </div>
@@ -844,8 +845,8 @@ export default function StudentCommunity({ onBack }: Props) {
             onClick={() => setSelectedCategory("all")}
             className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
               selectedCategory === "all"
-                ? "bg-slate-900 text-white shadow-lg"
-                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                ? "bg-white text-slate-900 shadow-lg"
+                : "bg-slate-800 border border-slate-700 text-slate-400 hover:text-white"
             }`}
           >
             Todos
@@ -857,7 +858,7 @@ export default function StudentCommunity({ onBack }: Props) {
               className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 shrink-0 ${
                 selectedCategory === cat.id
                   ? `bg-gradient-to-r ${cat.gradient} text-white shadow-lg`
-                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                  : "bg-slate-800 border border-slate-700 text-slate-400 hover:text-white"
               }`}
             >
               {cat.icon}
@@ -874,29 +875,29 @@ export default function StudentCommunity({ onBack }: Props) {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl border border-slate-200 p-5 animate-pulse shadow-sm"
+                className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-5 animate-pulse"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-slate-100" />
+                  <div className="w-12 h-12 rounded-xl bg-slate-700/60" />
                   <div className="flex-1">
-                    <div className="h-4 w-28 bg-slate-100 rounded mb-2" />
-                    <div className="h-3 w-16 bg-slate-50 rounded" />
+                    <div className="h-4 w-28 bg-slate-700/60 rounded mb-2" />
+                    <div className="h-3 w-16 bg-slate-700/40 rounded" />
                   </div>
                 </div>
-                <div className="h-5 w-3/4 bg-slate-100 rounded mb-2" />
-                <div className="h-4 w-full bg-slate-50 rounded" />
+                <div className="h-5 w-3/4 bg-slate-700/60 rounded mb-2" />
+                <div className="h-4 w-full bg-slate-700/40 rounded" />
               </div>
             ))}
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
-              <MessageCircle className="w-10 h-10 text-slate-400" />
+            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center">
+              <MessageCircle className="w-10 h-10 text-slate-500" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">
+            <h3 className="text-xl font-semibold text-white mb-2">
               Nenhuma publicação ainda
             </h3>
-            <p className="text-slate-500">
+            <p className="text-slate-400">
               Seja o primeiro a iniciar uma discussão!
             </p>
           </div>
@@ -911,7 +912,7 @@ export default function StudentCommunity({ onBack }: Props) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   onClick={() => void fetchPostDetails(post.id)}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-slate-300 hover:shadow-md transition-all group shadow-sm"
+                  className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 cursor-pointer hover:border-slate-600 hover:bg-slate-800/70 transition-all group"
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -923,10 +924,10 @@ export default function StudentCommunity({ onBack }: Props) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-medium text-slate-900">
+                        <span className="font-medium text-white">
                           {post.user_name}
                         </span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-slate-500">
                           · {formatDate(post.created_at)}
                         </span>
                       </div>
@@ -936,10 +937,10 @@ export default function StudentCommunity({ onBack }: Props) {
                         {cat.icon}
                         {cat.name}
                       </div>
-                      <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
+                      <h3 className="text-white font-semibold mb-1 line-clamp-2">
                         {post.title}
                       </h3>
-                      <p className="text-sm text-slate-500 line-clamp-2">
+                      <p className="text-sm text-slate-300 line-clamp-2">
                         {post.content}
                       </p>
 
@@ -951,8 +952,8 @@ export default function StudentCommunity({ onBack }: Props) {
                           }}
                           className={`flex items-center gap-1.5 text-sm transition-colors ${
                             likedPosts.includes(post.id)
-                              ? "text-rose-500"
-                              : "text-slate-400 hover:text-rose-500"
+                              ? "text-rose-400"
+                              : "text-slate-500 hover:text-slate-300"
                           }`}
                         >
                           <Heart
@@ -962,17 +963,17 @@ export default function StudentCommunity({ onBack }: Props) {
                           />
                           {post.likes_count}
                         </button>
-                        <span className="flex items-center gap-1.5 text-sm text-slate-400">
+                        <span className="flex items-center gap-1.5 text-sm text-slate-500">
                           <MessageCircle className="w-4 h-4" />
                           {post.comments_count}
                         </span>
                         {post.solution_comment_id && (
-                          <span className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
+                          <span className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-1 rounded-full">
                             <CheckCircle2 className="w-3 h-3" />
                             Resolvido
                           </span>
                         )}
-                        <ChevronRight className="w-4 h-4 text-slate-300 ml-auto group-hover:text-slate-600 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-slate-600 ml-auto group-hover:text-slate-400 transition-colors" />
                       </div>
                     </div>
                   </div>
@@ -986,7 +987,7 @@ export default function StudentCommunity({ onBack }: Props) {
       {/* New Post FAB */}
       <button
         onClick={() => setShowNewPost(true)}
-        className="fixed bottom-6 right-6 w-16 h-16 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-xl shadow-teal-500/30 flex items-center justify-center hover:scale-105 transition-transform"
+        className="fixed bottom-6 right-6 w-16 h-16 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white shadow-xl shadow-teal-900/40 flex items-center justify-center hover:scale-105 transition-transform"
       >
         <Plus className="w-7 h-7" />
       </button>
@@ -1005,16 +1006,16 @@ export default function StudentCommunity({ onBack }: Props) {
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="bg-white w-full sm:w-[480px] sm:rounded-2xl rounded-t-3xl max-h-[90vh] overflow-auto border-t border-slate-200 sm:border sm:border-slate-200 shadow-xl"
+              className="bg-slate-900 border border-slate-700 rounded-2xl w-full sm:w-[480px] sm:rounded-2xl rounded-t-3xl max-h-[90vh] overflow-auto shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="sticky top-0 bg-white/95 backdrop-blur-xl border-b border-slate-200 px-5 py-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-900">
+              <div className="sticky top-0 bg-slate-900/95 backdrop-blur-xl border-b border-slate-800 px-5 py-4 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-white">
                   Nova Publicação
                 </h2>
                 <button
                   onClick={() => setShowNewPost(false)}
-                  className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200"
+                  className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1023,7 +1024,7 @@ export default function StudentCommunity({ onBack }: Props) {
               <div className="p-5 space-y-5">
                 {/* Category Select */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                  <label className="block text-sm font-medium text-slate-300 mb-3">
                     Categoria
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -1033,8 +1034,8 @@ export default function StudentCommunity({ onBack }: Props) {
                         onClick={() => setNewPostCategory(cat.id)}
                         className={`p-4 rounded-xl border-2 text-left transition-all ${
                           newPostCategory === cat.id
-                            ? "border-teal-500 bg-teal-50"
-                            : "border-slate-200 hover:border-slate-300 bg-slate-50"
+                            ? "border-teal-500 bg-teal-500/10"
+                            : "border-slate-700 hover:border-slate-600 bg-slate-800/50"
                         }`}
                       >
                         <div
@@ -1042,7 +1043,7 @@ export default function StudentCommunity({ onBack }: Props) {
                         >
                           {cat.icon}
                         </div>
-                        <p className="text-sm font-medium text-slate-900">
+                        <p className="text-sm font-medium text-white">
                           {cat.name}
                         </p>
                       </button>
@@ -1052,7 +1053,7 @@ export default function StudentCommunity({ onBack }: Props) {
 
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Título
                   </label>
                   <input
@@ -1060,17 +1061,17 @@ export default function StudentCommunity({ onBack }: Props) {
                     value={newPostTitle}
                     onChange={(e) => setNewPostTitle(e.target.value)}
                     placeholder="Ex: Dúvida sobre manobra de Phalen"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                     maxLength={150}
                   />
-                  <p className="text-xs text-slate-400 mt-1.5 text-right">
+                  <p className="text-xs text-slate-500 mt-1.5 text-right">
                     {newPostTitle.length}/150
                   </p>
                 </div>
 
                 {/* Content */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Descrição
                   </label>
                   <textarea
@@ -1078,10 +1079,10 @@ export default function StudentCommunity({ onBack }: Props) {
                     onChange={(e) => setNewPostContent(e.target.value)}
                     placeholder="Descreva sua dúvida ou inicie a discussão..."
                     rows={5}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
                     maxLength={2000}
                   />
-                  <p className="text-xs text-slate-400 mt-1.5 text-right">
+                  <p className="text-xs text-slate-500 mt-1.5 text-right">
                     {newPostContent.length}/2000
                   </p>
                 </div>
@@ -1092,7 +1093,7 @@ export default function StudentCommunity({ onBack }: Props) {
                   disabled={
                     submitting || !newPostTitle.trim() || !newPostContent.trim()
                   }
-                  className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 rounded-xl"
+                  className="w-full py-6 text-lg font-semibold bg-teal-600 hover:bg-teal-700 text-white rounded-xl"
                 >
                   {submitting ? "Publicando..." : "Publicar"}
                 </Button>

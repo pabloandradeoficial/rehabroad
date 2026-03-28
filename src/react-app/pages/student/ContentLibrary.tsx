@@ -2,12 +2,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/react-app/components/ui/button";
 import { Input } from "@/react-app/components/ui/input";
-import { 
-  ArrowLeft, 
-  Search, 
-  BookOpen, 
-  Lightbulb, 
-  Target, 
+import {
+  ArrowLeft,
+  Search,
+  BookOpen,
+  Lightbulb,
+  Target,
   Stethoscope,
   ChevronRight,
   GraduationCap,
@@ -32,7 +32,7 @@ import { educationalContents, areas, type EducationalContent } from "@/data/libr
 // Map content areas to clinical case categories
 const areaToCaseMapping: Record<string, string> = {
   'ortopedia': 'ombro',
-  'esportiva': 'joelho', 
+  'esportiva': 'joelho',
   'geriatria': 'coluna',
   'neurologia': 'neurologia'
 };
@@ -61,7 +61,7 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
 
   const filteredContents = educationalContents.filter(content => {
     const matchesArea = !selectedArea || content.area === selectedArea;
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       content.explanation.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesArea && matchesSearch;
@@ -70,13 +70,13 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
   const getDifficultyBadge = (difficulty: string) => {
     switch (difficulty) {
       case 'basico':
-        return { label: 'Básico', color: 'bg-emerald-100 text-emerald-700' };
+        return { label: 'Básico', color: 'bg-emerald-500/20 text-emerald-400' };
       case 'intermediario':
-        return { label: 'Intermediário', color: 'bg-amber-100 text-amber-700' };
+        return { label: 'Intermediário', color: 'bg-amber-500/20 text-amber-400' };
       case 'avancado':
-        return { label: 'Avançado', color: 'bg-red-100 text-red-700' };
+        return { label: 'Avançado', color: 'bg-red-500/20 text-red-400' };
       default:
-        return { label: difficulty, color: 'bg-gray-100 text-gray-700' };
+        return { label: difficulty, color: 'bg-slate-700 text-slate-400' };
     }
   };
 
@@ -100,8 +100,8 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
   return (
     <AnimatePresence mode="wait">
       {selectedContent ? (
-        <ModulePage key="detail" className="min-h-screen bg-slate-50 pb-24 md:pb-8">
-        {/* Header - Mobile optimized */}
+        <ModulePage key="detail" className="min-h-screen bg-slate-950 pb-24 md:pb-8">
+        {/* Header */}
         <div className="bg-slate-900 text-white">
           <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
             <button
@@ -124,84 +124,84 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
                   )}
                   <span className="text-slate-400 text-xs sm:text-sm">{area?.name}</span>
                 </div>
-                <h1 className="text-lg sm:text-2xl font-bold leading-tight">{selectedContent.title}</h1>
+                <h1 className="text-lg sm:text-2xl font-bold text-white leading-tight">{selectedContent.title}</h1>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Content - Responsive spacing */}
+        {/* Content */}
         <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
           {/* Explanation */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center gap-2 text-slate-600 mb-2 sm:mb-3">
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 sm:p-6">
+            <div className="flex items-center gap-2 text-teal-400 mb-2 sm:mb-3">
               <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
-              <h2 className="font-semibold text-sm sm:text-base">Explicação</h2>
+              <h2 className="font-semibold text-sm sm:text-base text-teal-400">Explicação</h2>
             </div>
-            <p className="text-slate-700 leading-relaxed text-sm sm:text-base">{selectedContent.explanation}</p>
+            <p className="text-slate-300 leading-relaxed text-sm sm:text-base">{selectedContent.explanation}</p>
           </div>
 
           {/* Topics */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center gap-2 text-slate-600 mb-3 sm:mb-4">
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 sm:p-6">
+            <div className="flex items-center gap-2 text-slate-300 mb-3 sm:mb-4">
               <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />
-              <h2 className="font-semibold text-sm sm:text-base">Principais Tópicos</h2>
+              <h2 className="font-semibold text-sm sm:text-base text-white">Principais Tópicos</h2>
             </div>
             <ul className="space-y-2">
               {selectedContent.topics.map((topic, index) => (
                 <li key={index} className="flex items-start gap-2 sm:gap-3">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-xs sm:text-sm font-medium shrink-0">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs sm:text-sm font-medium shrink-0">
                     {index + 1}
                   </div>
-                  <span className="text-slate-700 text-sm sm:text-base">{topic}</span>
+                  <span className="text-slate-300 text-sm sm:text-base">{topic}</span>
                 </li>
               ))}
             </ul>
           </div>
 
           {/* Key Points */}
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 sm:p-6 border border-amber-200">
-            <div className="flex items-center gap-2 text-amber-700 mb-3 sm:mb-4">
-              <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5" />
-              <h2 className="font-semibold text-sm sm:text-base">Pontos-Chave</h2>
+          <div className="bg-amber-500/5 border-l-4 border-amber-500 rounded-r-xl p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+              <h2 className="font-semibold text-sm sm:text-base text-white">Pontos-Chave</h2>
             </div>
             <ul className="space-y-2 sm:space-y-3">
               {selectedContent.keyPoints.map((point, index) => (
                 <li key={index} className="flex items-start gap-2 sm:gap-3">
-                  <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 mt-1 shrink-0" />
-                  <span className="text-slate-700 text-sm sm:text-base">{point}</span>
+                  <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 mt-1 shrink-0" />
+                  <span className="text-slate-300 text-sm sm:text-base">{point}</span>
                 </li>
               ))}
             </ul>
           </div>
 
           {/* Clinical Application */}
-          <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-4 sm:p-6 border border-teal-200">
-            <div className="flex items-center gap-2 text-teal-700 mb-2 sm:mb-3">
-              <Stethoscope className="w-4 h-4 sm:w-5 sm:h-5" />
-              <h2 className="font-semibold text-sm sm:text-base">Aplicação Clínica</h2>
+          <div className="bg-teal-500/5 border-l-4 border-teal-500 rounded-r-xl p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <Stethoscope className="w-4 h-4 sm:w-5 sm:h-5 text-teal-400" />
+              <h2 className="font-semibold text-sm sm:text-base text-white">Aplicação Clínica</h2>
             </div>
-            <p className="text-slate-700 leading-relaxed text-sm sm:text-base">{selectedContent.clinicalApplication}</p>
+            <p className="text-slate-300 leading-relaxed text-sm sm:text-base">{selectedContent.clinicalApplication}</p>
           </div>
 
           {/* References */}
           {selectedContent.references && selectedContent.references.length > 0 && (
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-slate-200">
-              <div className="flex items-center gap-2 text-slate-600 mb-3 sm:mb-4">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 sm:p-6">
+              <div className="flex items-center gap-2 text-slate-400 mb-3 sm:mb-4">
                 <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
-                <h2 className="font-semibold text-sm sm:text-base">Referências Científicas</h2>
+                <h2 className="font-semibold text-sm sm:text-base text-white">Referências Científicas</h2>
               </div>
               <ol className="space-y-2 list-decimal list-inside">
                 {selectedContent.references.map((reference, index) => (
-                  <li key={index} className="text-xs sm:text-sm text-slate-600 leading-relaxed pl-1">
-                    <span className="text-slate-700">{reference}</span>
+                  <li key={index} className="text-xs sm:text-sm text-slate-500 leading-relaxed pl-1 italic">
+                    <span className="text-slate-500">{reference}</span>
                   </li>
                 ))}
               </ol>
             </div>
           )}
 
-          {/* Action Buttons - Mobile fixed bottom */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4 pb-20 sm:pb-4">
             {onTestCase && areaToCaseMapping[selectedContent.area] && (
               <Button
@@ -215,9 +215,9 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
             <Button
               onClick={() => markAsCompleted(selectedContent.id)}
               className={`flex-1 gap-2 h-12 sm:h-10 text-sm sm:text-base touch-manipulation ${
-                isCompleted 
-                  ? 'bg-emerald-600 hover:bg-emerald-700' 
-                  : 'bg-slate-800 hover:bg-slate-900'
+                isCompleted
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-slate-800 hover:bg-slate-700 border border-slate-700'
               }`}
             >
               <CheckCircle2 className="w-5 h-5" />
@@ -227,8 +227,8 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
         </div>
       </ModulePage>
       ) : (
-      <ModulePage key="list" className="min-h-screen bg-slate-50 pb-24 md:pb-8">
-      {/* Header - Mobile optimized */}
+      <ModulePage key="list" className="min-h-screen bg-slate-950 pb-24 md:pb-8">
+      {/* Header */}
       <div className="bg-slate-900 text-white">
         <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
           <button
@@ -238,12 +238,12 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm">{selectedArea ? 'Todas as áreas' : 'Voltar'}</span>
           </button>
-          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2 sm:gap-3">
             <BookOpen className="w-6 h-6 sm:w-7 sm:h-7" />
             Biblioteca de Conteúdo
           </h1>
           <p className="text-slate-400 mt-1 text-sm sm:text-base">
-            {selectedArea 
+            {selectedArea
               ? `${areas.find(a => a.id === selectedArea)?.name}`
               : 'Material organizado por áreas'
             }
@@ -252,28 +252,28 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
-        {/* Progress Stats - Compact mobile */}
-        <div className="bg-white rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 shadow-sm border border-slate-200">
+        {/* Progress Stats */}
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
-                <Target className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+                <Target className="w-5 h-5 sm:w-6 sm:h-6 text-teal-400" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-slate-500">Seu progresso</p>
-                <p className="font-bold text-slate-900 text-sm sm:text-base">
+                <p className="text-xs sm:text-sm text-slate-400">Seu progresso</p>
+                <p className="font-bold text-white text-sm sm:text-base">
                   {completedContent.length}/{educationalContents.length} conteúdos
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <div className="w-20 sm:w-32 h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div 
+              <div className="w-20 sm:w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div
                   className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
                   style={{ width: `${(completedContent.length / educationalContents.length) * 100}%` }}
                 />
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-1">
                 {Math.round((completedContent.length / educationalContents.length) * 100)}%
               </p>
             </div>
@@ -281,7 +281,7 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
         </div>
 
         {!selectedArea ? (
-          /* Area Selection Grid - Mobile 1 col, Tablet+ 2 col */
+          /* Area Selection Grid */
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {areas.map((area) => {
               const areaContents = educationalContents.filter(c => c.area === area.id);
@@ -291,21 +291,21 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
                 <button
                   key={area.id}
                   onClick={() => setSelectedArea(area.id)}
-                  className="bg-white rounded-xl p-4 sm:p-6 text-left shadow-sm border border-slate-200 hover:border-teal-300 hover:shadow-md active:scale-[0.98] transition-all group touch-manipulation"
+                  className="bg-slate-800/60 border border-slate-700/50 hover:border-teal-500/30 rounded-xl p-4 sm:p-6 text-left active:scale-[0.98] transition-all group touch-manipulation"
                 >
                   <div className="flex items-start justify-between mb-3 sm:mb-4">
                     <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${area.gradient} text-white flex items-center justify-center`}>
                       {areaIcons[area.iconName]}
                     </div>
-                    <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-teal-500 transition-colors" />
+                    <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-teal-400 transition-colors" />
                   </div>
-                  <h3 className="font-bold text-slate-900 text-base sm:text-lg mb-0.5 sm:mb-1">{area.name}</h3>
-                  <p className="text-slate-500 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">{area.description}</p>
+                  <h3 className="font-bold text-white text-base sm:text-lg mb-0.5 sm:mb-1">{area.name}</h3>
+                  <p className="text-slate-400 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">{area.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm text-slate-600">
+                    <span className="text-xs sm:text-sm text-slate-300">
                       {areaContents.length} conteúdos
                     </span>
-                    <span className="text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 rounded-full bg-slate-100 text-slate-600">
+                    <span className="text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 rounded-full bg-slate-700 text-slate-400">
                       {completedInArea}/{areaContents.length}
                     </span>
                   </div>
@@ -316,7 +316,7 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
         ) : (
           /* Content List */
           <div>
-            {/* Search - Touch optimized */}
+            {/* Search */}
             <div className="relative mb-4 sm:mb-6">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <Input
@@ -324,11 +324,11 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
                 placeholder="Buscar conteúdo..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 sm:h-10 bg-white border-slate-200 text-base sm:text-sm"
+                className="pl-10 h-12 sm:h-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-teal-500 text-base sm:text-sm"
               />
             </div>
 
-            {/* Content Cards - Touch optimized */}
+            {/* Content Cards */}
             <div className="space-y-2 sm:space-y-3">
               {filteredContents.map((content) => {
                 const difficulty = getDifficultyBadge(content.difficulty);
@@ -338,8 +338,10 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
                   <button
                     key={content.id}
                     onClick={() => setSelectedContent(content)}
-                    className={`w-full bg-white rounded-xl p-4 sm:p-5 text-left shadow-sm border transition-all group active:scale-[0.98] touch-manipulation ${
-                      isCompleted ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-200 hover:border-teal-300 hover:shadow-md'
+                    className={`w-full rounded-xl p-4 sm:p-5 text-left border transition-all group active:scale-[0.98] touch-manipulation ${
+                      isCompleted
+                        ? 'border-teal-500/30 bg-teal-500/5'
+                        : 'bg-slate-800/60 border-slate-700/50 hover:border-teal-500/30'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3 sm:gap-4">
@@ -349,20 +351,20 @@ export default function ContentLibrary({ onBack, onTestCase }: ContentLibraryPro
                             {difficulty.label}
                           </span>
                           {isCompleted && (
-                            <span className="flex items-center gap-1 text-[10px] sm:text-xs text-emerald-600">
+                            <span className="flex items-center gap-1 text-[10px] sm:text-xs text-emerald-400">
                               <CheckCircle2 className="w-3 h-3" />
                               Concluído
                             </span>
                           )}
                         </div>
-                        <h3 className="font-semibold text-slate-900 group-hover:text-teal-600 transition-colors text-sm sm:text-base">
+                        <h3 className="font-semibold text-white group-hover:text-teal-400 transition-colors text-sm sm:text-base">
                           {content.title}
                         </h3>
-                        <p className="text-xs sm:text-sm text-slate-500 mt-1 line-clamp-2">
+                        <p className="text-xs sm:text-sm text-slate-400 mt-1 line-clamp-2">
                           {content.explanation}
                         </p>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-teal-500 shrink-0 transition-colors" />
+                      <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-teal-400 shrink-0 transition-colors" />
                     </div>
                   </button>
                 );

@@ -347,30 +347,30 @@ export default function StudentDashboard({
     switch (difficulty) {
       case "facil":
         return {
-          bg: "bg-emerald-50",
-          text: "text-emerald-700",
-          border: "border-emerald-200",
+          bg: "bg-emerald-500/15",
+          text: "text-emerald-400",
+          border: "border-emerald-500/30",
           label: "Fácil",
         };
       case "medio":
         return {
-          bg: "bg-amber-50",
-          text: "text-amber-700",
-          border: "border-amber-200",
+          bg: "bg-amber-500/15",
+          text: "text-amber-400",
+          border: "border-amber-500/30",
           label: "Médio",
         };
       case "dificil":
         return {
-          bg: "bg-red-50",
-          text: "text-red-700",
-          border: "border-red-200",
+          bg: "bg-red-500/15",
+          text: "text-red-400",
+          border: "border-red-500/30",
           label: "Difícil",
         };
       default:
         return {
-          bg: "bg-slate-50",
-          text: "text-slate-700",
-          border: "border-slate-200",
+          bg: "bg-slate-700",
+          text: "text-slate-300",
+          border: "border-slate-600",
           label: difficulty,
         };
     }
@@ -378,13 +378,13 @@ export default function StudentDashboard({
 
   if (viewMode === "dashboard") {
     return (
-      <div className="min-h-screen bg-slate-50 py-4 sm:py-8 px-3 sm:px-4 pb-28 md:pb-8">
+      <div className="min-h-screen bg-slate-900 py-4 sm:py-8 px-3 sm:px-4 pb-28 md:pb-8">
         <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           <div className="text-center mb-4 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-1 sm:mb-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">
               Casos Clínicos
             </h1>
-            <p className="text-slate-600 text-sm sm:text-base">
+            <p className="text-slate-400 text-sm sm:text-base">
               Pratique raciocínio diagnóstico
             </p>
           </div>
@@ -412,56 +412,56 @@ export default function StudentDashboard({
           </Card>
 
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-violet-50 to-purple-50">
+            <Card className="bg-slate-800/60 border border-slate-700/50">
               <CardContent className="p-3 sm:p-4 text-center">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-violet-100 rounded-lg sm:rounded-xl flex items-center justify-center mx-auto mb-1.5 sm:mb-2">
-                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-violet-600" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-violet-500/15 rounded-lg sm:rounded-xl flex items-center justify-center mx-auto mb-1.5 sm:mb-2">
+                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
                 </div>
-                <p className="text-xl sm:text-2xl font-bold text-slate-900">
+                <p className="text-xl sm:text-2xl font-bold text-white">
                   {stats.completed}
                 </p>
-                <p className="text-[10px] sm:text-xs text-slate-500">Resolvidos</p>
+                <p className="text-[10px] sm:text-xs text-slate-400">Resolvidos</p>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-teal-50">
+            <Card className="bg-slate-800/60 border border-slate-700/50">
               <CardContent className="p-3 sm:p-4 text-center">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-100 rounded-lg sm:rounded-xl flex items-center justify-center mx-auto mb-1.5 sm:mb-2">
-                  <Target className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-500/15 rounded-lg sm:rounded-xl flex items-center justify-center mx-auto mb-1.5 sm:mb-2">
+                  <Target className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
                 </div>
-                <p className="text-xl sm:text-2xl font-bold text-slate-900">
+                <p className="text-xl sm:text-2xl font-bold text-white">
                   {stats.accuracy}%
                 </p>
-                <p className="text-[10px] sm:text-xs text-slate-500">Acertos</p>
+                <p className="text-[10px] sm:text-xs text-slate-400">Acertos</p>
               </CardContent>
             </Card>
 
             <Card
-              className="border-0 shadow-sm active:shadow-md transition-shadow bg-gradient-to-br from-amber-50 to-orange-50 touch-manipulation"
+              className="bg-slate-800/60 border border-slate-700/50 active:shadow-md transition-shadow touch-manipulation"
               onClick={() => setViewMode("ranking")}
             >
               <CardContent className="p-3 sm:p-4 text-center">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-100 rounded-lg sm:rounded-xl flex items-center justify-center mx-auto mb-1.5 sm:mb-2">
-                  <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-500/15 rounded-lg sm:rounded-xl flex items-center justify-center mx-auto mb-1.5 sm:mb-2">
+                  <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                 </div>
-                <p className="text-xs sm:text-sm font-semibold text-amber-700">
+                <p className="text-xs sm:text-sm font-semibold text-amber-400">
                   Ranking
                 </p>
-                <p className="text-[10px] sm:text-xs text-slate-500">Top 10</p>
+                <p className="text-[10px] sm:text-xs text-slate-400">Top 10</p>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="border-0 shadow-sm">
+          <Card className="border-slate-700/50 bg-slate-800/50">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-teal-600" />
-                  <span className="text-sm font-medium text-slate-700">
+                  <TrendingUp className="w-4 h-4 text-teal-400" />
+                  <span className="text-sm font-medium text-slate-300">
                     Progresso Geral
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-teal-600">
+                <span className="text-sm font-semibold text-teal-400">
                   {stats.completed}/{stats.total} casos
                 </span>
               </div>
@@ -469,7 +469,7 @@ export default function StudentDashboard({
                 value={stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}
                 className="h-2.5"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-slate-400 mt-2">
                 {stats.correct} acertos de {stats.completed} tentativas
               </p>
             </CardContent>
@@ -480,7 +480,7 @@ export default function StudentDashboard({
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="flex-1 px-2.5 sm:px-3 py-2.5 sm:py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent touch-manipulation"
+              className="flex-1 px-2.5 sm:px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent touch-manipulation"
             >
               <option value="all">Todas Regiões</option>
               {caseCategories.map((cat) => (
@@ -493,7 +493,7 @@ export default function StudentDashboard({
             <select
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="flex-1 px-2.5 sm:px-3 py-2.5 sm:py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent touch-manipulation"
+              className="flex-1 px-2.5 sm:px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent touch-manipulation"
             >
               <option value="all">Dificuldade</option>
               <option value="facil">Fácil</option>
@@ -515,11 +515,11 @@ export default function StudentDashboard({
                   transition={{ delay: index * 0.02 }}
                 >
                   <Card
-                    className={`border-0 shadow-sm active:shadow-md sm:hover:shadow-md transition-all cursor-pointer group h-full touch-manipulation ${
+                    className={`bg-slate-800/60 border-slate-700/50 shadow-sm active:shadow-md sm:hover:shadow-md transition-all cursor-pointer group h-full touch-manipulation ${
                       status === "correct"
-                        ? "ring-2 ring-emerald-200"
+                        ? "ring-2 ring-emerald-500/30"
                         : status === "incorrect"
-                          ? "ring-2 ring-red-200"
+                          ? "ring-2 ring-red-500/30"
                           : ""
                     }`}
                     onClick={() => handleStartCase(clinicalCase)}
@@ -539,25 +539,25 @@ export default function StudentDashboard({
                         )}
                       </div>
 
-                      <h3 className="font-semibold text-slate-900 text-sm sm:text-base mb-1.5 sm:mb-2 group-active:text-teal-600 sm:group-hover:text-teal-600 transition-colors line-clamp-2">
+                      <h3 className="font-semibold text-white text-sm sm:text-base mb-1.5 sm:mb-2 group-active:text-teal-400 sm:group-hover:text-teal-400 transition-colors line-clamp-2">
                         {clinicalCase.title}
                       </h3>
 
                       <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-                        <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-600 rounded-full">
+                        <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700/60 text-slate-300 rounded-full">
                           {clinicalCase.specialty}
                         </span>
-                        <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-600 rounded-full">
+                        <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700/60 text-slate-300 rounded-full">
                           {clinicalCase.category}
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between text-slate-500">
+                      <div className="flex items-center justify-between text-slate-400">
                         <p className="text-xs sm:text-sm">
                           {clinicalCase.patientProfile.gender === "M" ? "♂" : "♀"}{" "}
                           {clinicalCase.patientProfile.age}a
                         </p>
-                        <span className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-400">
+                        <span className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-500">
                           <Clock className="w-3 h-3" />
                           {clinicalCase.estimatedTime}
                         </span>
@@ -577,11 +577,11 @@ export default function StudentDashboard({
     const difficulty = getDifficultyStyle(selectedCase.difficulty);
 
     return (
-      <div className="min-h-screen bg-slate-50 py-6 px-4">
+      <div className="bg-slate-900 min-h-screen py-6 px-4">
         <div className="max-w-3xl mx-auto">
           <button
             onClick={handleBackToDashboard}
-            className="flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-6 text-sm"
+            className="flex items-center gap-2 text-slate-400 hover:text-white mb-6 text-sm"
           >
             <ChevronRight className="w-4 h-4 rotate-180" />
             Voltar aos casos
@@ -596,7 +596,7 @@ export default function StudentDashboard({
             </div>
           )}
 
-          <Card className="border-0 shadow-sm mb-6">
+          <Card className="bg-slate-800/60 border-slate-700/50 mb-6">
             <CardContent className="p-6">
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge
@@ -608,24 +608,24 @@ export default function StudentDashboard({
                 <Badge variant="outline">{selectedCase.specialty}</Badge>
               </div>
 
-              <h1 className="text-xl font-bold text-slate-900 mb-4">
+              <h1 className="text-xl font-bold text-white mb-4">
                 {selectedCase.title}
               </h1>
 
-              <div className="bg-slate-50 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+              <div className="bg-slate-800/50 rounded-lg p-4 mb-6 border border-slate-700/50">
+                <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
                   <Activity className="w-4 h-4 text-teal-500" />
                   Paciente
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                   <div>
-                    <span className="text-slate-500">Idade:</span>{" "}
+                    <span className="text-slate-400">Idade:</span>{" "}
                     <span className="font-medium">
                       {selectedCase.patientProfile.age} anos
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500">Sexo:</span>{" "}
+                    <span className="text-slate-400">Sexo:</span>{" "}
                     <span className="font-medium">
                       {selectedCase.patientProfile.gender === "M"
                         ? "Masculino"
@@ -633,14 +633,14 @@ export default function StudentDashboard({
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500">Ocupação:</span>{" "}
+                    <span className="text-slate-400">Ocupação:</span>{" "}
                     <span className="font-medium">
                       {selectedCase.patientProfile.occupation}
                     </span>
                   </div>
                   {selectedCase.patientProfile.lifestyle && (
                     <div>
-                      <span className="text-slate-500">Estilo:</span>{" "}
+                      <span className="text-slate-400">Estilo:</span>{" "}
                       <span className="font-medium">
                         {selectedCase.patientProfile.lifestyle}
                       </span>
@@ -650,17 +650,17 @@ export default function StudentDashboard({
               </div>
 
               <div className="mb-6">
-                <h3 className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-slate-500" />
+                <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-slate-400" />
                   História
                 </h3>
-                <p className="text-slate-700 leading-relaxed">
+                <p className="text-slate-300 leading-relaxed">
                   {selectedCase.history}
                 </p>
               </div>
 
               <div className="mb-6">
-                <h3 className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
                   Sintomas
                 </h3>
@@ -668,7 +668,7 @@ export default function StudentDashboard({
                   {selectedCase.symptoms.map((symptom, index) => (
                     <li
                       key={index}
-                      className="flex items-start gap-2 text-slate-700 text-sm"
+                      className="flex items-start gap-2 text-slate-300 text-sm"
                     >
                       <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2" />
                       {symptom}
@@ -678,7 +678,7 @@ export default function StudentDashboard({
               </div>
 
               <div>
-                <h3 className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
                   <Stethoscope className="w-4 h-4 text-teal-500" />
                   Achados Clínicos
                 </h3>
@@ -686,7 +686,7 @@ export default function StudentDashboard({
                   {selectedCase.clinicalFindings.map((finding, index) => (
                     <li
                       key={index}
-                      className="flex items-start gap-2 text-slate-700 text-sm"
+                      className="flex items-start gap-2 text-slate-300 text-sm"
                     >
                       <span className="w-1.5 h-1.5 bg-teal-500 rounded-full mt-2" />
                       {finding}
@@ -697,7 +697,7 @@ export default function StudentDashboard({
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm">
+          <Card className="bg-slate-800/60 border-slate-700/50">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Brain className="w-5 h-5 text-violet-600" />
@@ -712,8 +712,8 @@ export default function StudentDashboard({
                     onClick={() => setSelectedAnswer(option.id)}
                     className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                       selectedAnswer === option.id
-                        ? "border-teal-500 bg-teal-50"
-                        : "border-slate-200 hover:border-slate-300 bg-white"
+                        ? "border-teal-500 bg-teal-500/10"
+                        : "border-slate-700 hover:border-slate-500 bg-slate-800/40"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -731,8 +731,8 @@ export default function StudentDashboard({
                       <span
                         className={`font-medium text-sm ${
                           selectedAnswer === option.id
-                            ? "text-teal-700"
-                            : "text-slate-700"
+                            ? "text-teal-300"
+                            : "text-slate-200"
                         }`}
                       >
                         {option.label}
@@ -764,7 +764,7 @@ export default function StudentDashboard({
     const isCorrect = selectedOption?.isCorrect || false;
 
     return (
-      <div className="min-h-screen bg-slate-50 py-6 px-4 pb-24">
+      <div className="min-h-screen bg-slate-900 py-6 px-4 pb-24">
         <div className="max-w-3xl mx-auto">
           <SuccessAnimation
             show={showSuccessAnimation}
@@ -804,21 +804,21 @@ export default function StudentDashboard({
             </div>
           </motion.div>
 
-          <Card className="border-0 shadow-sm mb-6">
+          <Card className="bg-slate-800/60 border-slate-700/50 mb-6">
             <CardContent className="p-6">
-              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-teal-500" />
                 Diagnóstico Correto
               </h3>
-              <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-4">
-                <p className="text-lg font-bold text-teal-700">
+              <div className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-4 mb-4">
+                <p className="text-lg font-bold text-teal-300">
                   {selectedCase.correctDiagnosis}
                 </p>
               </div>
 
               {!isCorrect && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-red-600">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-red-400">
                     <strong>Sua resposta:</strong> {selectedOption?.label}
                   </p>
                 </div>
@@ -827,7 +827,7 @@ export default function StudentDashboard({
               <Button
                 variant="outline"
                 onClick={() => setShowClinicalReasoning(!showClinicalReasoning)}
-                className="w-full"
+                className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
               >
                 <Brain className="w-4 h-4 mr-2" />
                 {showClinicalReasoning ? "Ocultar" : "Ver"} Raciocínio Clínico
@@ -841,19 +841,19 @@ export default function StudentDashboard({
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              <Card className="border-0 shadow-sm">
+              <Card className="bg-slate-800/60 border-slate-700/50">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
                     <Lightbulb className="w-5 h-5 text-amber-500" />
                     Explicação
                   </h3>
-                  <p className="text-slate-700 leading-relaxed">
+                  <p className="text-slate-300 leading-relaxed">
                     {selectedCase.clinicalExplanation}
                   </p>
 
                   {selectedCase.tips && (
-                    <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <p className="text-sm text-amber-800">
+                    <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                      <p className="text-sm text-amber-300">
                         <strong>💡 Dica:</strong> {selectedCase.tips}
                       </p>
                     </div>
@@ -861,9 +861,9 @@ export default function StudentDashboard({
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm">
+              <Card className="bg-slate-800/60 border-slate-700/50">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
                     <Stethoscope className="w-5 h-5 text-indigo-500" />
                     Testes Recomendados
                   </h3>
@@ -871,7 +871,7 @@ export default function StudentDashboard({
                     {selectedCase.recommendedTests.map((test, index) => (
                       <li
                         key={index}
-                        className="flex items-start gap-2 text-slate-700 text-sm"
+                        className="flex items-start gap-2 text-slate-300 text-sm"
                       >
                         <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5" />
                         {test}
@@ -881,9 +881,9 @@ export default function StudentDashboard({
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm">
+              <Card className="bg-slate-800/60 border-slate-700/50">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
                     <Activity className="w-5 h-5 text-emerald-500" />
                     Conduta Inicial
                   </h3>
@@ -891,7 +891,7 @@ export default function StudentDashboard({
                     {selectedCase.initialTreatment.map((treatment, index) => (
                       <li
                         key={index}
-                        className="flex items-start gap-2 text-slate-700 text-sm"
+                        className="flex items-start gap-2 text-slate-300 text-sm"
                       >
                         <ArrowRight className="w-4 h-4 text-emerald-500 mt-0.5" />
                         {treatment}
@@ -965,22 +965,22 @@ export default function StudentDashboard({
 
   if (viewMode === "ranking") {
     return (
-      <div className="min-h-screen bg-slate-50 py-6 px-4">
+      <div className="min-h-screen bg-slate-900 py-6 px-4">
         <div className="max-w-3xl mx-auto">
           <button
             onClick={() => setViewMode("dashboard")}
-            className="flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-6 text-sm"
+            className="flex items-center gap-2 text-slate-400 hover:text-white mb-6 text-sm"
           >
             <ChevronRight className="w-4 h-4 rotate-180" />
             Voltar
           </button>
 
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/15 border border-amber-500/30 text-amber-400 rounded-full text-sm font-medium mb-4">
               <Crown className="w-4 h-4" />
               Ranking
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-2xl font-bold text-white">
               Top Estudantes
             </h1>
           </div>
@@ -1006,7 +1006,7 @@ export default function StudentDashboard({
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm">
+          <Card className="bg-slate-800/60 border-slate-700/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-amber-500" />
@@ -1017,12 +1017,12 @@ export default function StudentDashboard({
               {loadingRanking ? (
                 <div className="text-center py-12">
                   <div className="animate-spin w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full mx-auto mb-4" />
-                  <p className="text-slate-600">Carregando...</p>
+                  <p className="text-slate-300">Carregando...</p>
                 </div>
               ) : ranking.length === 0 ? (
                 <div className="text-center py-12">
                   <Crown className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-600">Nenhum estudante ainda.</p>
+                  <p className="text-slate-300">Nenhum estudante ainda.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1034,12 +1034,12 @@ export default function StudentDashboard({
                       transition={{ delay: index * 0.05 }}
                       className={`flex items-center gap-4 p-4 rounded-xl ${
                         index === 0
-                          ? "bg-amber-50 border-2 border-amber-200"
+                          ? "bg-amber-500/15 border border-amber-500/30"
                           : index === 1
-                            ? "bg-slate-50 border border-slate-200"
+                            ? "bg-slate-800/40 border border-slate-700/50 hover:bg-slate-700/40"
                             : index === 2
-                              ? "bg-orange-50 border border-orange-200"
-                              : "bg-slate-50"
+                              ? "bg-amber-500/15 border border-amber-500/30"
+                              : "bg-slate-800/40 hover:bg-slate-700/40"
                       }`}
                     >
                       <div
@@ -1050,21 +1050,21 @@ export default function StudentDashboard({
                               ? "bg-gradient-to-br from-slate-300 to-gray-400 text-white"
                               : index === 2
                                 ? "bg-gradient-to-br from-orange-400 to-amber-500 text-white"
-                                : "bg-slate-200 text-slate-600"
+                                : "bg-slate-700 text-slate-300"
                         }`}
                       >
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 truncate">
+                        <p className="font-semibold text-white truncate">
                           {student.user_name || "Anônimo"}
                         </p>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-slate-400">
                           {student.cases_completed} casos • {student.accuracy}% acerto
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="flex items-center gap-1 text-teal-600 font-bold">
+                        <div className="flex items-center gap-1 text-teal-400 font-bold">
                           <Target className="w-4 h-4" />
                           {student.accuracy}%
                         </div>

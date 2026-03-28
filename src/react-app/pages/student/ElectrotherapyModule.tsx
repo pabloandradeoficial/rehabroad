@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, 
-  Search, 
-  Zap, 
-  Thermometer, 
-  Radio, 
+import {
+  ArrowLeft,
+  Search,
+  Zap,
+  Thermometer,
+  Radio,
   Waves,
   Settings,
   CheckCircle2,
@@ -31,16 +31,16 @@ const categories = [
 ];
 
 const categoryColors = {
-  analgesica: { bg: 'bg-violet-100', text: 'text-violet-700', border: 'border-violet-200', gradient: 'from-violet-500 to-purple-600' },
-  correntes: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', gradient: 'from-blue-500 to-cyan-600' },
-  termica: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200', gradient: 'from-orange-500 to-red-600' },
-  laser: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200', gradient: 'from-emerald-500 to-teal-600' }
+  analgesica: { bg: 'bg-violet-500/15', text: 'text-violet-300', border: 'border-violet-500/30', gradient: 'from-violet-500 to-purple-600' },
+  correntes: { bg: 'bg-blue-500/15', text: 'text-blue-300', border: 'border-blue-500/30', gradient: 'from-blue-500 to-cyan-600' },
+  termica: { bg: 'bg-orange-500/15', text: 'text-orange-300', border: 'border-orange-500/30', gradient: 'from-orange-500 to-red-600' },
+  laser: { bg: 'bg-emerald-500/15', text: 'text-emerald-300', border: 'border-emerald-500/30', gradient: 'from-emerald-500 to-teal-600' }
 };
 
 const evidenceColors = {
-  alto: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Alta Evidência' },
-  moderado: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Evidência Moderada' },
-  baixo: { bg: 'bg-slate-100', text: 'text-slate-600', label: 'Baixa Evidência' }
+  alto: { bg: 'bg-emerald-500/15', text: 'text-emerald-300', label: 'Alta Evidência' },
+  moderado: { bg: 'bg-amber-500/15', text: 'text-amber-300', label: 'Evidência Moderada' },
+  baixo: { bg: 'bg-slate-700/60', text: 'text-slate-400', label: 'Baixa Evidência' }
 };
 
 export default function ElectrotherapyModule({ onBack }: Props) {
@@ -61,18 +61,18 @@ export default function ElectrotherapyModule({ onBack }: Props) {
   return (
     <AnimatePresence mode="wait">
       {selectedModality && colors && evidence ? (
-        <ModulePage key="detail" className="min-h-screen bg-slate-50 pb-24 md:pb-8">
+        <ModulePage key="detail" className="min-h-screen bg-slate-900 pb-24 md:pb-8">
           {/* Header */}
           <div className={`bg-gradient-to-br ${colors.gradient} text-white`}>
             <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
-              <button 
-                onClick={() => setSelectedModality(null)} 
+              <button
+                onClick={() => setSelectedModality(null)}
                 className="flex items-center gap-2 text-white/70 hover:text-white mb-3 transition-colors touch-manipulation p-1 -ml-1"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="text-sm">Voltar</span>
               </button>
-              
+
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span className={`inline-block px-2 py-0.5 bg-white/20 text-white text-xs font-medium rounded-md mb-2`}>
@@ -90,108 +90,108 @@ export default function ElectrotherapyModule({ onBack }: Props) {
 
           <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6 space-y-4">
             {/* Mechanism */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+            <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 sm:p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 ${colors.bg} rounded-xl flex items-center justify-center`}>
                   <Zap className={`w-5 h-5 ${colors.text}`} />
                 </div>
-                <h2 className="font-bold text-slate-900">Mecanismo de Ação</h2>
+                <h2 className="font-bold text-white">Mecanismo de Ação</h2>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed bg-slate-50 p-3 rounded-lg">
+              <p className="text-slate-300 text-sm leading-relaxed bg-slate-800/50 p-3 rounded-lg">
                 {selectedModality.mechanism}
               </p>
             </div>
 
             {/* Parameters */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+            <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 sm:p-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Settings className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-blue-500/15 rounded-xl flex items-center justify-center">
+                  <Settings className="w-5 h-5 text-blue-300" />
                 </div>
-                <h2 className="font-bold text-slate-900">Parâmetros</h2>
+                <h2 className="font-bold text-white">Parâmetros</h2>
               </div>
               <div className="space-y-3">
                 {selectedModality.parameters.map((param, i) => (
-                  <div key={i} className="bg-slate-50 rounded-lg p-3">
+                  <div key={i} className={`rounded-lg p-3 ${i % 2 === 0 ? 'bg-slate-800/30' : 'bg-slate-800/50'}`}>
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <span className="font-semibold text-slate-900 text-sm">{param.name}</span>
+                      <span className="font-semibold text-white text-sm">{param.name}</span>
                       <span className={`px-2 py-0.5 ${colors.bg} ${colors.text} text-xs font-bold rounded-md`}>
                         {param.values}
                       </span>
                     </div>
-                    <p className="text-slate-600 text-xs">{param.description}</p>
+                    <p className="text-slate-400 text-xs">{param.description}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Indications */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+            <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 sm:p-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-300" />
                 </div>
-                <h2 className="font-bold text-slate-900">Indicações</h2>
+                <h2 className="font-bold text-white">Indicações</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {selectedModality.indications.map((indication, i) => (
-                  <div key={i} className="flex items-start gap-2 p-2 bg-emerald-50 rounded-lg">
-                    <ChevronRight className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-slate-700 text-xs">{indication}</span>
+                  <div key={i} className="flex items-start gap-2 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                    <ChevronRight className="w-4 h-4 text-emerald-300 mt-0.5 flex-shrink-0" />
+                    <span className="text-emerald-300 text-xs">{indication}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Contraindications */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+            <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 sm:p-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">
-                  <XCircle className="w-5 h-5 text-rose-600" />
+                <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-red-300" />
                 </div>
-                <h2 className="font-bold text-slate-900">Contraindicações</h2>
+                <h2 className="font-bold text-white">Contraindicações</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {selectedModality.contraindications.map((contraindication, i) => (
-                  <div key={i} className="flex items-start gap-2 p-2 bg-rose-50 rounded-lg">
-                    <XCircle className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-slate-700 text-xs">{contraindication}</span>
+                  <div key={i} className="flex items-start gap-2 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <XCircle className="w-4 h-4 text-red-300 mt-0.5 flex-shrink-0" />
+                    <span className="text-red-300 text-xs">{contraindication}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Application Tips */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+            <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 sm:p-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-                  <Lightbulb className="w-5 h-5 text-amber-600" />
+                <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
+                  <Lightbulb className="w-5 h-5 text-amber-200" />
                 </div>
-                <h2 className="font-bold text-slate-900">Dicas de Aplicação</h2>
+                <h2 className="font-bold text-white">Dicas de Aplicação</h2>
               </div>
               <div className="space-y-2">
                 {selectedModality.applicationTips.map((tip, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg">
+                  <div key={i} className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                     <span className="w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                       {i + 1}
                     </span>
-                    <span className="text-slate-700 text-sm">{tip}</span>
+                    <span className="text-amber-200 text-sm">{tip}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* References */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+            <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 sm:p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-slate-600" />
+                <div className="w-10 h-10 bg-slate-700/60 rounded-xl flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-slate-400" />
                 </div>
-                <h2 className="font-bold text-slate-900">Referências Científicas</h2>
+                <h2 className="font-bold text-white">Referências Científicas</h2>
               </div>
               <div className="space-y-2">
                 {selectedModality.references.map((ref, i) => (
-                  <p key={i} className="text-slate-600 text-xs italic bg-slate-50 p-2 rounded-lg">
+                  <p key={i} className="text-slate-400 text-xs italic bg-slate-800/50 p-2 rounded-lg">
                     {ref}
                   </p>
                 ))}
@@ -200,12 +200,12 @@ export default function ElectrotherapyModule({ onBack }: Props) {
           </div>
         </ModulePage>
       ) : (
-        <ModulePage key="list" className="min-h-screen bg-slate-50 pb-24 md:pb-8">
+        <ModulePage key="list" className="min-h-screen bg-slate-900 pb-24 md:pb-8">
           {/* Header */}
           <div className="bg-gradient-to-br from-violet-600 to-purple-700 text-white">
             <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
-              <button 
-                onClick={onBack} 
+              <button
+                onClick={onBack}
                 className="flex items-center gap-2 text-white/70 hover:text-white mb-3 transition-colors touch-manipulation p-1 -ml-1"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -226,13 +226,13 @@ export default function ElectrotherapyModule({ onBack }: Props) {
           <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
               <input
                 type="text"
                 placeholder="Buscar modalidade..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm"
+                className="w-full pl-10 pr-4 py-3 bg-slate-800 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white placeholder-slate-500"
               />
             </div>
 
@@ -247,8 +247,8 @@ export default function ElectrotherapyModule({ onBack }: Props) {
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
                       isActive
-                        ? 'bg-violet-600 text-white shadow-lg shadow-violet-200'
-                        : 'bg-white text-slate-600 border border-slate-200 hover:border-violet-300'
+                        ? 'bg-violet-600 text-white shadow-lg shadow-violet-900/50'
+                        : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-violet-500/50'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -269,7 +269,7 @@ export default function ElectrotherapyModule({ onBack }: Props) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => setSelectedModality(modality)}
-                    className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm hover:shadow-md hover:border-violet-200 transition-all cursor-pointer"
+                    className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 hover:border-violet-500/40 hover:bg-slate-800/80 transition-all cursor-pointer"
                   >
                     <div className="flex items-start gap-3">
                       <div className={`w-12 h-12 bg-gradient-to-br ${modColors.gradient} rounded-xl flex items-center justify-center flex-shrink-0`}>
@@ -277,22 +277,22 @@ export default function ElectrotherapyModule({ onBack }: Props) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <h3 className="font-bold text-slate-900 text-sm">{modality.name}</h3>
+                          <h3 className="font-bold text-white text-sm">{modality.name}</h3>
                           <span className={`px-2 py-0.5 ${modEvidence.bg} ${modEvidence.text} text-[10px] font-medium rounded-md whitespace-nowrap`}>
                             {modality.evidenceLevel === 'alto' ? '★★★' : modality.evidenceLevel === 'moderado' ? '★★' : '★'}
                           </span>
                         </div>
-                        <p className="text-slate-600 text-xs line-clamp-2 mb-2">{modality.description}</p>
+                        <p className="text-slate-400 text-xs line-clamp-2 mb-2">{modality.description}</p>
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 ${modColors.bg} ${modColors.text} text-[10px] font-medium rounded-md`}>
+                          <span className={`px-2 py-0.5 ${modColors.bg} ${modColors.text} border ${modColors.border} text-[10px] font-medium rounded-md`}>
                             {categories.find(c => c.id === modality.category)?.name}
                           </span>
-                          <span className="text-slate-400 text-[10px]">
+                          <span className="text-slate-500 text-[10px]">
                             {modality.parameters.length} parâmetros
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
+                      <ChevronRight className="w-5 h-5 text-slate-600 flex-shrink-0" />
                     </div>
                   </motion.div>
                 );
@@ -301,21 +301,21 @@ export default function ElectrotherapyModule({ onBack }: Props) {
 
             {filteredModalities.length === 0 && (
               <div className="text-center py-12">
-                <Zap className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <Zap className="w-12 h-12 text-slate-600 mx-auto mb-3" />
                 <p className="text-slate-500 text-sm">Nenhuma modalidade encontrada</p>
               </div>
             )}
 
             {/* Info Card */}
-            <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-100">
+            <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-4">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Lightbulb className="w-5 h-5 text-violet-600" />
+                <div className="w-10 h-10 bg-violet-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Lightbulb className="w-5 h-5 text-violet-300" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm mb-1">Dica de Estudo</h3>
-                  <p className="text-slate-600 text-xs leading-relaxed">
-                    Sempre verifique as contraindicações antes de aplicar qualquer recurso. 
+                  <h3 className="font-bold text-white text-sm mb-1">Dica de Estudo</h3>
+                  <p className="text-slate-300 text-xs leading-relaxed">
+                    Sempre verifique as contraindicações antes de aplicar qualquer recurso.
                     Na prova, questões sobre marca-passo, gestação e implantes metálicos são frequentes!
                   </p>
                 </div>

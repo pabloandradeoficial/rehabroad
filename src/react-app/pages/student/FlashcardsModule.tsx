@@ -188,16 +188,17 @@ export default function FlashcardsModule({ onBack }: Props) {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentCard.id + (flipped ? "-back" : "-front")}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, rotateY: flipped ? -90 : 90, scale: 0.95 }}
+              animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+              exit={{ opacity: 0, rotateY: flipped ? 90 : -90, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               onClick={() => !flipped && setFlipped(true)}
+              style={{ transformStyle: "preserve-3d", perspective: 1000 }}
               className={`
                 relative rounded-2xl shadow-2xl cursor-pointer select-none
                 min-h-[280px] flex flex-col justify-between p-6
                 ${flipped
-                  ? "bg-gradient-to-br from-teal-800 to-emerald-900"
+                  ? "bg-gradient-to-br from-teal-800 to-emerald-900 shadow-teal-900/40"
                   : "bg-white"}
               `}
             >

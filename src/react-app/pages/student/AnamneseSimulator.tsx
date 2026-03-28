@@ -269,12 +269,22 @@ export default function AnamneseSimulator({ onBack }: Props) {
         </div>
       </header>
 
-      {/* Instructions strip */}
+      {/* Progress strip */}
       {!canReveal && (
         <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-800">
-          <p className="text-xs text-slate-400 text-center">
-            Faça perguntas ao paciente para investigar a queixa. Após {Math.max(0, 5 - exchangeCount)} {5 - exchangeCount === 1 ? "pergunta" : "perguntas"} você poderá revelar os achados clínicos.
-          </p>
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-xs text-slate-400">Investigação da queixa</p>
+              <p className="text-xs text-slate-500">{exchangeCount}/5 perguntas</p>
+            </div>
+            <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"
+                animate={{ width: `${Math.min((exchangeCount / 5) * 100, 100)}%` }}
+                transition={{ duration: 0.4 }}
+              />
+            </div>
+          </div>
         </div>
       )}
       {canReveal && (
@@ -339,6 +349,21 @@ export default function AnamneseSimulator({ onBack }: Props) {
 
       {/* Input */}
       <div className="border-t border-slate-800 p-4 max-w-2xl mx-auto w-full">
+        {/* Quick suggestion pills */}
+        {!canReveal && exchangeCount < 3 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {["Onde é a dor?", "Quando começou?", "O que piora?", "Irradia para algum lugar?", "Quanto é a dor (0–10)?"].map((s) => (
+              <button
+                key={s}
+                onClick={() => { setInput(s); setTimeout(() => inputRef.current?.focus(), 50); }}
+                disabled={sending}
+                className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-teal-500/50 text-slate-400 hover:text-teal-300 rounded-full transition-colors disabled:opacity-50"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex gap-2">
           <input
             ref={inputRef}
@@ -358,9 +383,6 @@ export default function AnamneseSimulator({ onBack }: Props) {
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
-        <p className="text-xs text-slate-600 text-center mt-2">
-          Dica: pergunte sobre localização, intensidade, início, fatores de melhora/piora
-        </p>
       </div>
     </div>
   );

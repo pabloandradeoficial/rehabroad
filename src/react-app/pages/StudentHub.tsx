@@ -858,9 +858,9 @@ export default function StudentHub() {
         whileTap={{ scale: 0.97 }}
         onClick={() => handleSelectModule(module.id)}
         className={`
-          relative bg-white rounded-xl cursor-pointer shadow-sm
-          active:shadow-md transition-all duration-200
-          border border-slate-100 active:border-slate-200
+          relative bg-slate-800/60 rounded-xl cursor-pointer
+          active:bg-slate-700/60 transition-all duration-200
+          border border-slate-700/50 active:border-slate-600/50
           touch-manipulation group
           ${isSmall ? "p-3 min-h-[100px]" : "p-4 min-h-[130px]"}
         `}
@@ -868,11 +868,11 @@ export default function StudentHub() {
         {progressValue > 0 && (
           <div className="absolute top-2 right-2">
             {isComplete ? (
-              <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
                 <Check className="w-2.5 h-2.5" />
               </span>
             ) : (
-              <span className="text-[9px] font-medium text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded-full">
+              <span className="text-[9px] font-medium text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded-full">
                 {Math.round(progressValue)}%
               </span>
             )}
@@ -890,7 +890,7 @@ export default function StudentHub() {
         </div>
 
         <h3
-          className={`font-bold text-slate-900 leading-tight ${
+          className={`font-bold text-white leading-tight ${
             isSmall ? "text-xs" : "text-sm"
           }`}
         >
@@ -898,7 +898,7 @@ export default function StudentHub() {
         </h3>
 
         <p
-          className={`text-slate-500 leading-snug mt-0.5 line-clamp-2 ${
+          className={`text-slate-400 leading-snug mt-0.5 line-clamp-2 ${
             isSmall ? "text-[10px]" : "text-xs"
           }`}
         >
@@ -906,7 +906,7 @@ export default function StudentHub() {
         </p>
 
         {progressValue > 0 && progressValue < 100 && (
-          <div className="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
+          <div className="mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"
               initial={{ width: 0 }}
@@ -920,7 +920,7 @@ export default function StudentHub() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 md:pb-0">
+    <div className="min-h-screen bg-slate-950 pb-20 md:pb-0">
       {/* 100% Completion Celebration Modal */}
       <AnimatePresence>
         {showCelebration && (
@@ -939,7 +939,7 @@ export default function StudentHub() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.8, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl relative overflow-hidden"
+              className="bg-slate-900 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl relative overflow-hidden"
             >
               {/* Confetti background */}
               <div className="absolute inset-0 pointer-events-none">
@@ -980,7 +980,7 @@ export default function StudentHub() {
                   setShowCelebration(false);
                   setCelebrationDismissed(true);
                 }}
-                className="absolute top-3 right-3 p-1 rounded-full hover:bg-slate-100 transition-colors"
+                className="absolute top-3 right-3 p-1 rounded-full hover:bg-slate-800 transition-colors"
               >
                 <X className="w-5 h-5 text-slate-400" />
               </button>
@@ -996,32 +996,32 @@ export default function StudentHub() {
                 </div>
               </div>
 
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              <h2 className="text-2xl font-bold text-white mb-2">
                 🎉 Parabéns!
               </h2>
               <p className="text-lg font-semibold text-emerald-600 mb-1">
                 100% Concluído!
               </p>
-              <p className="text-sm text-slate-600 mb-6">
+              <p className="text-sm text-slate-400 mb-6">
                 Você completou todo o treinamento clínico do REHABROAD. Seu
                 raciocínio clínico está afiado!
               </p>
 
               {/* Achievement badge preview */}
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 mb-4 border border-emerald-100">
-                <p className="text-xs text-slate-500 mb-2">
+              <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-emerald-800/30">
+                <p className="text-xs text-slate-400 mb-2">
                   Seu selo de conquista:
                 </p>
-                <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm border border-emerald-200">
+                <div className="inline-flex items-center gap-2 bg-slate-700 rounded-full px-4 py-2 shadow-sm border border-emerald-700">
                   <Trophy className="w-5 h-5 text-amber-500" />
-                  <span className="font-bold text-slate-900">
+                  <span className="font-bold text-white">
                     Fisioterapeuta Clínico Completo
                   </span>
                 </div>
               </div>
 
               {/* Share buttons */}
-              <p className="text-xs text-slate-500 mb-3">
+              <p className="text-xs text-slate-400 mb-3">
                 Compartilhe sua conquista:
               </p>
               <div className="flex gap-2 justify-center">
@@ -1034,7 +1034,7 @@ export default function StudentHub() {
                 </button>
                 <button
                   onClick={handleCopyLink}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-medium text-sm transition-colors"
                 >
                   <Copy className="w-4 h-4" />
                   Copiar Link
@@ -1058,18 +1058,18 @@ export default function StudentHub() {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              className="bg-slate-900 rounded-2xl border border-slate-700 p-6 max-w-sm w-full shadow-2xl"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-violet-900/40 rounded-xl flex items-center justify-center">
                   <Briefcase className="w-6 h-6 text-violet-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">Modo Estágio</h3>
-                  <p className="text-xs text-slate-500">Personaliza os casos para seu nível</p>
+                  <h3 className="font-bold text-white">Modo Estágio</h3>
+                  <p className="text-xs text-slate-400">Personaliza os casos para seu nível</p>
                 </div>
               </div>
-              <p className="text-sm text-slate-600 mb-4">
+              <p className="text-sm text-slate-300 mb-4">
                 Em qual fase do estágio você está? Vamos priorizar casos relevantes para você.
               </p>
               <div className="space-y-2">
@@ -1077,7 +1077,7 @@ export default function StudentHub() {
                   <button
                     key={estagio}
                     onClick={() => void handleInternshipSelect(estagio)}
-                    className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-violet-400 hover:bg-violet-50 transition-colors text-sm font-medium text-slate-700"
+                    className="w-full text-left px-4 py-3 rounded-xl border border-slate-700 hover:border-violet-500 hover:bg-violet-900/30 transition-colors text-sm font-medium text-slate-200"
                   >
                     {estagio}
                   </button>
@@ -1085,7 +1085,7 @@ export default function StudentHub() {
               </div>
               <button
                 onClick={() => setShowInternshipModal(false)}
-                className="w-full mt-3 text-xs text-slate-400 hover:text-slate-600"
+                className="w-full mt-3 text-xs text-slate-500 hover:text-slate-300"
               >
                 Pular por enquanto
               </button>
@@ -1145,80 +1145,62 @@ export default function StudentHub() {
         </p>
 
         <div className="text-center pt-2 pb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight mb-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-2">
             Treine seu Raciocínio Clínico como um Fisioterapeuta Especialista
           </h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-400">
             Resolva casos clínicos, pratique testes ortopédicos e conecte teoria
             com prática.
           </p>
         </div>
 
         {!isPending && (
-          <Card className="border-0 shadow-sm bg-white">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-slate-900">
-                  Seu progresso clínico
-                </span>
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 p-5 border border-slate-700/50 shadow-xl">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-teal-500/5 rounded-full -mr-20 -mt-20 pointer-events-none" />
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-xs text-teal-400 font-medium mb-0.5">Seu Progresso</p>
                 <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-white">{overallProgress}%</span>
                   {overallProgress >= 100 && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                      <Trophy className="w-3 h-3" />
-                      100%
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                      <Trophy className="w-3 h-3" />100%
                     </span>
                   )}
-                  <span className="text-sm font-bold text-teal-600">
-                    {overallProgress}%
-                  </span>
                 </div>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full rounded-full ${
-                    overallProgress >= 100
-                      ? "bg-gradient-to-r from-amber-400 to-yellow-500"
-                      : "bg-gradient-to-r from-teal-500 to-emerald-500"
-                  }`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(overallProgress, 100)}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                />
-              </div>
-              {overallProgress >= 100 ? (
-                <div className="flex items-center justify-between mt-2">
-                  <p className="text-xs text-emerald-600 font-medium">
-                    🎉 Parabéns! Treinamento completo!
-                  </p>
-                  <button
-                    onClick={() => setShowCelebration(true)}
-                    className="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
-                  >
-                    <Share2 className="w-3 h-3" />
-                    Compartilhar
-                  </button>
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500 mt-2">
-                  Continue resolvendo casos para evoluir.
-                </p>
+              {overallProgress >= 100 && (
+                <button onClick={() => setShowCelebration(true)} className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1">
+                  <Share2 className="w-3 h-3" />Compartilhar
+                </button>
               )}
-            </CardContent>
-          </Card>
+            </div>
+            <div className="h-2 bg-slate-700/50 rounded-full overflow-hidden mb-2">
+              <motion.div
+                className={`h-full rounded-full ${overallProgress >= 100 ? "bg-gradient-to-r from-amber-400 to-yellow-500" : "bg-gradient-to-r from-teal-500 to-emerald-500"}`}
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(overallProgress, 100)}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            </div>
+            <p className="text-xs text-slate-500">
+              {overallProgress >= 100 ? "🎉 Treinamento completo!" : "Continue resolvendo casos para evoluir."}
+            </p>
+          </div>
         )}
 
         {!dailyChallengeCompleted && (
-          <Card className="border-0 shadow-sm bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-l-orange-400">
+          <Card className="border border-slate-700 shadow-sm bg-slate-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Flame className="w-4 h-4 text-orange-500" />
-                    <span className="text-sm font-bold text-slate-900">
+                    <span className="text-sm font-bold text-white">
                       Caso Clínico do Dia
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-slate-400">
                     Resolva o desafio clínico de hoje e mantenha sua sequência
                     de estudos.
                   </p>
@@ -1237,61 +1219,51 @@ export default function StudentHub() {
         )}
 
         {!isPending && progress && !loadingProgress && (
-          <div className="grid grid-cols-3 gap-2">
-            <CircularStatCard
-              icon={<Target className="w-4 h-4" />}
-              value={progress.cases_completed || 0}
-              maxValue={50}
-              label="Casos resolvidos"
-              color="violet"
-            />
-            <CircularStatCard
-              icon={<TrendingUp className="w-4 h-4" />}
-              value={accuracy}
-              maxValue={100}
-              label="Taxa de acerto"
-              suffix="%"
-              color="amber"
-            />
-            <CircularStatCard
-              icon={<Flame className="w-4 h-4" />}
-              value={progress.streak || 0}
-              maxValue={30}
-              label="Sequência"
-              color="rose"
-            />
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: "Casos", value: progress.cases_completed || 0, icon: "🧠" },
+              { label: "Acertos", value: `${accuracy}%`, icon: "🎯" },
+              { label: "Sequência", value: progress.streak || 0, icon: "🔥" },
+              { label: "Tempo", value: `${Math.round((progress.total_time_minutes || 0) / 60)}h`, icon: "⏱️" },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 text-center">
+                <div className="text-xl mb-1">{stat.icon}</div>
+                <div className="text-lg font-bold text-white">{stat.value}</div>
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider">{stat.label}</div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Region Journey — shown when user has any region progress */}
         {user && regionProgress.length > 0 && (
-          <Card className="border-0 shadow-sm bg-white">
+          <Card className="border-slate-700/50 bg-slate-900/50 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Award className="w-4 h-4 text-teal-600" />
-                <span className="text-sm font-bold text-slate-900">Sua Jornada Clínica</span>
+                <span className="text-sm font-bold text-white">Sua Jornada Clínica</span>
               </div>
               <div className="space-y-2">
                 {regionProgress.map((r) => (
                   <div key={r.regiao} className="flex items-center gap-3">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
                       r.status === "dominated" ? "bg-emerald-500" :
-                      r.status === "in_progress" ? "bg-teal-500" : "bg-slate-200"
+                      r.status === "in_progress" ? "bg-teal-500" : "bg-slate-700"
                     }`}>
                       {r.status === "dominated"
                         ? <Trophy className="w-3 h-3 text-white" />
                         : r.status === "in_progress"
                         ? <TrendingUp className="w-3 h-3 text-white" />
-                        : <Lock className="w-3 h-3 text-slate-400" />}
+                        : <Lock className="w-3 h-3 text-slate-500" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-xs font-medium text-slate-700 capitalize truncate">
+                        <span className="text-xs font-medium text-white capitalize truncate">
                           {r.regiao.replace("_", " ")}
                         </span>
-                        <span className="text-xs text-slate-500 ml-2 flex-shrink-0">{r.dominio_percent}%</span>
+                        <span className="text-xs text-slate-400 ml-2 flex-shrink-0">{r.dominio_percent}%</span>
                       </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             r.status === "dominated"
@@ -1345,7 +1317,7 @@ export default function StudentHub() {
         {currentStreak > 0 && (
           <div className="flex items-center justify-center gap-2 py-2">
             <Flame className="w-4 h-4 text-orange-500" />
-            <span className="text-sm font-semibold text-slate-900">
+            <span className="text-sm font-semibold text-white">
               {currentStreak} {currentStreak === 1 ? "dia" : "dias"} seguidos
               estudando
             </span>
@@ -1373,7 +1345,7 @@ export default function StudentHub() {
         )}
 
         {!isPending && (
-          <Card className="border-0 shadow-sm bg-white">
+          <Card className="border-slate-700/50 bg-slate-800/50 shadow-sm">
             <CardContent className="p-4">
               {user ? (
                 <div className="flex items-center justify-between gap-3">
@@ -1391,17 +1363,17 @@ export default function StudentHub() {
                       }}
                     />
                     <div>
-                      <p className="font-semibold text-slate-900 text-sm">
+                      <p className="font-semibold text-white text-sm">
                         {displayName}
                       </p>
-                      <p className="text-xs text-slate-500">{user.email}</p>
+                      <p className="text-xs text-slate-400">{user.email}</p>
                     </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleLogout}
-                    className="text-slate-500 h-8"
+                    className="text-slate-400 hover:text-white h-8"
                   >
                     <LogOut className="w-4 h-4" />
                   </Button>
@@ -1411,10 +1383,10 @@ export default function StudentHub() {
                   <div className="flex items-center gap-3">
                     <StudentAvatar name="?" size="sm" />
                     <div>
-                      <p className="font-semibold text-slate-900 text-sm">
+                      <p className="font-semibold text-white text-sm">
                         Salve seu progresso
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-400">
                         Entre com Google
                       </p>
                     </div>
@@ -1422,7 +1394,7 @@ export default function StudentHub() {
                   <Button
                     size="sm"
                     onClick={() => void handleStudentLogin()}
-                    className="gap-1 bg-slate-900 hover:bg-slate-800 h-8 text-xs"
+                    className="gap-1 bg-teal-600 hover:bg-teal-700 text-white h-8 text-xs"
                   >
                     <LogIn className="w-3 h-3" />
                     Entrar
@@ -1474,8 +1446,8 @@ export default function StudentHub() {
         </section>
 
         <section>
-          <h2 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <Stethoscope className="w-4 h-4 text-teal-600" />
+          <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+            <div className="w-1 h-5 bg-teal-500 rounded-full" />
             Módulos Clínicos Principais
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1486,8 +1458,8 @@ export default function StudentHub() {
         </section>
 
         <section>
-          <h2 className="text-sm font-bold text-slate-500 mb-3 flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
+          <h2 className="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+            <div className="w-1 h-5 bg-violet-500 rounded-full" />
             Biblioteca e Apoio
           </h2>
           <div className="grid grid-cols-3 gap-2">
@@ -1502,20 +1474,20 @@ export default function StudentHub() {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white py-6 px-4 mt-6">
+      <footer className="border-t border-slate-800 bg-slate-950 py-6 px-4 mt-6">
         <div className="max-w-2xl mx-auto text-center">
           <p className="text-xs text-slate-500 mb-3">
             Conteúdo educacional para apoio ao estudo. Não substitui supervisão
             clínica.
           </p>
           <div className="flex items-center justify-center gap-4">
-            <Link to="/" className="text-xs text-slate-600 hover:text-slate-900">
+            <Link to="/" className="text-xs text-slate-400 hover:text-white">
               Voltar ao Site
             </Link>
-            <span className="text-slate-300">•</span>
+            <span className="text-slate-700">•</span>
             <Link
               to="/login"
-              className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+              className="text-xs text-teal-400 hover:text-teal-300 font-medium"
             >
               Área Profissional →
             </Link>
@@ -1523,39 +1495,39 @@ export default function StudentHub() {
         </div>
       </footer>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 py-1.5 px-1 md:hidden z-50 safe-area-inset-bottom shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800 py-1.5 px-1 md:hidden z-50 safe-area-inset-bottom shadow-lg">
         <div className="flex items-center justify-around max-w-md mx-auto">
           <button
             onClick={() => setActiveModule("hub")}
-            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 bg-teal-50 text-teal-600"
+            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 bg-teal-500/15 text-teal-400"
           >
             <Home className="w-5 h-5" />
             <span className="text-[10px] font-semibold">Início</span>
           </button>
           <button
             onClick={() => handleSelectModule("daily-training")}
-            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 text-slate-500"
+            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 text-slate-500 hover:text-slate-300"
           >
             <Flame className="w-5 h-5" />
             <span className="text-[10px] font-medium">Treino</span>
           </button>
           <button
             onClick={() => handleSelectModule("cases")}
-            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 text-slate-500"
+            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 text-slate-500 hover:text-slate-300"
           >
             <BookOpen className="w-5 h-5" />
             <span className="text-[10px] font-medium">Casos</span>
           </button>
           <button
             onClick={() => handleSelectModule("library")}
-            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 text-slate-500"
+            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 text-slate-500 hover:text-slate-300"
           >
             <Grid3X3 className="w-5 h-5" />
             <span className="text-[10px] font-medium">Módulos</span>
           </button>
           <button
             onClick={() => handleSelectModule("community")}
-            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 text-slate-500"
+            className="flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-xl min-h-[52px] transition-all active:scale-95 text-slate-500 hover:text-slate-300"
           >
             <MessageCircle className="w-5 h-5" />
             <span className="text-[10px] font-medium">Social</span>
