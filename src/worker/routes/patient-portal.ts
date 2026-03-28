@@ -72,10 +72,22 @@ async function findPatientByEmail(db: D1Database, email: string): Promise<Patien
 
 // ── GET /api/patient-portal/me ────────────────────────────────────────────────
 // Check whether the authenticated Supabase user is a registered patient.
+// Therapists always take priority: if the email exists in user_profiles, treat
+// the user as a therapist regardless of the patients table.
 
 patientPortalRouter.get("/patient-portal/me", authMiddleware, async (c) => {
   const user = c.get("user");
   const db = c.env.DB;
+
+  // If this email belongs to a therapist, never redirect to /patient
+  const therapist = await db
+    .prepare("SELECT id FROM user_profiles WHERE LOWER(email) = LOWER(?) LIMIT 1")
+    .bind(user.email)
+    .first<{ id: string }>();
+
+  if (therapist) {
+    return c.json({ isPatient: false }, 200);
+  }
 
   const patient = await findPatientByEmail(db, user.email);
 
