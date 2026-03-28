@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, FileText, Search, Target, Zap, AlertTriangle, TrendingUp, ChevronRight } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
@@ -12,6 +12,7 @@ interface Props {
 const regions = ['Cervical', 'Ombro', 'Lombar', 'Quadril', 'Joelho', 'Tornozelo', 'Punho e Mão'];
 
 export default function InitialTreatmentsModule({ onBack }: Props) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [selectedTreatment, setSelectedTreatment] = useState<InitialTreatment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,21 +26,21 @@ export default function InitialTreatmentsModule({ onBack }: Props) {
   return (
     <AnimatePresence mode="wait">
       {selectedTreatment ? (
-        <ModulePage key="detail" className="min-h-screen bg-slate-50 pb-24 md:pb-8">
+        <ModulePage key="detail" className="min-h-screen bg-gray-50 pb-24 md:pb-8">
         {/* Header - Mobile optimized */}
-        <div className="bg-slate-900 text-white">
+        <div className="bg-white border-b border-gray-200">
           <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
-            <button 
-              onClick={() => setSelectedTreatment(null)} 
-              className="flex items-center gap-2 text-slate-400 hover:text-white mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1"
+            <button
+              onClick={() => setSelectedTreatment(null)}
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="text-sm">Voltar</span>
             </button>
-            <span className="inline-block px-2 py-0.5 sm:py-1 bg-blue-500/20 text-blue-300 text-[10px] sm:text-xs font-medium rounded-md mb-1.5 sm:mb-2">
+            <span className="inline-block px-2 py-0.5 sm:py-1 bg-blue-100 text-blue-700 text-[10px] sm:text-xs font-medium rounded-md mb-1.5 sm:mb-2">
               {selectedTreatment.region}
             </span>
-            <h1 className="text-lg sm:text-xl font-bold">{selectedTreatment.condition}</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900">{selectedTreatment.condition}</h1>
           </div>
         </div>
 
@@ -121,13 +122,13 @@ export default function InitialTreatmentsModule({ onBack }: Props) {
         </div>
       </ModulePage>
       ) : (
-      <ModulePage key="list" className="min-h-screen bg-slate-50 pb-24 md:pb-8">
+      <ModulePage key="list" className="min-h-screen bg-gray-50 pb-24 md:pb-8">
       {/* Header */}
-      <div className="bg-slate-900 text-white">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
-          <button 
-            onClick={onBack} 
-            className="flex items-center gap-2 text-slate-400 hover:text-white mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1"
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm">Voltar</span>
@@ -137,8 +138,8 @@ export default function InitialTreatmentsModule({ onBack }: Props) {
               <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold">Condutas Iniciais</h1>
-              <p className="text-xs sm:text-sm text-slate-400">Objetivos e tratamento</p>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900">Condutas Iniciais</h1>
+              <p className="text-xs sm:text-sm text-gray-500">Objetivos e tratamento</p>
             </div>
           </div>
         </div>

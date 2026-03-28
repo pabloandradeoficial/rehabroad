@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Search, Bone, ArrowUpDown, Target, Activity, AlertTriangle, BookOpen, ChevronRight } from "lucide-react";
 import { jointBiomechanics, type JointBiomechanics } from "@/data/educationalModules";
 
@@ -15,6 +15,7 @@ const categories = [
 ];
 
 export default function BiomechanicsModule({ onBack }: BiomechanicsModuleProps) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJoint, setSelectedJoint] = useState<JointBiomechanics | null>(null);

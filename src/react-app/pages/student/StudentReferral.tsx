@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Gift,
   Mail,
@@ -22,6 +22,7 @@ interface Props {
 }
 
 export default function StudentReferral({ onBack }: Props) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const { user, isPending, loginWithGoogle } = useAppAuth();
 
   const [email, setEmail] = useState("");

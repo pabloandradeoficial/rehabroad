@@ -91,12 +91,13 @@ interface DailyProgress {
 
 type ViewState = 'intro' | 'challenge' | 'question_result' | 'final_result';
 
-export default function DailyTrainingModule({ 
-  onBack, 
+export default function DailyTrainingModule({
+  onBack,
   onComplete,
   currentStreak,
   userId
 }: DailyTrainingModuleProps) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const todayKey = getTodayKey();
   const storageKey = userId ? `daily_training_${userId}_${todayKey}` : `daily_training_guest_${todayKey}`;
   
@@ -232,11 +233,11 @@ export default function DailyTrainingModule({
   // INTRO VIEW
   if (view === 'intro') {
     return (
-      <div className="min-h-screen bg-slate-50 pb-24 md:pb-6">
+      <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
         {/* Header - Optimized */}
-        <div className="bg-slate-900 text-white">
+        <div className="bg-white border-b border-gray-200">
           <div className="max-w-2xl mx-auto px-4 py-4 sm:py-6">
-            <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1">
+            <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1">
               <ArrowLeft className="w-5 h-5" />
               <span className="text-sm">Voltar</span>
             </button>
@@ -245,8 +246,8 @@ export default function DailyTrainingModule({
                 <Flame className="w-5 h-5 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold">Treino Diário</h1>
-                <p className="text-xs sm:text-sm text-slate-400">5 casos clínicos por dia</p>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">Treino Diário</h1>
+                <p className="text-xs sm:text-sm text-gray-500">5 casos clínicos por dia</p>
               </div>
             </div>
           </div>
@@ -353,20 +354,20 @@ export default function DailyTrainingModule({
   // CHALLENGE VIEW
   if (view === 'challenge' && currentCase) {
     return (
-      <div className="min-h-screen bg-slate-50 pb-24 sm:pb-6">
+      <div className="min-h-screen bg-gray-50 pb-24 sm:pb-6">
         {/* Header - Sticky & Optimized */}
-        <div className="bg-slate-900 text-white sticky top-0 z-10">
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
           <div className="max-w-2xl mx-auto px-4 py-3 sm:py-4">
             <div className="flex items-center justify-between">
-              <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors touch-manipulation p-1.5 -ml-1.5">
+              <button onClick={onBack} className="text-gray-500 hover:text-gray-900 transition-colors touch-manipulation p-1.5 -ml-1.5">
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="flex items-center gap-2 sm:gap-3">
-                <span className="text-xs sm:text-sm text-slate-400">
+                <span className="text-xs sm:text-sm text-gray-500">
                   {progress.currentQuestion + 1}/{QUESTIONS_PER_DAY}
                 </span>
                 <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full font-mono text-xs sm:text-sm font-bold ${
-                  timeLeft <= 30 ? 'bg-red-500/20 text-red-400' : 'bg-teal-500/20 text-teal-400'
+                  timeLeft <= 30 ? 'bg-red-100 text-red-600' : 'bg-teal-50 text-teal-600'
                 }`}>
                   <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {formatTime(timeLeft)}
@@ -465,10 +466,10 @@ export default function DailyTrainingModule({
       : ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)];
     
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="bg-slate-900 text-white">
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b border-gray-200">
           <div className="max-w-2xl mx-auto px-4 py-4">
-            <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors">
+            <button onClick={onBack} className="text-gray-500 hover:text-gray-900 transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="mt-3">
@@ -534,10 +535,10 @@ export default function DailyTrainingModule({
 
   // FINAL RESULT VIEW
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 md:pb-6">
-      <div className="bg-slate-900 text-white">
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-2xl mx-auto px-4 py-6">
-          <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white mb-4 transition-colors">
+          <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-4 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm">Voltar</span>
           </button>
@@ -545,8 +546,8 @@ export default function DailyTrainingModule({
             <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
               <Trophy className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold">Treino Completo!</h1>
-            <p className="text-slate-400 text-sm mt-1">5 casos concluídos hoje</p>
+            <h1 className="text-2xl font-bold text-gray-900">Treino Completo!</h1>
+            <p className="text-gray-500 text-sm mt-1">5 casos concluídos hoje</p>
           </div>
         </div>
       </div>

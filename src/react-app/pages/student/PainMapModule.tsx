@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, MapPin, Activity, Dumbbell, Stethoscope, Zap, ChevronRight } from "lucide-react";
 import { painMapRegions, type PainMapRegion } from "@/data/educationalModules";
@@ -9,18 +9,19 @@ interface Props {
 }
 
 export default function PainMapModule({ onBack }: Props) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const [selectedRegion, setSelectedRegion] = useState<PainMapRegion | null>(null);
 
   return (
     <AnimatePresence mode="wait">
       {selectedRegion ? (
-        <ModulePage key="detail" className="min-h-screen bg-slate-50 pb-24 md:pb-8">
+        <ModulePage key="detail" className="min-h-screen bg-gray-50 pb-24 md:pb-8">
         {/* Header - Mobile optimized */}
-        <div className="bg-slate-900 text-white">
+        <div className="bg-white border-b border-gray-200">
           <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
-            <button 
-              onClick={() => setSelectedRegion(null)} 
-              className="flex items-center gap-2 text-slate-400 hover:text-white mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1"
+            <button
+              onClick={() => setSelectedRegion(null)}
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="text-sm">Voltar</span>
@@ -28,8 +29,8 @@ export default function PainMapModule({ onBack }: Props) {
             <div className="flex items-center gap-3">
               <span className="text-2xl sm:text-3xl">{selectedRegion.icon}</span>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold">{selectedRegion.name}</h1>
-                <p className="text-xs sm:text-sm text-slate-400">Mapa clínico completo</p>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">{selectedRegion.name}</h1>
+                <p className="text-xs sm:text-sm text-gray-500">Mapa clínico completo</p>
               </div>
             </div>
           </div>
@@ -37,7 +38,7 @@ export default function PainMapModule({ onBack }: Props) {
 
         <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6 space-y-3 sm:space-y-4">
           {/* Clinical Hypotheses */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+          <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-200">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-rose-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
                 <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
@@ -57,7 +58,7 @@ export default function PainMapModule({ onBack }: Props) {
           </div>
 
           {/* Involved Muscles */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+          <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-200">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
                 <Dumbbell className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
@@ -74,7 +75,7 @@ export default function PainMapModule({ onBack }: Props) {
           </div>
 
           {/* Clinical Tests */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+          <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-200">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
                 <Stethoscope className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
@@ -92,7 +93,7 @@ export default function PainMapModule({ onBack }: Props) {
           </div>
 
           {/* Initial Treatments */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100">
+          <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-200">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-teal-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
@@ -111,13 +112,13 @@ export default function PainMapModule({ onBack }: Props) {
         </div>
       </ModulePage>
       ) : (
-      <ModulePage key="list" className="min-h-screen bg-slate-50 pb-24 md:pb-8">
+      <ModulePage key="list" className="min-h-screen bg-gray-50 pb-24 md:pb-8">
       {/* Header */}
-      <div className="bg-slate-900 text-white">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
-          <button 
-            onClick={onBack} 
-            className="flex items-center gap-2 text-slate-400 hover:text-white mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1"
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-3 sm:mb-4 transition-colors touch-manipulation p-1 -ml-1"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm">Voltar</span>
@@ -127,8 +128,8 @@ export default function PainMapModule({ onBack }: Props) {
               <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold">Mapa da Dor</h1>
-              <p className="text-xs sm:text-sm text-slate-400">Selecione uma região</p>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900">Mapa da Dor</h1>
+              <p className="text-xs sm:text-sm text-gray-500">Selecione uma região</p>
             </div>
           </div>
         </div>
@@ -143,13 +144,13 @@ export default function PainMapModule({ onBack }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.04 }}
               onClick={() => setSelectedRegion(region)}
-              className="bg-white rounded-xl p-3.5 sm:p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-slate-200 active:scale-[0.97] transition-all text-center group touch-manipulation"
+              className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 text-center shadow-sm hover:border-teal-300 hover:shadow-md active:scale-[0.97] transition-all group touch-manipulation"
             >
               <span className="text-3xl sm:text-4xl block mb-2 sm:mb-3">{region.icon}</span>
-              <h3 className="font-bold text-slate-900 group-hover:text-rose-600 transition-colors text-sm sm:text-base">
+              <h3 className="font-bold text-gray-900 group-hover:text-rose-600 transition-colors text-sm sm:text-base">
                 {region.name}
               </h3>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1">
+              <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
                 {region.clinicalHypotheses.length} hipóteses
               </p>
             </motion.button>

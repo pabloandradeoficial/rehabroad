@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Search, MessageSquare, ClipboardList, AlertTriangle, FileText, ChevronRight, BookOpen, AlertCircle, Lightbulb, XCircle } from 'lucide-react';
 import { Button } from '@/react-app/components/ui/button';
 import { getAnamneseByCategory, type AnamneseTopic } from '@/data/educationalModules';
@@ -23,6 +23,7 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
 };
 
 export default function AnamneseModule({ onBack }: AnamneseModuleProps) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<AnamneseTopic | null>(null);
