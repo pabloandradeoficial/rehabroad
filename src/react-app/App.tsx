@@ -112,6 +112,21 @@ function PageLoader() {
   );
 }
 
+// Blocks all route rendering until Supabase resolves the initial session.
+// This eliminates the flash of the landing page before auth redirects.
+function AuthGate({ children }: { children: ReactNode }) {
+  const { isPending } = useAppAuth();
+  if (isPending) return <PageLoader />;
+  return <>{children}</>;
+}
+
+// Redirects authenticated users to /dashboard; shows landing page otherwise.
+function RootRedirect() {
+  const { user } = useAppAuth();
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <HomePage />;
+}
+
 function OwnerOnlyRoute({ children }: { children: ReactNode }) {
   const { user, isPending } = useAppAuth();
 
@@ -136,9 +151,10 @@ export default function App() {
           <SubscriptionProvider>
             <ToastProvider>
               <Router>
+                <AuthGate>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
-                    <Route path="/" element={<HomePage />} />
+                    <Route path="/" element={<RootRedirect />} />
                     <Route path="/comparacao" element={<ComparacaoPage />} />
                     <Route
                       path="/fisioterapia-ortopedica"
@@ -260,6 +276,7 @@ export default function App() {
                     <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </Suspense>
+                </AuthGate>
               </Router>
             </ToastProvider>
           </SubscriptionProvider>
