@@ -34,6 +34,7 @@ import { Button } from "@/react-app/components/ui/button";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
+import { DateInput } from "@/react-app/components/ui/DateInput";
 import { Label } from "@/react-app/components/ui/label";
 import { Textarea } from "@/react-app/components/ui/textarea";
 import {
@@ -540,17 +541,15 @@ export default function FinanceiroPage() {
               </div>
               <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                <Input
-                  type="date"
+                <DateInput
                   value={dateRange.start}
-                  onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                  onChange={(val) => setDateRange({ ...dateRange, start: val })}
                   className="flex-1 sm:w-36 sm:flex-none min-w-0"
                 />
                 <span className="text-muted-foreground text-sm shrink-0">até</span>
-                <Input
-                  type="date"
+                <DateInput
                   value={dateRange.end}
-                  onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                  onChange={(val) => setDateRange({ ...dateRange, end: val })}
                   className="flex-1 sm:w-36 sm:flex-none min-w-0"
                 />
               </div>
@@ -713,10 +712,9 @@ export default function FinanceiroPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Data</Label>
-                  <Input
-                    type="date"
+                  <DateInput
                     value={form.transaction_date}
-                    onChange={(e) => setForm({ ...form, transaction_date: e.target.value })}
+                    onChange={(val) => setForm({ ...form, transaction_date: val })}
                   />
                 </div>
                 <div>

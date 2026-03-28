@@ -88,7 +88,8 @@ export default function LoginPage() {
 
       <button
         onClick={() => setLanguage(language === "pt" ? "en" : "pt")}
-        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold text-white/80 hover:text-white transition-all"
+        className="absolute right-4 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold text-white/80 hover:text-white transition-all select-none"
+        style={{ top: "calc(1rem + env(safe-area-inset-top, 0px))" }}
         title={language === "pt" ? "Switch to English" : "Mudar para Português"}
         type="button"
       >
@@ -134,7 +135,7 @@ export default function LoginPage() {
                   <button
                     onClick={() => void handleLogin("professional")}
                     disabled={isSubmitting}
-                    className="group p-4 rounded-xl border-2 border-primary/50 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="group p-4 rounded-xl border-2 border-primary/50 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.97] active:opacity-80"
                     type="button"
                   >
                     <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -151,7 +152,7 @@ export default function LoginPage() {
                   <button
                     onClick={() => void handleLogin("student")}
                     disabled={isSubmitting}
-                    className="group p-4 rounded-xl border-2 border-violet-500/50 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500 transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="group p-4 rounded-xl border-2 border-violet-500/50 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500 transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.97] active:opacity-80"
                     type="button"
                   >
                     <div className="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">

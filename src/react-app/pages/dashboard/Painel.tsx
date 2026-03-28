@@ -30,6 +30,7 @@ import { Button } from "@/react-app/components/ui/button";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
+import { DateInput } from "@/react-app/components/ui/DateInput";
 import { Badge } from "@/react-app/components/ui/badge";
 import {
   Dialog,
@@ -59,6 +60,7 @@ import { PatientAvatar } from "@/react-app/components/PatientAvatar";
 import { WelcomeWizard } from "@/react-app/components/WelcomeWizard";
 import { PainelSkeleton } from "@/react-app/components/DashboardSkeletons";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
+import { useFocusFirstInput } from "@/react-app/hooks/useFocusFirstInput";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -111,6 +113,7 @@ export default function PainelPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<number | null>(null);
   const [formData, setFormData] = useState<PatientFormData>({ name: "" });
+  const focusRef = useFocusFirstInput(dialogOpen);
   const [saving, setSaving] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -384,7 +387,7 @@ export default function PainelPage() {
                 Preencha os campos principais para iniciar.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div ref={focusRef} className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo *</Label>
                 <Input
@@ -397,12 +400,11 @@ export default function PainelPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="birth_date">Data de Nascimento</Label>
-                <Input
+                <DateInput
                   id="birth_date"
-                  type="date"
                   value={formData.birth_date || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, birth_date: e.target.value })
+                  onChange={(val) =>
+                    setFormData({ ...formData, birth_date: val })
                   }
                   className="h-11"
                 />
@@ -1079,7 +1081,7 @@ export default function PainelPage() {
                   : "Preencha os dados principais do paciente."}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div ref={focusRef} className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo *</Label>
                 <Input
@@ -1092,12 +1094,11 @@ export default function PainelPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="birth_date">Data de Nascimento</Label>
-                <Input
+                <DateInput
                   id="birth_date"
-                  type="date"
                   value={formData.birth_date || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, birth_date: e.target.value })
+                  onChange={(val) =>
+                    setFormData({ ...formData, birth_date: val })
                   }
                   className="h-11"
                 />

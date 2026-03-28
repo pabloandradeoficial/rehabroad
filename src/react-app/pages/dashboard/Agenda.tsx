@@ -24,6 +24,7 @@ import { Button } from "@/react-app/components/ui/button";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
+import { DateInput } from "@/react-app/components/ui/DateInput";
 import { Label } from "@/react-app/components/ui/label";
 import { Textarea } from "@/react-app/components/ui/textarea";
 import {
@@ -1134,11 +1135,10 @@ export default function AgendaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Data</Label>
-                  <Input
-                    type="date"
+                  <DateInput
                     value={form.appointment_date}
-                    onChange={(e) =>
-                      setForm({ ...form, appointment_date: e.target.value })
+                    onChange={(val) =>
+                      setForm({ ...form, appointment_date: val })
                     }
                   />
                 </div>

@@ -53,7 +53,7 @@ function DifficultyButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+      className={`flex-1 py-3 rounded-xl text-sm font-medium border transition-all select-none active:scale-[0.97] ${
         selected
           ? "bg-primary text-white border-primary shadow-md"
           : "bg-card text-muted-foreground border-border hover:border-primary/50"
@@ -146,6 +146,7 @@ export default function HepPatientPortal() {
           <div className="flex flex-col gap-2">
             <Button
               variant="outline"
+              className="h-12"
               onClick={() => {
                 setCurrentStep(0);
                 setCheckins([]);
@@ -198,7 +199,7 @@ export default function HepPatientPortal() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-4">
+      <div className="bg-card border-b border-border px-4" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))", paddingBottom: "1rem" }}>
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-2 mb-1">
             <Heart className="w-5 h-5 text-primary" />
@@ -235,7 +236,7 @@ export default function HepPatientPortal() {
       </div>
 
       {/* Exercise card */}
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-6" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -279,7 +280,7 @@ export default function HepPatientPortal() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
                     Como fazer:
                   </p>
-                  <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">
+                  <p className="text-base text-foreground whitespace-pre-line leading-relaxed">
                     {currentExercise.instructions}
                   </p>
                 </div>
@@ -295,7 +296,7 @@ export default function HepPatientPortal() {
                   onClick={() =>
                     setCurrentCheckin((c) => ({ ...c, completed: true }))
                   }
-                  className={`flex items-center justify-center gap-2 py-4 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-2 py-4 rounded-xl border-2 text-sm font-semibold transition-all select-none active:scale-[0.97] active:opacity-80 ${
                     currentCheckin.completed === true
                       ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
                       : "border-border bg-card text-muted-foreground hover:border-emerald-300"
@@ -309,7 +310,7 @@ export default function HepPatientPortal() {
                   onClick={() =>
                     setCurrentCheckin((c) => ({ ...c, completed: false }))
                   }
-                  className={`flex items-center justify-center gap-2 py-4 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-2 py-4 rounded-xl border-2 text-sm font-semibold transition-all select-none active:scale-[0.97] active:opacity-80 ${
                     currentCheckin.completed === false
                       ? "border-red-400 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
                       : "border-border bg-card text-muted-foreground hover:border-red-300"

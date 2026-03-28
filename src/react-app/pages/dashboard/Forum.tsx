@@ -31,6 +31,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFocusFirstInput } from "@/react-app/hooks/useFocusFirstInput";
 
 interface ForumPost {
   id: number;
@@ -99,6 +100,7 @@ export default function Forum() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewPost, setShowNewPost] = useState(false);
+  const focusPostFormRef = useFocusFirstInput(showNewPost);
   const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
   const [comments, setComments] = useState<ForumComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -679,7 +681,7 @@ export default function Forum() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 mt-2">
+          <div ref={focusPostFormRef} className="space-y-4 mt-2">
             <div>
               <label className="text-sm font-medium mb-2 block">Categoria</label>
               <div className="grid grid-cols-2 gap-2">

@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/react-app/components/ui/dialog";
 import { Label } from "@/react-app/components/ui/label";
 import { Input } from "@/react-app/components/ui/input";
+import { DateInput } from "@/react-app/components/ui/DateInput";
 import { Textarea } from "@/react-app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
 import { Slider } from "@/react-app/components/ui/slider";
@@ -30,6 +31,7 @@ import { HighlightedADM } from "@/react-app/lib/admHighlight";
 import PatientProgressDashboard from "@/react-app/components/PatientProgressDashboard";
 import HepPlanManager from "@/react-app/components/HepPlanManager";
 import ScribeButton, { type ScribeResult } from "@/react-app/components/ScribeButton";
+import { useFocusFirstInput } from "@/react-app/hooks/useFocusFirstInput";
 
 const termosParaRegiao: Record<string, string> = {
   "pescoço": "cervical", "cervical": "cervical", "nuca": "cervical",
@@ -69,6 +71,7 @@ export default function PatientDetailPage() {
 
   const [evalDialogOpen, setEvalDialogOpen] = useState(false);
   const [evolDialogOpen, setEvolDialogOpen] = useState(false);
+  const focusEvolRef = useFocusFirstInput(evolDialogOpen);
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -160,6 +163,10 @@ export default function PatientDetailPage() {
   };
 
   const handleSaveEvolution = async () => {
+    if ((evolForm.procedures || "").trim().length < 10) {
+      toast.showError("Procedimentos devem ter pelo menos 10 caracteres.");
+      return;
+    }
     setSaving(true);
     try {
       if (editingEvolution) {
@@ -967,11 +974,11 @@ export default function PatientDetailPage() {
                 />
               </div>
             )}
-            <div className="space-y-5 py-4">
+            <div ref={focusEvolRef} className="space-y-5 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="font-semibold">Data da Sessão</Label>
-                  <Input type="date" value={evolForm.session_date || ""} onChange={(e) => setEvolForm({ ...evolForm, session_date: e.target.value })} className="h-11" />
+                  <DateInput value={evolForm.session_date || ""} onChange={(val) => setEvolForm({ ...evolForm, session_date: val })} className="h-11" />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-semibold">Presença</Label>
@@ -1082,10 +1089,9 @@ export default function PatientDetailPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label className="font-semibold">Data</Label>
-                    <Input
-                      type="date"
+                    <DateInput
                       value={reminderForm.date}
-                      onChange={(e) => setReminderForm({ ...reminderForm, date: e.target.value })}
+                      onChange={(val) => setReminderForm({ ...reminderForm, date: val })}
                       className="h-11"
                     />
                   </div>
