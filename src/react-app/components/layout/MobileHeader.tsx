@@ -44,7 +44,7 @@ export function MobileHeader({ title, showBack, actions }: MobileHeaderProps) {
 
   return (
     <header
-      className="sticky top-0 z-[40] flex items-center justify-between px-4 bg-slate-900/95 backdrop-blur-xl border-b border-white/5"
+      className="sticky top-0 z-[40] flex items-center justify-between px-4 bg-background border-b border-border"
       style={{
         paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))`,
         paddingBottom: "0.75rem",
@@ -56,7 +56,7 @@ export function MobileHeader({ title, showBack, actions }: MobileHeaderProps) {
         {showBack ? (
           <button
             onClick={() => navigate(-1)}
-            className="-ml-1 w-9 h-9 flex items-center justify-center rounded-full text-slate-300 hover:text-white active:bg-white/10"
+            className="-ml-1 w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground active:bg-muted"
             aria-label="Voltar"
           >
             <ArrowLeft size={20} />
@@ -67,7 +67,7 @@ export function MobileHeader({ title, showBack, actions }: MobileHeaderProps) {
           </div>
         )}
 
-        <h1 className="text-base font-semibold text-white truncate leading-tight">
+        <h1 className="text-base font-semibold text-foreground truncate leading-tight">
           {resolvedTitle}
         </h1>
       </div>

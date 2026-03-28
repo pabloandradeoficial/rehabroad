@@ -1,4 +1,5 @@
 import { MobileSidebar } from "./MobileSidebar";
+import { RehabFriendFAB } from "./RehabFriendFAB";
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -12,10 +13,11 @@ interface MobileLayoutProps {
 export function MobileLayout({ children, onOpenRehabFriend }: MobileLayoutProps) {
   return (
     <div className="flex overflow-hidden bg-background" style={{ height: "100dvh", width: "100dvw" }}>
-      <MobileSidebar onOpenRehabFriend={onOpenRehabFriend} />
+      <MobileSidebar />
       <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background">
         {children}
       </main>
+      <RehabFriendFAB onOpen={onOpenRehabFriend} />
     </div>
   );
 }

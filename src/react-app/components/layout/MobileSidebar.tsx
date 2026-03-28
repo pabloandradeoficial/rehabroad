@@ -4,7 +4,6 @@ import {
   Users,
   Calendar,
   HeartPulse,
-  MessageCircle,
   Brain,
   Dumbbell,
   Route,
@@ -15,7 +14,6 @@ import {
   User,
   ChevronLeft,
   Activity,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "@/react-app/lib/utils";
 
@@ -33,7 +31,7 @@ const mainItems = [
 const iaItems = [
   { to: "/dashboard/neuroflux", icon: Brain, label: "NeuroFlux", color: "violet" as const },
   { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", color: "teal" as const },
-  { to: "/dashboard/caminho", icon: Route, label: "Caminho", color: "teal" as const },
+  { to: "/dashboard/caminho", icon: Route, label: "Caminho Clínico", color: "teal" as const },
 ];
 
 const communityItems = [
@@ -41,15 +39,9 @@ const communityItems = [
   { to: "/dashboard/perfil", icon: User, label: "Meu Perfil", end: false },
 ];
 
-// ── Props ─────────────────────────────────────────────────────────────────────
-
-interface MobileSidebarProps {
-  onOpenRehabFriend: () => void;
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function MobileSidebar({ onOpenRehabFriend }: MobileSidebarProps) {
+export function MobileSidebar() {
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("sidebar_collapsed") === "true";
   });
@@ -78,8 +70,6 @@ export function MobileSidebar({ onOpenRehabFriend }: MobileSidebarProps) {
           : "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
         : "text-slate-400 hover:text-white hover:bg-white/5"
     );
-
-  const rehabFriendActive = false; // action button, never "active"
 
   return (
     <aside
@@ -147,34 +137,6 @@ export function MobileSidebar({ onOpenRehabFriend }: MobileSidebarProps) {
         )}
         {collapsed && <div className="mt-3" />}
         <ul className="space-y-1">
-          {/* Rehab Friend — action button */}
-          <li>
-            <button
-              onClick={onOpenRehabFriend}
-              className={cn(
-                "w-full group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
-                collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
-                rehabFriendActive
-                  ? "bg-gradient-to-r from-violet-500/20 to-purple-500/10 text-violet-400 border-l-2 border-violet-400"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <div className={cn(
-                "rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 flex-shrink-0",
-                collapsed ? "w-6 h-6" : "w-7 h-7",
-                "bg-gradient-to-br from-violet-500/30 to-purple-600/30"
-              )}>
-                <MessageCircle className={cn(collapsed ? "w-3.5 h-3.5" : "w-4 h-4")} />
-              </div>
-              {!collapsed && (
-                <>
-                  <span className="flex-1">Rehab Friend</span>
-                  <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-                </>
-              )}
-            </button>
-          </li>
-
           {/* IA route items */}
           {iaItems.map((item) => (
             <li key={item.to}>
