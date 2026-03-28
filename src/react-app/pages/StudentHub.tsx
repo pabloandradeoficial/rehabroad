@@ -97,8 +97,8 @@ interface StudentProgress {
   daily_challenge_date: string | null;
   daily_challenge_case_id: string | null;
   avatar_url: string | null;
-  estagio_atual: string | null;
-  ponte_pro_shown: number;
+  estagio_atual?: string | null;
+  ponte_pro_shown?: number;
 }
 
 interface RegionProgress {
