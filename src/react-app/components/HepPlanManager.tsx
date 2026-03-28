@@ -603,6 +603,30 @@ export default function HepPlanManager({ patientId, patientPhone }: HepPlanManag
               })}
             </p>
           )}
+
+          {/* Patient notes from recent check-ins */}
+          {adherence.recentCheckins?.some((ci) => ci.notes) && (
+            <div className="space-y-2 pt-1 border-t border-border">
+              <p className="text-xs font-semibold text-foreground">Observações do paciente</p>
+              {adherence.recentCheckins
+                .filter((ci) => ci.notes)
+                .map((ci, i) => (
+                  <div key={i} className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground mb-1">💬 Observação do paciente:</p>
+                    <p className="text-sm text-foreground italic">"{ci.notes}"</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(ci.checked_at).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
       )}
 

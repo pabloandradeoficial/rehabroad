@@ -53,6 +53,13 @@ export interface HepAdherence {
     completionRate: number;
     averagePain: number;
   }[];
+  recentCheckins: {
+    completed: number;
+    pain_level: number | null;
+    difficulty: string | null;
+    notes: string | null;
+    checked_at: string;
+  }[];
 }
 
 export interface HepExerciseInput {

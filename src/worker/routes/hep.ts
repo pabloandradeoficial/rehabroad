@@ -47,12 +47,22 @@ function computeAdherenceStatus(
 
 // GET /api/hep/plans?patient_id=X
 hepRouter.get("/plans", authMiddleware, async (c) => {
-  const user = c.get("user" as never) as { id: string };
+  const user = c.get("user" as never) as { id: string; email: string; name: string | null };
   const patientId = c.req.query("patient_id");
 
   if (!patientId) {
     return c.json({ error: "patient_id é obrigatório" }, 400);
   }
+
+  // Sync physio email so checkin notification emails can find it (fire-and-forget)
+  void c.env.DB.prepare(
+    `INSERT INTO user_profiles (id, email, name, updated_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       email      = excluded.email,
+       name       = excluded.name,
+       updated_at = excluded.updated_at`
+  ).bind(user.id, user.email ?? null, user.name ?? null, new Date().toISOString()).run();
 
   const { results } = await c.env.DB.prepare(
     `SELECT * FROM hep_plans WHERE patient_id = ? AND user_id = ? ORDER BY created_at DESC`
@@ -382,6 +392,13 @@ hepRouter.get("/plans/:id/adherence", authMiddleware, async (c) => {
     lastCheckin,
     status,
     exerciseBreakdown,
+    recentCheckins: (checkins ?? []).slice(0, 5).map((c) => ({
+      completed: c.completed as number,
+      pain_level: c.pain_level as number | null,
+      difficulty: c.difficulty as string | null,
+      notes: c.notes as string | null,
+      checked_at: c.checked_at as string,
+    })),
   });
 });
 
