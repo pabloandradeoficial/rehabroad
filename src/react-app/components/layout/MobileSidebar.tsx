@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { NavLink } from "react-router";
 import {
   Users,
@@ -12,7 +11,6 @@ import {
   ClipboardCheck,
   BookOpen,
   User,
-  ChevronLeft,
   Activity,
 } from "lucide-react";
 import { cn } from "@/react-app/lib/utils";
@@ -39,18 +37,15 @@ const communityItems = [
   { to: "/dashboard/perfil", icon: User, label: "Meu Perfil", end: false },
 ];
 
+// ── Props ─────────────────────────────────────────────────────────────────────
+
+interface MobileSidebarProps {
+  collapsed: boolean;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function MobileSidebar() {
-  const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem("sidebar_collapsed") === "true";
-  });
-  const toggle = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    localStorage.setItem("sidebar_collapsed", String(next));
-  };
-
+export function MobileSidebar({ collapsed }: MobileSidebarProps) {
   const navLinkClass = (isActive: boolean) =>
     cn(
       "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
@@ -74,7 +69,7 @@ export function MobileSidebar() {
   return (
     <aside
       className={cn(
-        "relative flex-shrink-0 flex flex-col h-full",
+        "flex-shrink-0 flex flex-col h-full z-50",
         "bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950",
         "border-r border-white/5"
       )}
@@ -137,7 +132,6 @@ export function MobileSidebar() {
         )}
         {collapsed && <div className="mt-3" />}
         <ul className="space-y-1">
-          {/* IA route items */}
           {iaItems.map((item) => (
             <li key={item.to}>
               <NavLink
@@ -159,7 +153,7 @@ export function MobileSidebar() {
           ))}
         </ul>
 
-        {/* Section: Comunidade & Conta */}
+        {/* Section: Conta */}
         {!collapsed && (
           <div className="mt-5 mb-2">
             <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -184,28 +178,8 @@ export function MobileSidebar() {
         </ul>
       </nav>
 
-      {/* ── Fade gradient (matches desktop) ───────────────────────────────── */}
+      {/* ── Fade gradient ─────────────────────────────────────────────────── */}
       <div className="pointer-events-none absolute bottom-10 left-0 right-0 h-8 bg-gradient-to-t from-slate-950 to-transparent" />
-
-      {/* ── Toggle button ─────────────────────────────────────────────────── */}
-      <button
-        onClick={toggle}
-        className={cn(
-          "absolute -right-3.5 top-1/2 -translate-y-1/2 z-10",
-          "w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500",
-          "flex items-center justify-center",
-          "shadow-lg shadow-teal-500/30 transition-all duration-200",
-          "hover:scale-110 active:scale-95"
-        )}
-        aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-      >
-        <ChevronLeft
-          className={cn(
-            "w-4 h-4 text-white transition-transform duration-200",
-            collapsed && "rotate-180"
-          )}
-        />
-      </button>
     </aside>
   );
 }
