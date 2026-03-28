@@ -34,6 +34,7 @@ import { Button } from "@/react-app/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
 import { usePatients } from "@/react-app/hooks/usePatients";
 import { useSuporte, type ClinicalInsight, type DiagnosticHypothesis } from "@/react-app/hooks/useSuporte";
+import { useClinicalContext, type ClinicalAlert } from "@/react-app/hooks/useClinicalContext";
 import PremiumGate from "@/react-app/components/PremiumGate";
 import { PageTransition } from "@/react-app/components/ui/microinteractions";
 import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
@@ -147,6 +148,69 @@ function InsightItem({ insight }: { insight: ClinicalInsight }) {
   );
 }
 
+// Clinical Alert Card (9-rule engine)
+const alertConfig = {
+  danger: {
+    icon: AlertCircle,
+    color: "text-red-500",
+    bg: "bg-red-500/10",
+    border: "border-red-500/20",
+    badge: "bg-red-500/10 text-red-600",
+    label: "Urgente",
+  },
+  warning: {
+    icon: AlertTriangle,
+    color: "text-amber-500",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    badge: "bg-amber-500/10 text-amber-600",
+    label: "Atenção",
+  },
+  info: {
+    icon: Info,
+    color: "text-blue-500",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20",
+    badge: "bg-blue-500/10 text-blue-600",
+    label: "Info",
+  },
+  success: {
+    icon: CheckCircle2,
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    badge: "bg-emerald-500/10 text-emerald-600",
+    label: "Positivo",
+  },
+} as const;
+
+function ClinicalAlertCard({ alert }: { alert: ClinicalAlert }) {
+  const c = alertConfig[alert.severity];
+  const IconComponent = c.icon;
+  return (
+    <div className={`rounded-xl border ${c.border} ${c.bg} p-4 space-y-3`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5">
+          <IconComponent className={`w-5 h-5 ${c.color} mt-0.5 shrink-0`} />
+          <h4 className="font-semibold text-foreground text-sm leading-snug">{alert.title}</h4>
+        </div>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0 ${c.badge}`}>
+          {alert.confidence}%
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">{alert.description}</p>
+      <div className="rounded-lg bg-background/60 border border-border/50 p-2.5 space-y-1">
+        <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide">Conduta sugerida</p>
+        <p className="text-xs text-muted-foreground">{alert.conduta}</p>
+      </div>
+      <p className="text-[11px] text-muted-foreground/60 flex items-center gap-1">
+        <Info className="w-3 h-3 shrink-0" />
+        Baseado em: {alert.baseadoEm}
+      </p>
+    </div>
+  );
+}
+
 // Diagnostic Card
 function DiagnosticCard({ hypothesis }: { hypothesis: DiagnosticHypothesis }) {
   const [expanded, setExpanded] = useState(false);
@@ -246,6 +310,7 @@ function SuporteContent() {
   const { patients, loading: patientsLoading } = usePatients();
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const { suporte, loading: suporteLoading, refetch } = useSuporte(selectedPatientId || null);
+  const { context: clinicalContext } = useClinicalContext(selectedPatientId || null);
 
   const selectedPatient = patients.find(p => p.id.toString() === selectedPatientId);
 
@@ -575,8 +640,29 @@ function SuporteContent() {
           </section>
         )}
 
-        {/* Clinical Insights */}
-        {otherInsights.length > 0 && (
+        {/* Clinical Alerts — 9-rule engine */}
+        {(clinicalContext?.alerts ?? []).length > 0 && (
+          <section>
+            <SectionHeader icon={Stethoscope} title="Pontos de Atenção" iconColor="text-primary">
+              <Badge variant="outline">{clinicalContext!.alerts.length} alerta{clinicalContext!.alerts.length > 1 ? "s" : ""}</Badge>
+            </SectionHeader>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {clinicalContext!.alerts.map((alert, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                >
+                  <ClinicalAlertCard alert={alert} />
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* General Insights (non-high priority) */}
+        {otherInsights.length > 0 && (clinicalContext?.alerts ?? []).length === 0 && (
           <section>
             <SectionHeader icon={Stethoscope} title="Pontos de Atenção" iconColor="text-primary" />
             <div className="grid sm:grid-cols-2 gap-3">

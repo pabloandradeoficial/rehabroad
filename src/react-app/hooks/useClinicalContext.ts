@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/react-app/lib/api";
 
+export interface ClinicalAlert {
+  severity: "danger" | "warning" | "info" | "success";
+  title: string;
+  description: string;
+  conduta: string;
+  baseadoEm: string;
+  confidence: number;
+}
+
 export interface ClinicalContext {
   patient: {
     id: number;
@@ -34,6 +43,7 @@ export interface ClinicalContext {
     notImproving: boolean;
     fewSessions: boolean;
   };
+  alerts: ClinicalAlert[];
 }
 
 export function buildClinicalSummary(context: ClinicalContext): string {
