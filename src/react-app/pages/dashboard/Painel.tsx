@@ -953,7 +953,7 @@ export default function PainelPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.03 }}
-                      whileHover={{ scale: 1.005 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => navigate(`/dashboard/paciente/${paciente.id}`)}
                       className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted border border-border hover:border-primary/30 transition-all cursor-pointer group"
                     >

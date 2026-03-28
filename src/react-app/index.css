@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Body scroll lock when dialog is open (Radix sets data-scroll-locked) */
+body[data-scroll-locked] {
+  overflow: hidden !important;
+  touch-action: none;
+}
+
 /* Performance: defer off-screen content rendering */
 .content-auto {
   content-visibility: auto;

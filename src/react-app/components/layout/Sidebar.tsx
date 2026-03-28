@@ -393,7 +393,10 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
         </NavLink>
       </div>
 
-      <div className={cn("border-t border-white/5", collapsed ? "p-2" : "p-3")}>
+      <div
+        className={cn("border-t border-white/5", collapsed ? "p-2" : "p-3")}
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
+      >
         <div className={cn("flex items-center", collapsed ? "flex-col gap-1 justify-center" : "justify-between")}>
           {onRestartTour && !collapsed && (
             <button

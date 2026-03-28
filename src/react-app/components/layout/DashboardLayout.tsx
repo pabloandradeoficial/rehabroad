@@ -239,7 +239,10 @@ export default function DashboardLayout() {
       {/* Main Content */}
       <main
         className={cn(
-          "min-h-dvh pt-16 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0 flex flex-col transition-all duration-300",
+          "min-h-dvh pt-16 lg:pt-0 lg:pb-0 flex flex-col transition-all duration-300",
+          isPremium
+            ? "pb-[calc(7rem+env(safe-area-inset-bottom,0px))]"
+            : "pb-[calc(4rem+env(safe-area-inset-bottom,0px))]",
           sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
         )}
       >
@@ -319,15 +322,18 @@ export default function DashboardLayout() {
           data-onboarding="rehab-friend-btn"
           onClick={() => setRehabFriendOpen(true)}
           className={cn(
-            "fixed z-[39] flex items-center gap-2 rounded-full shadow-lg transition-all duration-200",
-            "bg-gradient-to-br from-primary to-primary/80 text-white hover:scale-105 active:scale-95",
-            "right-4 lg:bottom-6 lg:right-6 px-4 py-3",
-            "bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6"
+            "fixed z-[39] flex items-center gap-2 shadow-lg",
+            "bg-gradient-to-br from-primary to-primary/80 text-white",
+            // Desktop: rounded pill in corner
+            "lg:bottom-6 lg:right-6 lg:rounded-full lg:px-4 lg:py-3 lg:hover:scale-105 lg:transition-all",
+            // Mobile: full-width bar just above the bottom nav
+            "max-lg:left-0 max-lg:right-0 max-lg:rounded-none max-lg:justify-center max-lg:py-2.5 max-lg:px-4",
+            "max-lg:bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))]"
           )}
           title="Rehab Friend — Assistente IA"
         >
           <Bot className="w-5 h-5" />
-          <span className="text-sm font-semibold hidden sm:inline">Rehab Friend</span>
+          <span className="text-sm font-semibold">Rehab Friend</span>
         </button>
       )}
 
