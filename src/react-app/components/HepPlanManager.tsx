@@ -7,7 +7,6 @@ import {
   Link,
   Copy,
   Check,
-  ChevronRight,
   Loader2,
   AlertCircle,
   Dumbbell,
@@ -313,7 +312,7 @@ function getPlanSectionValue(plan: NonNullable<ReturnType<typeof useHepPlan>["pl
 
 export default function HepPlanManager({ patientId, patientPhone, patientEmail }: HepPlanManagerProps) {
   const toast = useToast();
-  const { plan, exercises, adherence, unreadComments, loading, error, createPlan, addExercise, updateExercise, removeExercise, generateToken, refreshAdherence, patchPlanSections, markCommentRead, refetch } =
+  const { plan, exercises, adherence, unreadComments, loading, error, createPlan, addExercise, updateExercise, removeExercise, refreshAdherence, patchPlanSections, markCommentRead, refetch } =
     useHepPlan(patientId);
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
