@@ -22,6 +22,7 @@ import { cn } from "@/react-app/lib/utils";
 const mainItems = [
   { to: "/dashboard", icon: Users, label: "Prontuário", end: true },
   { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", end: false },
+  { to: "/dashboard/caminho", icon: Route, label: "Caminho Clínico", end: false },
   { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", end: false },
   { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", end: false },
   { to: "/dashboard/exportacao", icon: FileText, label: "Exportação", end: false },
@@ -31,7 +32,6 @@ const mainItems = [
 const iaItems = [
   { to: "/dashboard/neuroflux", icon: Brain, label: "NeuroFlux", color: "violet" as const },
   { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", color: "teal" as const },
-  { to: "/dashboard/caminho", icon: Route, label: "Caminho Clínico", color: "teal" as const },
 ];
 
 const communityItems = [

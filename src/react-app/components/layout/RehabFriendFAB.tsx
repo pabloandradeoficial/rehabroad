@@ -22,7 +22,7 @@ export function RehabFriendFAB({ onOpen }: RehabFriendFABProps) {
 
   if (minimized) {
     return (
-      <div className="fixed bottom-6 left-2 z-50">
+      <div className="fixed bottom-6 right-4 z-50">
         <button
           onClick={expand}
           className="w-10 h-10 rounded-xl bg-purple-600/80 flex items-center justify-center shadow-md active:scale-95 transition-transform"
@@ -35,7 +35,7 @@ export function RehabFriendFAB({ onOpen }: RehabFriendFABProps) {
   }
 
   return (
-    <div className="fixed bottom-6 left-2 z-50 flex flex-col items-center gap-2">
+    <div className="fixed bottom-6 right-4 z-50 flex flex-col items-center gap-2">
       {/* Minimizar */}
       <button
         onClick={minimize}
