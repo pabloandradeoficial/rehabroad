@@ -82,10 +82,48 @@ patientsRouter.put("/patients/:id", authMiddleware, async (c) => {
 patientsRouter.delete("/patients/:id", authMiddleware, async (c) => {
   const user = c.get("user");
   const patientId = c.req.param("id");
+  const db = c.env.DB;
 
-  await c.env.DB.prepare(
-    `DELETE FROM patients WHERE id = ? AND user_id = ?`
-  ).bind(patientId, user!.id).run();
+  // Verify ownership before deleting anything
+  const patient = await db
+    .prepare(`SELECT id FROM patients WHERE id = ? AND user_id = ?`)
+    .bind(patientId, user!.id)
+    .first();
+
+  if (!patient) {
+    return c.json({ error: "Patient not found" }, 404);
+  }
+
+  // Delete children in FK-safe order (deepest first)
+  // 1. hep_checkins references hep_plans and hep_exercises
+  await db.prepare(
+    `DELETE FROM hep_checkins WHERE plan_id IN (SELECT id FROM hep_plans WHERE patient_id = ?)`
+  ).bind(patientId).run();
+
+  // 2. hep_access_tokens references hep_plans
+  await db.prepare(
+    `DELETE FROM hep_access_tokens WHERE plan_id IN (SELECT id FROM hep_plans WHERE patient_id = ?)`
+  ).bind(patientId).run();
+
+  // 3. hep_exercises references hep_plans
+  await db.prepare(
+    `DELETE FROM hep_exercises WHERE plan_id IN (SELECT id FROM hep_plans WHERE patient_id = ?)`
+  ).bind(patientId).run();
+
+  // 4. hep_plans references patients (FK constraint — must go before patients)
+  await db.prepare(`DELETE FROM hep_plans WHERE patient_id = ?`).bind(patientId).run();
+
+  // 5. Tables with patient_id but no FK constraint
+  await db.prepare(`DELETE FROM evolutions WHERE patient_id = ?`).bind(patientId).run();
+  await db.prepare(`DELETE FROM evaluations WHERE patient_id = ?`).bind(patientId).run();
+  await db.prepare(`DELETE FROM caminho WHERE patient_id = ?`).bind(patientId).run();
+  await db.prepare(`DELETE FROM appointments WHERE patient_id = ?`).bind(patientId).run();
+  await db.prepare(`DELETE FROM report_exports WHERE patient_id = ?`).bind(patientId).run();
+  await db.prepare(`DELETE FROM neuroflux_consultations WHERE patient_id = ?`).bind(patientId).run();
+  await db.prepare(`DELETE FROM rehab_friend_messages WHERE patient_id = ?`).bind(patientId).run();
+
+  // 6. Finally delete the patient
+  await db.prepare(`DELETE FROM patients WHERE id = ? AND user_id = ?`).bind(patientId, user!.id).run();
 
   return c.json({ success: true });
 });
