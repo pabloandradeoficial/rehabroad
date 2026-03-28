@@ -78,7 +78,14 @@ export default function AuthCallbackPage() {
 
           session = data.session ?? null;
         } else {
-          throw new Error("Retorno de autenticação inválido.");
+          // Supabase PKCE v2 may have already consumed the ?code= during
+          // client initialization before this effect ran, leaving the URL as
+          // /auth/callback# with no params. Wait briefly for the session that
+          // was established internally before giving up.
+          session = await waitForSession(10, 300);
+          if (!session) {
+            throw new Error("Retorno de autenticação inválido.");
+          }
         }
 
         if (!session) {
