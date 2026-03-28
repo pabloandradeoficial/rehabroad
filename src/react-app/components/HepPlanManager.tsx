@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Home,
   Plus,
@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Dumbbell,
   RefreshCw,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
@@ -33,7 +34,7 @@ import {
   SelectValue,
 } from "@/react-app/components/ui/select";
 import { useToast } from "@/react-app/components/ui/microinteractions";
-import { useHepPlan, type HepExercise, type HepExerciseInput } from "@/react-app/hooks/useHep";
+import { useHepPlan, type HepExercise, type HepExerciseInput, type PatientComment } from "@/react-app/hooks/useHep";
 import { exercises as exerciseLibrary, exerciseCategories } from "@/data/exercises";
 import { DS } from "@/react-app/lib/design-system";
 
@@ -276,9 +277,42 @@ interface HepPlanManagerProps {
   patientPhone?: string | null;
 }
 
+// ─────────────────────────────────────────────
+// Plan section config
+// ─────────────────────────────────────────────
+
+const PLAN_SECTIONS = [
+  {
+    key: "diagnostico" as const,
+    dbField: "diagnostico_explicado" as const,
+    label: "Diagnóstico explicado",
+    placeholder: "Explique o diagnóstico em linguagem simples para o paciente entender...",
+  },
+  {
+    key: "orientacoes" as const,
+    dbField: "orientacoes" as const,
+    label: "Orientações",
+    placeholder: "Evite ficar sentado por mais de 1 hora seguida, use calçados com amortecimento...",
+  },
+  {
+    key: "metas" as const,
+    dbField: "metas" as const,
+    label: "Metas do tratamento",
+    placeholder: "Em 4 semanas você vai conseguir caminhar 30 minutos sem dor...",
+  },
+] as const;
+
+type SectionKey = typeof PLAN_SECTIONS[number]["key"];
+
+function getPlanSectionValue(plan: NonNullable<ReturnType<typeof useHepPlan>["plan"]>, key: SectionKey): string {
+  if (key === "diagnostico") return plan.diagnostico_explicado ?? "";
+  if (key === "orientacoes") return plan.orientacoes ?? "";
+  return plan.metas ?? "";
+}
+
 export default function HepPlanManager({ patientId, patientPhone }: HepPlanManagerProps) {
   const toast = useToast();
-  const { plan, exercises, adherence, loading, error, createPlan, addExercise, updateExercise, removeExercise, generateToken, refreshAdherence, refetch } =
+  const { plan, exercises, adherence, unreadComments, loading, error, createPlan, addExercise, updateExercise, removeExercise, generateToken, refreshAdherence, patchPlanSections, markCommentRead, refetch } =
     useHepPlan(patientId);
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -289,6 +323,25 @@ export default function HepPlanManager({ patientId, patientPhone }: HepPlanManag
   const [accessUrl, setAccessUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
+
+  // ── Section editors ──
+  const [sectionValues, setSectionValues] = useState<Record<SectionKey, string>>({
+    diagnostico: "",
+    orientacoes: "",
+    metas: "",
+  });
+  const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
+  const [savingSection, setSavingSection] = useState(false);
+
+  useEffect(() => {
+    if (plan) {
+      setSectionValues({
+        diagnostico: plan.diagnostico_explicado ?? "",
+        orientacoes: plan.orientacoes ?? "",
+        metas: plan.metas ?? "",
+      });
+    }
+  }, [plan?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Create plan ──
   const handleCreate = async () => {
@@ -332,6 +385,31 @@ export default function HepPlanManager({ patientId, patientPhone }: HepPlanManag
       toast.showSuccess("Exercício removido.");
     } catch {
       toast.showError("Erro ao remover exercício.");
+    }
+  };
+
+  // ── Save plan section ──
+  const handleSaveSection = async (key: SectionKey) => {
+    if (!plan) return;
+    const section = PLAN_SECTIONS.find((s) => s.key === key)!;
+    setSavingSection(true);
+    try {
+      await patchPlanSections(plan.id, { [section.dbField]: sectionValues[key] || null });
+      setEditingSection(null);
+      toast.showSuccess("Salvo!");
+    } catch {
+      toast.showError("Erro ao salvar. Tente novamente.");
+    } finally {
+      setSavingSection(false);
+    }
+  };
+
+  // ── Mark patient comment as read ──
+  const handleMarkCommentRead = async (commentId: number) => {
+    try {
+      await markCommentRead(commentId);
+    } catch {
+      toast.showError("Erro ao marcar como lido.");
     }
   };
 
@@ -560,6 +638,111 @@ export default function HepPlanManager({ patientId, patientPhone }: HepPlanManag
             ))}
           </div>
         )}
+      </div>
+
+      {/* Plan content sections (diagnostico, orientacoes, metas) */}
+      <div className="rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3 bg-muted/50 border-b border-border">
+          <span className="text-sm font-semibold text-foreground">CONTEÚDO PARA O PACIENTE</span>
+        </div>
+        <div className="divide-y divide-border">
+          {PLAN_SECTIONS.map((section) => {
+            const sectionComments: PatientComment[] = unreadComments.filter((c) => c.section === section.key);
+            const isEditing = editingSection === section.key;
+            const value = sectionValues[section.key];
+            return (
+              <div key={section.key} className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-foreground">{section.label}</h3>
+                    {sectionComments.length > 0 && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                        <MessageSquare className="w-3 h-3" />
+                        {sectionComments.length}
+                      </span>
+                    )}
+                  </div>
+                  {!isEditing && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs"
+                      onClick={() => setEditingSection(section.key)}
+                    >
+                      <Pencil className="w-3 h-3" />
+                      {value ? "Editar" : "Adicionar"}
+                    </Button>
+                  )}
+                </div>
+
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={value}
+                      onChange={(e) =>
+                        setSectionValues((prev) => ({ ...prev, [section.key]: e.target.value }))
+                      }
+                      placeholder={section.placeholder}
+                      rows={4}
+                      className="resize-none text-sm"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => void handleSaveSection(section.key)}
+                        disabled={savingSection}
+                      >
+                        {savingSection ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+                        {savingSection ? "Salvando..." : "Salvar"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingSection(null);
+                          setSectionValues((prev) => ({
+                            ...prev,
+                            [section.key]: getPlanSectionValue(plan, section.key),
+                          }));
+                        }}
+                        disabled={savingSection}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {value || <span className="italic">Nenhuma informação adicionada ainda.</span>}
+                  </p>
+                )}
+
+                {/* Patient comments for this section */}
+                {sectionComments.length > 0 && (
+                  <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg space-y-2">
+                    <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                      💬 {sectionComments.length} dúvida{sectionComments.length > 1 ? "s" : ""} do paciente
+                    </p>
+                    {sectionComments.map((c) => (
+                      <div key={c.id} className="flex items-start justify-between gap-3">
+                        <p className="text-xs text-amber-700 dark:text-amber-300 flex-1">
+                          "{c.comment}"
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => void handleMarkCommentRead(c.id)}
+                          className="text-xs text-amber-500 hover:text-amber-600 underline shrink-0 transition-colors"
+                        >
+                          Marcar lido
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Adherence breakdown */}

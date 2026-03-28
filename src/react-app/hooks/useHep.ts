@@ -14,6 +14,20 @@ export interface HepPlan {
   status: "active" | "inactive";
   created_at: string;
   updated_at: string;
+  diagnostico_explicado: string | null;
+  orientacoes: string | null;
+  metas: string | null;
+}
+
+export interface PatientComment {
+  id: number;
+  patient_id: number;
+  hep_plan_id: number | null;
+  hep_exercise_id: number | null;
+  section: string | null;
+  comment: string;
+  created_at: string;
+  read_by_therapist: number;
 }
 
 export interface HepExercise {
@@ -80,6 +94,7 @@ export function useHepPlan(patientId: number | undefined) {
   const [plan, setPlan] = useState<HepPlan | null>(null);
   const [exercises, setExercises] = useState<HepExercise[]>([]);
   const [adherence, setAdherence] = useState<HepAdherence | null>(null);
+  const [unreadComments, setUnreadComments] = useState<PatientComment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,8 +133,9 @@ export function useHepPlan(patientId: number | undefined) {
       cache: "no-store",
     });
     if (res.ok) {
-      const data = await res.json() as { exercises: HepExercise[] };
+      const data = await res.json() as { exercises: HepExercise[]; unreadComments?: PatientComment[] };
       setExercises(data.exercises ?? []);
+      setUnreadComments(data.unreadComments ?? []);
     }
   }, []);
 
@@ -225,14 +241,38 @@ export function useHepPlan(patientId: number | undefined) {
     if (plan) await fetchAdherence(plan.id);
   }, [plan, fetchAdherence]);
 
+  const patchPlanSections = useCallback(
+    async (planId: number, sections: {
+      diagnostico_explicado?: string | null;
+      orientacoes?: string | null;
+      metas?: string | null;
+    }): Promise<void> => {
+      const res = await apiFetch(`/api/hep/plans/${planId}`, {
+        method: "PATCH",
+        body: JSON.stringify(sections),
+      });
+      if (!res.ok) throw new Error("Erro ao salvar seção");
+      await fetchPlan();
+    },
+    [fetchPlan]
+  );
+
+  const markCommentRead = useCallback(async (commentId: number): Promise<void> => {
+    await apiFetch(`/api/hep/comments/${commentId}/read`, { method: "PATCH" });
+    setUnreadComments((prev) => prev.filter((c) => c.id !== commentId));
+  }, []);
+
   return {
     plan,
     exercises,
     adherence,
+    unreadComments,
     loading,
     error,
     createPlan,
     updatePlan,
+    patchPlanSections,
+    markCommentRead,
     addExercise,
     updateExercise,
     removeExercise,

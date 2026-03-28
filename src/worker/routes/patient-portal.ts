@@ -21,6 +21,9 @@ type HepPlanRow = {
   status: string;
   created_at: string;
   updated_at: string;
+  diagnostico_explicado: string | null;
+  orientacoes: string | null;
+  metas: string | null;
 };
 
 type HepExerciseRow = {
@@ -45,6 +48,17 @@ type HepCheckinRow = {
   difficulty: string | null;
   notes: string | null;
   checked_at: string;
+};
+
+type PatientCommentRow = {
+  id: number;
+  patient_id: number;
+  hep_plan_id: number | null;
+  hep_exercise_id: number | null;
+  section: string | null;
+  comment: string;
+  created_at: string;
+  read_by_therapist: number;
 };
 
 // ── Helper: find patient by authenticated user's email ────────────────────────
@@ -113,10 +127,18 @@ patientPortalRouter.get("/patient-portal/plan", authMiddleware, async (c) => {
     .bind(plan.id, sevenDaysAgo)
     .all<HepCheckinRow>();
 
+  const commentsResult = await db
+    .prepare(
+      "SELECT * FROM patient_comments WHERE patient_id = ? AND hep_plan_id = ? ORDER BY created_at DESC LIMIT 20"
+    )
+    .bind(patient.id, plan.id)
+    .all<PatientCommentRow>();
+
   return c.json({
     plan,
     exercises: exercisesResult.results,
     checkins: checkinsResult.results,
+    comments: commentsResult.results,
   }, 200);
 });
 
@@ -166,4 +188,54 @@ patientPortalRouter.post("/patient-portal/checkin", authMiddleware, async (c) =>
     .run();
 
   return c.json({ success: true, checkinId: result.meta?.last_row_id ?? null }, 201);
+});
+
+// ── POST /api/patient-portal/comment ─────────────────────────────────────────
+// Patient sends a question/comment about a section or exercise.
+
+patientPortalRouter.post("/patient-portal/comment", authMiddleware, async (c) => {
+  const user = c.get("user");
+  const db = c.env.DB;
+
+  const patient = await findPatientByEmail(db, user.email);
+  if (!patient) {
+    return c.json({ error: "Not a registered patient" }, 403);
+  }
+
+  const body = await c.req.json() as {
+    hep_plan_id: number;
+    hep_exercise_id?: number | null;
+    section?: string | null;
+    comment: string;
+  };
+
+  if (!body.comment?.trim()) {
+    return c.json({ error: "comment é obrigatório" }, 400);
+  }
+
+  // Verify the plan belongs to this patient
+  const plan = await db
+    .prepare("SELECT id FROM hep_plans WHERE id = ? AND patient_id = ?")
+    .bind(body.hep_plan_id, patient.id)
+    .first<{ id: number }>();
+
+  if (!plan) {
+    return c.json({ error: "Plano não encontrado" }, 404);
+  }
+
+  const result = await db
+    .prepare(
+      `INSERT INTO patient_comments (patient_id, hep_plan_id, hep_exercise_id, section, comment)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .bind(
+      patient.id,
+      body.hep_plan_id,
+      body.hep_exercise_id ?? null,
+      body.section ?? null,
+      body.comment.trim()
+    )
+    .run();
+
+  return c.json({ success: true, id: result.meta?.last_row_id ?? null }, 201);
 });

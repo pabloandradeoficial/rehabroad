@@ -118,7 +118,13 @@ hepRouter.get("/plans/:id", authMiddleware, async (c) => {
     .bind(planId)
     .all();
 
-  return c.json({ plan, exercises: exercises ?? [] });
+  const { results: unreadComments } = await c.env.DB.prepare(
+    `SELECT * FROM patient_comments WHERE hep_plan_id = ? AND read_by_therapist = 0 ORDER BY created_at ASC`
+  )
+    .bind(planId)
+    .all();
+
+  return c.json({ plan, exercises: exercises ?? [], unreadComments: unreadComments ?? [] });
 });
 
 // PUT /api/hep/plans/:id
@@ -150,6 +156,36 @@ hepRouter.put("/plans/:id", authMiddleware, async (c) => {
     .bind(planId)
     .first();
 
+  return c.json({ plan: updated, success: true });
+});
+
+// PATCH /api/hep/plans/:id — update text content sections only
+hepRouter.patch("/plans/:id", authMiddleware, async (c) => {
+  const user = c.get("user" as never) as { id: string };
+  const planId = c.req.param("id");
+
+  const plan = await getPlanWithOwnerCheck(c.env.DB, planId, user.id);
+  if (!plan) return c.json({ error: "Plano não encontrado" }, 404);
+
+  const body = await c.req.json<Record<string, string | null>>();
+
+  const ALLOWED = ["diagnostico_explicado", "orientacoes", "metas"] as const;
+  const fields = ALLOWED.filter((k) => k in body);
+  if (fields.length === 0) return c.json({ error: "Nenhum campo para atualizar" }, 400);
+
+  const setClauses = fields.map((f) => `${f} = ?`).join(", ");
+  const values: (string | null)[] = fields.map((f) => {
+    const v = body[f];
+    return typeof v === "string" && v.trim() ? v.trim() : null;
+  });
+
+  await c.env.DB.prepare(
+    `UPDATE hep_plans SET ${setClauses}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+  )
+    .bind(...values, planId)
+    .run();
+
+  const updated = await c.env.DB.prepare(`SELECT * FROM hep_plans WHERE id = ?`).bind(planId).first();
   return c.json({ plan: updated, success: true });
 });
 
@@ -295,6 +331,33 @@ hepRouter.delete("/exercises/:id", authMiddleware, async (c) => {
 
   await c.env.DB.prepare(`DELETE FROM hep_checkins WHERE exercise_id = ?`).bind(exerciseId).run();
   await c.env.DB.prepare(`DELETE FROM hep_exercises WHERE id = ?`).bind(exerciseId).run();
+
+  return c.json({ success: true });
+});
+
+// ─────────────────────────────────────────────
+// COMENTÁRIOS DO PACIENTE
+// ─────────────────────────────────────────────
+
+// PATCH /api/hep/comments/:id/read
+hepRouter.patch("/comments/:id/read", authMiddleware, async (c) => {
+  const user = c.get("user" as never) as { id: string };
+  const commentId = c.req.param("id");
+
+  // Verify the comment belongs to one of this therapist's plans
+  const comment = await c.env.DB.prepare(
+    `SELECT pc.id FROM patient_comments pc
+     JOIN hep_plans hp ON hp.id = pc.hep_plan_id
+     WHERE pc.id = ? AND hp.user_id = ?`
+  )
+    .bind(commentId, user.id)
+    .first();
+
+  if (!comment) return c.json({ error: "Comentário não encontrado" }, 404);
+
+  await c.env.DB.prepare(`UPDATE patient_comments SET read_by_therapist = 1 WHERE id = ?`)
+    .bind(commentId)
+    .run();
 
   return c.json({ success: true });
 });
