@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Briefcase,
   Globe,
+  User,
 } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { useLanguage } from "@/react-app/contexts/LanguageContext";
@@ -131,7 +132,7 @@ export default function LoginPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="grid grid-cols-3 gap-3 mb-6">
                   <button
                     onClick={() => void handleLogin("professional")}
                     disabled={isSubmitting}
@@ -163,6 +164,23 @@ export default function LoginPage() {
                     </h3>
                     <p className="text-xs text-muted-foreground">
                       Pratique casos clínicos
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => void handleLogin("professional")}
+                    disabled={isSubmitting}
+                    className="group p-4 rounded-xl border-2 border-blue-500/50 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500 transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.97] active:opacity-80"
+                    type="button"
+                  >
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <User className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-1">
+                      Paciente
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Acesse seu plano
                     </p>
                   </button>
                 </div>
@@ -256,14 +274,6 @@ export default function LoginPage() {
                   </a>
                 </p>
 
-                <div className="mt-6 p-4 rounded-xl border border-blue-500/20 bg-blue-500/5">
-                  <p className="text-xs font-semibold text-blue-400 mb-1">
-                    Acesso para Pacientes
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Se você é paciente e recebeu um plano de exercícios do seu fisioterapeuta, faça login com o mesmo e-mail cadastrado no consultório. Você será redirecionado automaticamente para o seu portal.
-                  </p>
-                </div>
               </div>
             </div>
           </div>
