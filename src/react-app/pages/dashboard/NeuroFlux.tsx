@@ -795,11 +795,11 @@ function NeuroFluxContent() {
 
   return (
     <PageTransition>
-      <div className="space-y-6 pb-24 md:pb-8">
+      <div className="space-y-6 pb-6">
 
         {/* ── SEÇÃO A: Hero Header ──────────────────── */}
         <motion.div
-          className="relative overflow-hidden rounded-3xl"
+          className="relative overflow-hidden rounded-2xl mx-3"
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
         >
@@ -1415,7 +1415,7 @@ function NeuroFluxContent() {
 
         {/* ── SEÇÃO D: Botão mobile (sticky) ── */}
         {!recommendations && (
-          <div className="md:hidden fixed left-0 right-0 z-30 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-xl border-t border-white/10" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}>
+          <div className="md:hidden sticky bottom-0 z-30 px-4 pb-4 pt-2 bg-background/95 backdrop-blur-xl border-t border-white/10">
             {generateButton}
           </div>
         )}

@@ -74,10 +74,10 @@ function ExerciciosContent() {
 
   return (
     <PageTransition>
-      <div className="space-y-6 pb-8">
+      <div className="space-y-6 pb-6">
         {/* Hero Header */}
-        <motion.div 
-          className="relative overflow-hidden rounded-3xl"
+        <motion.div
+          className="relative overflow-hidden rounded-2xl mx-3"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >

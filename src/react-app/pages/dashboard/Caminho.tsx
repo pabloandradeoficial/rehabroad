@@ -696,21 +696,25 @@ function CaminhoContent() {
                   <div className="relative w-10 h-10 sm:w-12 sm:h-12">
                     <svg className="w-full h-full -rotate-90">
                       <circle cx="50%" cy="50%" r="40%" className="fill-none stroke-muted/30 stroke-[4]" />
-                      <circle
-                        cx="50%" cy="50%" r="40%"
-                        className={`fill-none stroke-[4] ${progress === 100 ? "stroke-emerald-500" : "stroke-primary"}`}
-                        strokeLinecap="round"
-                        strokeDasharray={`${progress * 1.005} 100`}
-                        style={{ transition: "stroke-dasharray 0.5s ease" }}
-                      />
+                      {selectedPatientId && (
+                        <circle
+                          cx="50%" cy="50%" r="40%"
+                          className={`fill-none stroke-[4] ${progress === 100 ? "stroke-emerald-500" : "stroke-primary"}`}
+                          strokeLinecap="round"
+                          strokeDasharray={`${progress * 1.005} 100`}
+                          style={{ transition: "stroke-dasharray 0.5s ease" }}
+                        />
+                      )}
                     </svg>
                     <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${progress === 100 ? "text-emerald-500" : "text-primary"}`}>
-                      {progress}%
+                      {selectedPatientId ? `${progress}%` : "--"}
                     </span>
                   </div>
                   <div className="hidden lg:block">
-                    <p className="text-xs font-semibold text-foreground">{Math.round(progress / 100 * 6)}/6 seções</p>
-                    <p className="text-xs text-muted-foreground">{progress === 100 ? "Completo!" : "Preenchidas"}</p>
+                    <p className="text-xs font-semibold text-foreground">
+                      {selectedPatientId ? `${Math.round(progress / 100 * 6)}/6 seções` : "Selecione um paciente"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{selectedPatientId && (progress === 100 ? "Completo!" : "Preenchidas")}</p>
                   </div>
                 </div>
 

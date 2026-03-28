@@ -385,7 +385,7 @@ export default function PatientDetailPage() {
 
         {/* === QUICK STATS === */}
         <motion.div variants={itemVariants}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-3 md:px-0">
             {[
               { value: activitySummary.totalEvaluations, label: "Avaliações", icon: ClipboardList, gradient: "from-primary via-emerald-500 to-teal-500", text: "text-primary" },
               { value: activitySummary.totalEvolutions, label: "Evoluções", icon: TrendingUp, gradient: "from-emerald-400 via-green-500 to-teal-500", text: "text-emerald-400" },
@@ -393,14 +393,14 @@ export default function PatientDetailPage() {
               { value: evolutions[0]?.pain_level ?? "—", label: "Dor Atual", icon: Activity, gradient: "from-violet-500 via-purple-500 to-fuchsia-500", text: "text-violet-400" },
             ].map((stat, i) => (
               <Card key={i} className="border border-border shadow-md bg-card overflow-hidden group hover:shadow-lg transition-shadow">
-                <CardContent className="p-4">
+                <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className={`text-2xl md:text-3xl font-black ${stat.text}`}>{stat.value}</p>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">{stat.label}</p>
+                    <div className="min-w-0">
+                      <p className={`text-xl md:text-3xl font-black ${stat.text}`}>{stat.value}</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mt-0.5">{stat.label}</p>
                     </div>
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg`}>
-                      <stat.icon className="w-5 h-5 text-white" />
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg`}>
+                      <stat.icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                     </div>
                   </div>
                 </CardContent>
@@ -476,8 +476,8 @@ export default function PatientDetailPage() {
             <div className="h-1 bg-gradient-to-r from-primary via-violet-500 to-emerald-500" />
             
             <Tabs defaultValue="evaluations" className="w-full">
-              <div className="p-4 border-b border-border">
-                <TabsList className="w-full md:w-auto bg-muted border border-border p-1.5 rounded-xl">
+              <div className="px-4 py-3 border-b border-border overflow-x-auto scrollbar-none">
+                <TabsList className="w-max md:w-auto bg-muted border border-border p-1.5 rounded-xl">
                   <TabsTrigger
                     value="evaluations"
                     data-onboarding="evaluations-tab"
