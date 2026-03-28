@@ -142,13 +142,37 @@ patientPortalRouter.get("/patient-portal/plan", authMiddleware, async (c) => {
     .bind(plan.id)
     .all<HepExerciseRow>();
 
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const checkinsResult = await db
-    .prepare(
-      "SELECT * FROM hep_checkins WHERE plan_id = ? AND checked_at >= ? ORDER BY checked_at DESC"
-    )
-    .bind(plan.id, sevenDaysAgo)
-    .all<HepCheckinRow>();
+  // Fetch last-7-days checkins for all exercises in one query, grouped by exercise + day.
+  // Using date() ensures a clean daily reset — each UTC day starts fresh.
+  const checkinSummaryResult = await db
+    .prepare(`
+      SELECT exercise_id, date(checked_at) AS dia, MAX(completed) AS completed
+      FROM hep_checkins
+      WHERE plan_id = ? AND checked_at >= datetime('now', '-7 days')
+      GROUP BY exercise_id, date(checked_at)
+      ORDER BY exercise_id, dia ASC
+    `)
+    .bind(plan.id)
+    .all<{ exercise_id: number; dia: string; completed: number }>();
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Build per-exercise history map
+  const historyMap = new Map<number, { dia: string; completed: boolean }[]>();
+  for (const row of checkinSummaryResult.results) {
+    if (!historyMap.has(row.exercise_id)) historyMap.set(row.exercise_id, []);
+    historyMap.get(row.exercise_id)!.push({ dia: row.dia, completed: row.completed === 1 });
+  }
+
+  // Enrich each exercise with daily history and today's status
+  const exercises = exercisesResult.results.map((ex) => {
+    const checkins7dias = historyMap.get(ex.id) ?? [];
+    return {
+      ...ex,
+      feitoHoje: checkins7dias.some((h) => h.dia === today && h.completed),
+      checkins7dias,
+    };
+  });
 
   const commentsResult = await db
     .prepare(
@@ -159,8 +183,7 @@ patientPortalRouter.get("/patient-portal/plan", authMiddleware, async (c) => {
 
   return c.json({
     plan,
-    exercises: exercisesResult.results,
-    checkins: checkinsResult.results,
+    exercises,
     comments: commentsResult.results,
   }, 200);
 });

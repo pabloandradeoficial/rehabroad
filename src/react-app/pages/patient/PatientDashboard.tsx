@@ -4,7 +4,6 @@ import {
   XCircle,
   Loader2,
   ClipboardList,
-  ChevronRight,
 } from "lucide-react";
 import { apiFetch } from "@/react-app/lib/api";
 import { Button } from "@/react-app/components/ui/button";
@@ -26,6 +25,11 @@ interface HepPlan {
   metas: string | null;
 }
 
+interface CheckinDay {
+  dia: string;      // YYYY-MM-DD (UTC)
+  completed: boolean;
+}
+
 interface HepExercise {
   id: number;
   plan_id: number;
@@ -36,20 +40,13 @@ interface HepExercise {
   frequency: string | null;
   instructions: string | null;
   order_index: number;
-}
-
-interface HepCheckin {
-  id: number;
-  plan_id: number;
-  exercise_id: number;
-  completed: number;
-  checked_at: string;
+  feitoHoje: boolean;
+  checkins7dias: CheckinDay[];
 }
 
 interface PlanData {
   plan: HepPlan | null;
   exercises: HepExercise[];
-  checkins: HepCheckin[];
 }
 
 interface CheckinState {
@@ -65,6 +62,18 @@ const EMPTY_CHECKIN: CheckinState = {
   difficulty: null,
   notes: "",
 };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Build an array of the last 7 days (oldest→newest) with feito flag. */
+function buildWeekDots(checkins7dias: CheckinDay[]) {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dia = d.toISOString().slice(0, 10);
+    return { dia, feito: checkins7dias.some((c) => c.dia === dia && c.completed) };
+  });
+}
 
 // ─── DifficultyButton ─────────────────────────────────────────────────────────
 
@@ -101,13 +110,12 @@ export default function PatientDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // step-by-step checkin state
-  const [currentStep, setCurrentStep] = useState(0);
-  const [checkinsByExercise, setCheckinsByExercise] = useState<Map<number, CheckinState>>(new Map());
-  const [currentCheckin, setCurrentCheckin] = useState<CheckinState>(EMPTY_CHECKIN);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  // Per-exercise checkin form state
+  const [checkinForms, setCheckinForms] = useState<Map<number, CheckinState>>(() => new Map());
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+  const [submitErrors, setSubmitErrors] = useState<Map<number, string>>(() => new Map());
+  // Exercises marked done in this session (optimistic — avoids refetch)
+  const [localDoneToday, setLocalDoneToday] = useState<Set<number>>(() => new Set());
 
   useEffect(() => {
     apiFetch("/api/patient-portal/plan")
@@ -116,6 +124,48 @@ export default function PatientDashboard() {
       .catch(() => setError("Não foi possível carregar seu plano."))
       .finally(() => setLoading(false));
   }, []);
+
+  // ── form helpers ────────────────────────────────────────────────────────────
+
+  const getForm = (id: number): CheckinState => checkinForms.get(id) ?? EMPTY_CHECKIN;
+
+  const patchForm = (id: number, patch: Partial<CheckinState>) =>
+    setCheckinForms((prev) => new Map(prev).set(id, { ...getForm(id), ...patch }));
+
+  const handleCheckin = async (exercise: HepExercise) => {
+    if (!planData?.plan) return;
+    const form = getForm(exercise.id);
+    if (form.completed === null) return;
+
+    setSubmittingId(exercise.id);
+    setSubmitErrors((prev) => {
+      const m = new Map(prev);
+      m.delete(exercise.id);
+      return m;
+    });
+
+    try {
+      const res = await apiFetch("/api/patient-portal/checkin", {
+        method: "POST",
+        body: JSON.stringify({
+          plan_id: planData.plan.id,
+          exercise_id: exercise.id,
+          completed: form.completed,
+          pain_level: form.painLevel || null,
+          difficulty: form.difficulty,
+          notes: form.notes || null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setLocalDoneToday((prev) => new Set(prev).add(exercise.id));
+    } catch {
+      setSubmitErrors((prev) => new Map(prev).set(exercise.id, "Não foi possível salvar. Tente novamente."));
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  // ── early returns ────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -145,270 +195,260 @@ export default function PatientDashboard() {
     );
   }
 
-  const { plan, exercises, checkins } = planData;
+  const { plan, exercises } = planData;
   const totalSteps = exercises.length;
-  const today = new Date().toISOString().slice(0, 10);
-  const todayCheckins = checkins.filter((c) => c.checked_at.slice(0, 10) === today);
-  const alreadyDoneToday = todayCheckins.length >= totalSteps && totalSteps > 0;
-  const currentExercise = exercises[currentStep];
 
-  const handleNext = async () => {
-    if (currentCheckin.completed === null || !currentExercise) return;
-    setSubmitting(true);
-    setSubmitError(null);
-    try {
-      const res = await apiFetch("/api/patient-portal/checkin", {
-        method: "POST",
-        body: JSON.stringify({
-          plan_id: plan.id,
-          exercise_id: currentExercise.id,
-          completed: currentCheckin.completed,
-          pain_level: currentCheckin.painLevel || null,
-          difficulty: currentCheckin.difficulty,
-          notes: currentCheckin.notes || null,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      setCheckinsByExercise((prev) => new Map(prev).set(currentExercise.id, currentCheckin));
-      if (currentStep + 1 >= totalSteps) {
-        setDone(true);
-      } else {
-        setCurrentStep((s) => s + 1);
-        setCurrentCheckin(EMPTY_CHECKIN);
-      }
-    } catch {
-      setSubmitError("Não foi possível salvar. Tente novamente.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Count exercises done today (backend flag + optimistic local set)
+  const doneToday = exercises.filter(
+    (ex) => ex.feitoHoje || localDoneToday.has(ex.id)
+  ).length;
+  const allDoneToday = totalSteps > 0 && doneToday >= totalSteps;
 
   return (
     <div className="space-y-4 pb-8">
-      {/* Plan header */}
+
+      {/* ── Plan header ── */}
       <div>
         <h1 className="text-xl font-bold text-foreground">{plan.title}</h1>
         {plan.description && (
           <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
         )}
-        {!done && !alreadyDoneToday && totalSteps > 0 && (
+
+        {totalSteps > 0 && (
           <div className="flex items-center gap-2 mt-3">
             <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                style={{ width: `${(doneToday / totalSteps) * 100}%` }}
               />
             </div>
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {currentStep}/{totalSteps}
+              {doneToday}/{totalSteps} hoje
             </span>
           </div>
         )}
       </div>
 
-      {/* Exercise section */}
-      {done || alreadyDoneToday ? (
-        <div className="text-center py-8">
-          <div className="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
-            <CheckCircle2 className="w-7 h-7 text-emerald-500" />
+      {/* ── All-done banner (shown when every exercise is checked today) ── */}
+      {allDoneToday && (
+        <div className="flex items-center gap-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 px-5 py-4">
+          <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-emerald-400">Exercícios concluídos!</p>
+            <p className="text-xs text-emerald-500/80">
+              Ótimo trabalho! Continue assim para se recuperar mais rápido.
+            </p>
           </div>
-          <h2 className="text-lg font-bold text-foreground mb-1">Exercícios concluídos!</h2>
-          <p className="text-sm text-muted-foreground">
-            Ótimo trabalho! Continue assim para se recuperar mais rápido.
-          </p>
         </div>
-      ) : currentExercise ? (
-        <>
-          {/* Exercise card */}
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-start justify-between gap-2 mb-4">
-              <div>
-                {currentExercise.exercise_category && (
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                    {currentExercise.exercise_category}
-                  </span>
+      )}
+
+      {/* ── Exercise cards (always visible) ── */}
+      {exercises.map((exercise) => {
+        const isDoneToday = exercise.feitoHoje || localDoneToday.has(exercise.id);
+        const form = getForm(exercise.id);
+        const isSubmitting = submittingId === exercise.id;
+        const submitError = submitErrors.get(exercise.id);
+        const weekDots = buildWeekDots(exercise.checkins7dias);
+        const doneCount = weekDots.filter((d) => d.feito).length;
+
+        return (
+          <div key={exercise.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+
+            {/* Done-today badge */}
+            {isDoneToday && (
+              <div className="flex items-center gap-1.5 px-5 pt-4 pb-0">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-xs font-semibold text-emerald-500">Feito hoje</span>
+              </div>
+            )}
+
+            {/* Exercise info */}
+            <div className="p-5">
+              <div className="flex items-start justify-between gap-2 mb-4">
+                <div>
+                  {exercise.exercise_category && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                      {exercise.exercise_category}
+                    </span>
+                  )}
+                  <h2 className="text-lg font-bold text-foreground mt-1">
+                    {exercise.exercise_name}
+                  </h2>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3 mb-4">
+                {exercise.sets && (
+                  <div className="text-center bg-white/5 rounded-xl px-4 py-2">
+                    <p className="text-xs text-muted-foreground">Séries</p>
+                    <p className="text-base font-bold text-foreground">{exercise.sets}</p>
+                  </div>
                 )}
-                <h2 className="text-lg font-bold text-foreground mt-1">
-                  {currentExercise.exercise_name}
-                </h2>
-              </div>
-              <span className="text-xs text-muted-foreground bg-white/5 rounded-lg px-2 py-1 shrink-0">
-                {currentStep + 1}/{totalSteps}
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-3 mb-4">
-              {currentExercise.sets && (
-                <div className="text-center bg-white/5 rounded-xl px-4 py-2">
-                  <p className="text-xs text-muted-foreground">Séries</p>
-                  <p className="text-base font-bold text-foreground">{currentExercise.sets}</p>
-                </div>
-              )}
-              {currentExercise.reps && (
-                <div className="text-center bg-white/5 rounded-xl px-4 py-2">
-                  <p className="text-xs text-muted-foreground">Repetições</p>
-                  <p className="text-base font-bold text-foreground">{currentExercise.reps}</p>
-                </div>
-              )}
-              {currentExercise.frequency && (
-                <div className="text-center bg-white/5 rounded-xl px-4 py-2">
-                  <p className="text-xs text-muted-foreground">Frequência</p>
-                  <p className="text-base font-bold text-foreground">{currentExercise.frequency}</p>
-                </div>
-              )}
-            </div>
-
-            {currentExercise.instructions && (
-              <p className="text-sm text-muted-foreground leading-relaxed mb-2">
-                {currentExercise.instructions}
-              </p>
-            )}
-
-            <CommentBox
-              planId={plan.id}
-              section="exercicio"
-              exerciseId={currentExercise.id}
-            />
-          </div>
-
-          {/* Check-in form */}
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-5">
-            <div>
-              <p className="text-sm font-semibold text-foreground mb-3">
-                Você realizou este exercício?
-              </p>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setCurrentCheckin((s) => ({ ...s, completed: true }))}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border transition-all select-none active:scale-[0.97] ${
-                    currentCheckin.completed === true
-                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50"
-                      : "bg-card text-muted-foreground border-border hover:border-emerald-500/30"
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Sim
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentCheckin((s) => ({ ...s, completed: false }))}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border transition-all select-none active:scale-[0.97] ${
-                    currentCheckin.completed === false
-                      ? "bg-red-500/20 text-red-400 border-red-500/50"
-                      : "bg-card text-muted-foreground border-border hover:border-red-500/30"
-                  }`}
-                >
-                  <XCircle className="w-4 h-4" />
-                  Não
-                </button>
-              </div>
-            </div>
-
-            {currentCheckin.completed === true && (
-              <>
-                <div>
-                  <p className="text-sm font-semibold text-foreground mb-1">Nível de dor</p>
-                  <p className="text-xs text-muted-foreground mb-3">0 = sem dor · 10 = dor intensa</p>
-                  <Slider
-                    min={0}
-                    max={10}
-                    step={1}
-                    value={[currentCheckin.painLevel]}
-                    onValueChange={([v]) => setCurrentCheckin((s) => ({ ...s, painLevel: v }))}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>0</span>
-                    <span className="font-semibold text-foreground">{currentCheckin.painLevel}</span>
-                    <span>10</span>
+                {exercise.reps && (
+                  <div className="text-center bg-white/5 rounded-xl px-4 py-2">
+                    <p className="text-xs text-muted-foreground">Repetições</p>
+                    <p className="text-base font-bold text-foreground">{exercise.reps}</p>
                   </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-foreground mb-3">Dificuldade</p>
-                  <div className="flex gap-2">
-                    {(
-                      [
-                        { value: "easy", label: "Fácil" },
-                        { value: "ok", label: "Normal" },
-                        { value: "hard", label: "Difícil" },
-                      ] as { value: Difficulty; label: string }[]
-                    ).map((d) => (
-                      <DifficultyButton
-                        key={d.value}
-                        value={d.value}
-                        label={d.label}
-                        selected={currentCheckin.difficulty === d.value}
-                        onClick={() => setCurrentCheckin((s) => ({ ...s, difficulty: d.value }))}
-                      />
-                    ))}
+                )}
+                {exercise.frequency && (
+                  <div className="text-center bg-white/5 rounded-xl px-4 py-2">
+                    <p className="text-xs text-muted-foreground">Frequência</p>
+                    <p className="text-base font-bold text-foreground">{exercise.frequency}</p>
                   </div>
-                </div>
+                )}
+              </div>
 
-                <div>
-                  <p className="text-sm font-semibold text-foreground mb-2">
-                    Observações{" "}
-                    <span className="font-normal text-muted-foreground">(opcional)</span>
-                  </p>
-                  <Textarea
-                    placeholder="Como você se sentiu? Alguma dificuldade?"
-                    value={currentCheckin.notes}
-                    onChange={(e) => setCurrentCheckin((s) => ({ ...s, notes: e.target.value }))}
-                    rows={3}
-                    className="resize-none"
-                  />
-                </div>
-              </>
-            )}
-
-            {submitError && (
-              <p className="text-sm text-red-400 text-center">{submitError}</p>
-            )}
-
-            <Button
-              onClick={() => void handleNext()}
-              disabled={currentCheckin.completed === null || submitting}
-              className="w-full h-12 text-base font-semibold gap-2"
-            >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  {currentStep + 1 >= totalSteps ? "Concluir" : "Próximo"}
-                  {currentStep + 1 < totalSteps && <ChevronRight className="w-4 h-4" />}
-                </>
+              {exercise.instructions && (
+                <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                  {exercise.instructions}
+                </p>
               )}
-            </Button>
-          </div>
 
-          {/* Previous exercises in this session */}
-          {checkinsByExercise.size > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Feito nesta sessão
-              </p>
-              <div className="space-y-2">
-                {exercises.slice(0, currentStep).map((ex) => {
-                  const c = checkinsByExercise.get(ex.id);
-                  return (
+              {/* 7-day adherence dots */}
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-xs text-muted-foreground shrink-0">7 dias:</span>
+                <div className="flex items-center gap-1">
+                  {weekDots.map((d, i) => (
                     <div
-                      key={ex.id}
-                      className="flex items-center gap-3 rounded-xl border border-border bg-card/50 px-4 py-3"
-                    >
-                      {c?.completed ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                      ) : (
-                        <XCircle className="w-4 h-4 text-red-400 shrink-0" />
-                      )}
-                      <span className="text-sm text-foreground">{ex.exercise_name}</span>
-                    </div>
-                  );
-                })}
+                      key={i}
+                      title={d.dia}
+                      className={`w-3.5 h-3.5 rounded-full transition-colors ${
+                        d.feito ? "bg-primary" : "bg-white/10"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground ml-1">{doneCount}/7</span>
               </div>
+
+              <CommentBox
+                planId={plan.id}
+                section="exercicio"
+                exerciseId={exercise.id}
+              />
             </div>
-          )}
-        </>
-      ) : null}
+
+            {/* Check-in section */}
+            <div className="border-t border-border p-5">
+              {isDoneToday ? (
+                // Disabled "done today" button — card stays readable
+                <div className="flex items-center justify-center gap-2 w-full h-10 rounded-xl text-sm font-semibold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Concluído hoje
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Completed yes/no */}
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-3">
+                      Você realizou este exercício?
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => patchForm(exercise.id, { completed: true })}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border transition-all select-none active:scale-[0.97] ${
+                          form.completed === true
+                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50"
+                            : "bg-card text-muted-foreground border-border hover:border-emerald-500/30"
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Sim
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => patchForm(exercise.id, { completed: false })}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border transition-all select-none active:scale-[0.97] ${
+                          form.completed === false
+                            ? "bg-red-500/20 text-red-400 border-red-500/50"
+                            : "bg-card text-muted-foreground border-border hover:border-red-500/30"
+                        }`}
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Não
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Extra fields when completed */}
+                  {form.completed === true && (
+                    <>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground mb-1">Nível de dor</p>
+                        <p className="text-xs text-muted-foreground mb-3">0 = sem dor · 10 = dor intensa</p>
+                        <Slider
+                          min={0}
+                          max={10}
+                          step={1}
+                          value={[form.painLevel]}
+                          onValueChange={([v]) => patchForm(exercise.id, { painLevel: v })}
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                          <span>0</span>
+                          <span className="font-semibold text-foreground">{form.painLevel}</span>
+                          <span>10</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-semibold text-foreground mb-3">Dificuldade</p>
+                        <div className="flex gap-2">
+                          {(
+                            [
+                              { value: "easy", label: "Fácil" },
+                              { value: "ok", label: "Normal" },
+                              { value: "hard", label: "Difícil" },
+                            ] as { value: Difficulty; label: string }[]
+                          ).map((d) => (
+                            <DifficultyButton
+                              key={d.value}
+                              value={d.value}
+                              label={d.label}
+                              selected={form.difficulty === d.value}
+                              onClick={() => patchForm(exercise.id, { difficulty: d.value })}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-semibold text-foreground mb-2">
+                          Observações{" "}
+                          <span className="font-normal text-muted-foreground">(opcional)</span>
+                        </p>
+                        <Textarea
+                          placeholder="Como você se sentiu? Alguma dificuldade?"
+                          value={form.notes}
+                          onChange={(e) => patchForm(exercise.id, { notes: e.target.value })}
+                          rows={3}
+                          className="resize-none"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {submitError && (
+                    <p className="text-sm text-red-400 text-center">{submitError}</p>
+                  )}
+
+                  <Button
+                    onClick={() => void handleCheckin(exercise)}
+                    disabled={form.completed === null || isSubmitting}
+                    className="w-full h-12 text-base font-semibold"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Registrar"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
 
       {/* ── Info sections — always visible when content exists ── */}
 
