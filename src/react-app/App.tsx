@@ -1,5 +1,6 @@
-import { lazy, Suspense, type ReactNode } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router";
+import { trackPageView } from "@/react-app/lib/pixel";
 import { SubscriptionProvider } from "@/react-app/contexts/SubscriptionContext";
 import { ToastProvider } from "@/react-app/components/ui/microinteractions";
 import { ThemeProvider } from "@/react-app/hooks/useTheme";
@@ -57,6 +58,7 @@ const IndicacaoPage = lazy(
 );
 const PerfilPage = lazy(() => import("@/react-app/pages/dashboard/Perfil"));
 const HepOverviewPage = lazy(() => import("@/react-app/pages/dashboard/HepOverview"));
+const MetaAdsPage = lazy(() => import("@/react-app/pages/dashboard/MetaAds"));
 
 const HepPatientPortalPage = lazy(
   () => import("@/react-app/pages/HepPatientPortal")
@@ -100,6 +102,15 @@ const CasoSemanaPage = lazy(() => import("@/react-app/pages/CasoSemana"));
 const NotFoundPage = lazy(() => import("./pages/NotFound"));
 
 const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
+
+/** Fires fbq PageView on every React Router navigation. Must be inside <Router>. */
+function MetaPixelTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView();
+  }, [location.pathname]);
+  return null;
+}
 
 function PageLoader() {
   return (
@@ -163,6 +174,7 @@ export default function App() {
           <SubscriptionProvider>
             <ToastProvider>
               <Router>
+                <MetaPixelTracker />
                 <AuthGate>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
@@ -252,6 +264,14 @@ export default function App() {
                       <Route path="indicacao" element={<IndicacaoPage />} />
                       <Route path="perfil" element={<PerfilPage />} />
                       <Route path="hep" element={<HepOverviewPage />} />
+                      <Route
+                        path="meta-ads"
+                        element={
+                          <OwnerOnlyRoute>
+                            <MetaAdsPage />
+                          </OwnerOnlyRoute>
+                        }
+                      />
                     </Route>
 
                     {/* Public HEP patient portal — no auth required */}

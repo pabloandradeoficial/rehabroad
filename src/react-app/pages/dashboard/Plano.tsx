@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router";
+import { trackSubscribe } from "@/react-app/lib/pixel";
 import { CheckCircle2, Sparkles, Crown, Check, Route, HeartPulse, Bell, FileText, XCircle, AlertTriangle, ClipboardCheck, Clock, Brain, Star, Zap, Award, Gift } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
@@ -100,6 +101,10 @@ export default function PlanoPage() {
   // Refresh subscription status when returning from Stripe
   useEffect(() => {
     if (success) {
+      const pendingValue = sessionStorage.getItem("pending_plan_value");
+      const planValue = pendingValue ? parseFloat(pendingValue) : 0;
+      sessionStorage.removeItem("pending_plan_value");
+      trackSubscribe(planValue, "BRL");
       refreshSubscription();
       toast.showSuccess("Assinatura ativada com sucesso!");
     }
@@ -138,6 +143,11 @@ export default function PlanoPage() {
       const data = await response.json();
 
       if (data.url) {
+        // Persist plan value so trackSubscribe can read it after Stripe redirect
+        const planData = plans.find((p) => p.id === selectedPlan);
+        if (planData) {
+          sessionStorage.setItem("pending_plan_value", String(planData.price));
+        }
         window.location.href = data.url;
       } else {
         setError(data.error || "Erro ao criar sessão de pagamento");

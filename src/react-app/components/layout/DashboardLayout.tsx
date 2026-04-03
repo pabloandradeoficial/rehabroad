@@ -49,6 +49,8 @@ const ALLOWED_PAGES_FOR_EXPIRED = [
   "/dashboard/admin",
 ];
 
+const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
+
 // ── Shared expired-subscription wall ─────────────────────────────────────────
 
 function SubscriptionExpiredWall() {
@@ -177,12 +179,15 @@ export default function DashboardLayout() {
   } = useSubscription();
   const location = useLocation();
 
+  const isOwner =
+    (user?.email || "").trim().toLowerCase() === OWNER_EMAIL;
+
   const isAllowedPage = ALLOWED_PAGES_FOR_EXPIRED.some((page) =>
     location.pathname.startsWith(page)
   );
 
   const shouldBlockAccess =
-    !subscriptionLoading && isFreeLimited && !isAllowedPage && !isAdmin;
+    !subscriptionLoading && isFreeLimited && !isAllowedPage && !isAdmin && !isOwner;
 
   // Adjust sidebar default when window resizes
   useEffect(() => {

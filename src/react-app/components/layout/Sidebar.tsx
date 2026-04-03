@@ -23,6 +23,7 @@ import {
   GraduationCap,
   MapPin,
   Home,
+  BarChart2,
 } from "lucide-react";
 import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
@@ -336,6 +337,25 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                 >
                   <GraduationCap className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
                   {!collapsed && <span className="flex-1">Admin Estudante</span>}
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/dashboard/meta-ads"
+                  title={collapsed ? "Meta Ads" : undefined}
+                  className={({ isActive }) =>
+                    cn(
+                      "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                      collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
+                      isActive
+                        ? "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
+                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                    )
+                  }
+                >
+                  <BarChart2 className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+                  {!collapsed && <span className="flex-1">Meta Ads</span>}
                 </NavLink>
               </li>
             </>
