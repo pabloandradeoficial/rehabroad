@@ -1,15 +1,8 @@
-import { useEffect } from "react";
-import { trackCompleteRegistration } from "@/react-app/lib/pixel";
-
 interface OnboardingCompleteProps {
   onClose: () => void;
 }
 
 export function OnboardingComplete({ onClose }: OnboardingCompleteProps) {
-  useEffect(() => {
-    trackCompleteRegistration();
-  }, []);
-
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-7 border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-300 text-center">

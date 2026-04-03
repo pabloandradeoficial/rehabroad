@@ -3,7 +3,6 @@ import { Activity, Loader2 } from "lucide-react";
 import { supabase } from "@/react-app/lib/supabase";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import { apiFetch } from "@/react-app/lib/api";
-import { trackLead } from "@/react-app/lib/pixel";
 
 export default function AuthCallbackPage() {
   const { refreshSession } = useAppAuth();
@@ -95,14 +94,6 @@ export default function AuthCallbackPage() {
 
         if (!session) {
           throw new Error("A sessão não foi concluída a tempo.");
-        }
-
-        // Fire Lead only for brand-new users (created within the last 60 s)
-        if (session.user?.created_at) {
-          const ageMs = Date.now() - new Date(session.user.created_at).getTime();
-          if (ageMs < 60_000) {
-            trackLead(session.user.email ?? undefined);
-          }
         }
 
         await refreshSession();

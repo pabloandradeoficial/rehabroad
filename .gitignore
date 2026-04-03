@@ -11,6 +11,3 @@ worker-configuration.d.ts
 e2e/.auth/
 playwright-report/
 test-results/
-
-# Local Netlify folder
-.netlify

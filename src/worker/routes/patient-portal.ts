@@ -233,23 +233,6 @@ patientPortalRouter.post("/patient-portal/checkin", authMiddleware, async (c) =>
     )
     .run();
 
-  // Also persist to logs_exercicios for PBE/adherence analytics
-  await db
-    .prepare(
-      `INSERT INTO logs_exercicios (patient_id, exercicio_id, plano_id, concluido, nivel_dor, nivel_esforco, observacoes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    )
-    .bind(
-      patient.id,
-      body.exercise_id,
-      body.plan_id,
-      body.completed ? 1 : 0,
-      body.pain_level ?? null,
-      body.difficulty ?? null,
-      body.notes ?? null
-    )
-    .run();
-
   return c.json({ success: true, checkinId: result.meta?.last_row_id ?? null }, 201);
 });
 

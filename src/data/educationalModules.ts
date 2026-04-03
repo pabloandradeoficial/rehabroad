@@ -91,7 +91,7 @@ export const painMapRegions: PainMapRegion[] = [
   {
     id: 'lombar',
     name: 'Coluna Lombar',
-    icon: '🦴',
+    icon: '🔙',
     clinicalHypotheses: [
       'Lombalgia mecânica inespecífica',
       'Hérnia de disco lombar',
