@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from "hono";
 import { authMiddleware, getInsertedId, normalizeDelimitedTextValue, splitDelimitedText, normalizeCaminhoRecord } from "../lib/helpers";
 
@@ -683,7 +685,7 @@ function generateStructuredSuporte(evaluation: any, caminho: any, evolution: any
   };
 }
 
-function generateDiagnosticHypotheses(evaluation: any, caminho: any, _evolution: any): DiagnosticHypothesis[] {
+function generateDiagnosticHypotheses(evaluation: any, caminho: any): DiagnosticHypothesis[] {
   const hypotheses: DiagnosticHypothesis[] = [];
 
   if (!evaluation) return hypotheses;

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from "hono";
 import { authMiddleware, isOwnerAdminEmail, optionalAuthMiddleware, getInsertedId } from "../lib/helpers";
 

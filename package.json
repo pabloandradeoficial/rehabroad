@@ -21,6 +21,7 @@
     "react-snap": "^1.23.0",
     "recharts": "^3.7.0",
     "resend": "^6.9.1",
+    "sonner": "^2.0.7",
     "stripe": "^20.3.1",
     "tailwind-merge": "^3.4.0",
     "zod": "^3.24.3"

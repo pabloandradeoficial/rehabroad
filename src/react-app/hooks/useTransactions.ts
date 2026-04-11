@@ -109,7 +109,7 @@ export function useTransactions(startDate?: string, endDate?: string) {
         const chart = await chartRes.json();
         setChartData(Array.isArray(chart) ? chart : []);
       }
-    } catch (error) {
+    } catch {
       setTransactions([]);
       setSummary(EMPTY_SUMMARY);
     } finally {

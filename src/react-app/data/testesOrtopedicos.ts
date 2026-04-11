@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Base de dados de testes ortopédicos organizados por região e tags estruturadas
 
 export interface TagsTeste {

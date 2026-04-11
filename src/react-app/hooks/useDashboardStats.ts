@@ -79,7 +79,7 @@ export function useDashboardStats() {
       );
 
       setRecentActivities(Array.isArray(data?.recentActivities) ? data.recentActivities : []);
-    } catch (err) {
+    } catch {
       setStats({
         totalPatients: 0,
         totalEvaluations: 0,

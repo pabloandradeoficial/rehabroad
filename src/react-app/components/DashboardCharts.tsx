@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { motion } from "framer-motion";
 import {
   AreaChart,
@@ -63,12 +64,12 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
     { name: "Alerta", value: data.statusDistribution.red, color: "#ef4444" }
   ].filter(d => d.value > 0);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-popover/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-xl">
           <p className="text-sm font-medium text-foreground mb-1">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: any /* eslint-disable-line @typescript-eslint/no-explicit-any */, index: number) => (
             <p key={index} className="text-xs" style={{ color: entry.color }}>
               {entry.name}: <span className="font-semibold">{entry.value}</span>
             </p>

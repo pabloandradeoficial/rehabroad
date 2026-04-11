@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
 import { useParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";

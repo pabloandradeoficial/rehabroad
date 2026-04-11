@@ -152,10 +152,7 @@ export function StaggerItem(props: StaggerItemProps) {
   return <DesktopStaggerItem {...props} />;
 }
 
-// Animated counter - simple, no IntersectionObserver
-export function AnimatedCounter({ value, className = "" }: { value: string; className?: string }) {
-  if (IS_MOBILE) return <span className={className}>{value}</span>;
-  
+function DesktopAnimatedCounter({ value, className = "" }: { value: string; className?: string }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
   
@@ -170,6 +167,12 @@ export function AnimatedCounter({ value, className = "" }: { value: string; clas
       {value}
     </motion.span>
   );
+}
+
+// Animated counter - simple, no IntersectionObserver
+export function AnimatedCounter(props: { value: string; className?: string }) {
+  if (IS_MOBILE) return <span className={props.className}>{props.value}</span>;
+  return <DesktopAnimatedCounter {...props} />;
 }
 
 // Hover card effect - desktop only

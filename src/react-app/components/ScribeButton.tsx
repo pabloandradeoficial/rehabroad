@@ -53,9 +53,6 @@ export default function ScribeButton({ patientId, onResult }: ScribeButtonProps)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  // Premium-only feature
-  if (!isPremium) return null;
-
   // ── Timer ──
   const startTimer = useCallback(() => {
     setSeconds(0);
@@ -199,6 +196,8 @@ export default function ScribeButton({ patientId, onResult }: ScribeButtonProps)
   // ─────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────
+
+  if (!isPremium) return null;
 
   return (
     <AnimatePresence mode="wait">

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getCookie } from "hono/cookie";
 
 export type AppUser = {

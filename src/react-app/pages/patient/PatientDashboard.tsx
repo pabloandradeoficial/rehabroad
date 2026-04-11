@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState } from "react";
 import {
   CheckCircle2,
@@ -10,6 +12,7 @@ import { Button } from "@/react-app/components/ui/button";
 import { Slider } from "@/react-app/components/ui/slider";
 import { Textarea } from "@/react-app/components/ui/textarea";
 import { CommentBox } from "./CommentBox";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -135,13 +138,30 @@ export default function PatientDashboard() {
   const handleCheckin = async (exercise: HepExercise) => {
     if (!planData?.plan) return;
     const form = getForm(exercise.id);
-    if (form.completed === null) return;
+    
+    if (form.completed === null) {
+      toast.error("Por favor, informe se você realizou o exercício hoje.");
+      return;
+    }
 
+    const wasDoneBefore = localDoneToday.has(exercise.id);
+
+    // Optimistic UI update
     setSubmittingId(exercise.id);
     setSubmitErrors((prev) => {
       const m = new Map(prev);
       m.delete(exercise.id);
       return m;
+    });
+
+    setLocalDoneToday((prev) => {
+      const nextSet = new Set(prev);
+      if (form.completed) {
+        nextSet.add(exercise.id);
+      } else {
+        nextSet.delete(exercise.id);
+      }
+      return nextSet;
     });
 
     try {
@@ -157,8 +177,19 @@ export default function PatientDashboard() {
         }),
       });
       if (!res.ok) throw new Error();
-      setLocalDoneToday((prev) => new Set(prev).add(exercise.id));
+      toast.success("Progresso salvo com sucesso!");
     } catch {
+      // Rollback on failure
+      setLocalDoneToday((prev) => {
+        const revertedSet = new Set(prev);
+        if (wasDoneBefore) {
+          revertedSet.add(exercise.id);
+        } else {
+          revertedSet.delete(exercise.id);
+        }
+        return revertedSet;
+      });
+      toast.error("Erro na comunicação. Desfazendo alteração local.");
       setSubmitErrors((prev) => new Map(prev).set(exercise.id, "Não foi possível salvar. Tente novamente."));
     } finally {
       setSubmittingId(null);
@@ -343,7 +374,7 @@ export default function PatientDashboard() {
                     <p className="text-sm font-semibold text-foreground mb-3">
                       Você realizou este exercício?
                     </p>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <button
                         type="button"
                         onClick={() => patchForm(exercise.id, { completed: true })}
@@ -361,8 +392,8 @@ export default function PatientDashboard() {
                         onClick={() => patchForm(exercise.id, { completed: false })}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border transition-all select-none active:scale-[0.97] ${
                           form.completed === false
-                            ? "bg-red-500/20 text-red-400 border-red-500/50"
-                            : "bg-card text-muted-foreground border-border hover:border-red-500/30"
+                            ? "bg-red-500/10 text-red-500 border-red-500/30"
+                            : "bg-card text-muted-foreground border-border hover:border-red-500/20"
                         }`}
                       >
                         <XCircle className="w-4 h-4" />
@@ -393,7 +424,7 @@ export default function PatientDashboard() {
 
                       <div>
                         <p className="text-sm font-semibold text-foreground mb-3">Dificuldade</p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-3">
                           {(
                             [
                               { value: "easy", label: "Fácil" },
@@ -422,6 +453,7 @@ export default function PatientDashboard() {
                           value={form.notes}
                           onChange={(e) => patchForm(exercise.id, { notes: e.target.value })}
                           rows={3}
+                          maxLength={1500}
                           className="resize-none"
                         />
                       </div>

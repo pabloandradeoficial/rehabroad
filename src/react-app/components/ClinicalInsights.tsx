@@ -38,7 +38,8 @@ export default function ClinicalInsights({ painLocation, chiefComplaint }: Clini
           const result = await response.json();
           setData(result);
         }
-      } catch (error) {
+      } catch {
+        /* ignore error */
       } finally {
         setLoading(false);
       }

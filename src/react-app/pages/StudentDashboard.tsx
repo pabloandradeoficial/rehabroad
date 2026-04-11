@@ -310,7 +310,7 @@ export default function StudentDashboard({
                 onProgressUpdate();
               }
             }
-          } catch (error) {
+          } catch {
             if (retries > 0) {
               window.setTimeout(() => {
                 void postProgress(retries - 1);

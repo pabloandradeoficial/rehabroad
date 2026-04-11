@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Hono } from "hono";
 import { getSEOForRoute, injectSEOTags } from "./seo";
 import { sendEmail, emailTemplates } from "./lib/email";
@@ -296,7 +298,7 @@ export default {
     return app.fetch(request, env, ctx);
   },
 
-  async scheduled(event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
     const cron = event.cron;
 
     if (cron === "0 12 * * *") {

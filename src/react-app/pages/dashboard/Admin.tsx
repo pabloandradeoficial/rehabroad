@@ -521,7 +521,7 @@ export default function Admin() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
@@ -558,6 +558,30 @@ export default function Admin() {
                   </tbody>
                 </table>
               </div>
+              <div className="md:hidden space-y-4 mt-2">
+                {engagement.topUsers.map((user, i) => (
+                  <div key={user.user_id} className="border border-border bg-card rounded-xl p-4 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-border pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold">
+                          {i + 1}
+                        </span>
+                        <code className="text-xs bg-muted px-2 py-1 rounded">
+                          {user.user_id.slice(0, 8)}...
+                        </code>
+                      </div>
+                      <div>{getStatusBadge(user.status, 0)}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex flex-col"><span className="text-muted-foreground text-xs">Pacientes</span> <span className="font-semibold">{user.patients}</span></div>
+                      <div className="flex flex-col"><span className="text-muted-foreground text-xs">Avaliações</span> <span className="font-semibold">{user.evaluations}</span></div>
+                      <div className="flex flex-col"><span className="text-muted-foreground text-xs">Evoluções</span> <span className="font-semibold">{user.evolutions}</span></div>
+                      <div className="flex flex-col"><span className="text-muted-foreground text-xs">Agenda</span> <span className="font-semibold">{user.appointments}</span></div>
+                      <div className="col-span-2 flex justify-between items-center"><span className="text-muted-foreground text-xs">Posts no Fórum</span> <span className="font-semibold">{user.posts}</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -574,7 +598,7 @@ export default function Admin() {
             <Card>
               <CardHeader><CardTitle className="text-lg">Usuários Registrados</CardTitle></CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
@@ -616,6 +640,47 @@ export default function Admin() {
                     </tbody>
                   </table>
                 </div>
+                <div className="md:hidden space-y-4">
+                  {users.map((user) => (
+                    <div key={user.user_id} className="border border-border bg-card rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <code className="text-xs bg-muted px-2 py-1 rounded">{user.user_id.slice(0, 8)}...</code>
+                        {getStatusBadge(user.status, user.is_admin)}
+                      </div>
+                      <div className="flex border-t border-b border-border py-2 my-1">
+                        <div className="flex-1 border-r border-border px-2 text-center">
+                          <p className="text-xs text-muted-foreground uppercase">Pacientes</p>
+                          <p className="font-semibold text-lg">{user.patients_count}</p>
+                        </div>
+                        <div className="flex-1 border-r border-border px-2 text-center">
+                          <p className="text-xs text-muted-foreground uppercase">Avaliações</p>
+                          <p className="font-semibold text-lg">{user.evaluations_count}</p>
+                        </div>
+                        <div className="flex-1 px-2 text-center">
+                          <p className="text-xs text-muted-foreground uppercase">Plano</p>
+                          <p className="font-semibold text-sm mt-1 capitalize">{user.plan_type}</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-muted-foreground">
+                        <div>
+                          <p>Cad: {formatDate(user.created_at)}</p>
+                          <p>Ativ: {formatDate(user.last_activity)}</p>
+                        </div>
+                        <div>
+                          {(() => {
+                            const days = getDaysRemaining(user.trial_start_date, user.status);
+                            if (days === null) return null;
+                            if (days <= 0) return <Badge className="bg-red-500 scale-90 origin-right">Exp</Badge>;
+                            return <Badge className="scale-90 origin-right" variant="outline">{days} dias</Badge>;
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {users.length === 0 && (
+                    <div className="py-8 text-center text-muted-foreground">Nenhum usuário registrado</div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -624,7 +689,7 @@ export default function Admin() {
             <Card>
               <CardHeader><CardTitle className="text-lg">Lista de Espera (Beta)</CardTitle></CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
@@ -653,6 +718,24 @@ export default function Admin() {
                     </tbody>
                   </table>
                 </div>
+                <div className="md:hidden space-y-3">
+                  {waitlist.map((entry) => (
+                    <div key={entry.id} className="border border-border bg-card rounded-lg p-4 flex flex-col gap-2">
+                      <div className="flex justify-between items-start">
+                        <div className="font-semibold">{entry.name || "Sem nome"}</div>
+                        {entry.is_approved === 1 ? <Badge className="bg-emerald-500">Aprovado</Badge> : <Badge variant="secondary">Pendente</Badge>}
+                      </div>
+                      <div className="text-sm text-blue-500 break-all">{entry.email}</div>
+                      <div className="text-xs text-muted-foreground flex justify-between">
+                        <span>ID: {entry.id}</span>
+                        <span>{formatDate(entry.created_at)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {waitlist.length === 0 && (
+                    <div className="py-8 text-center text-muted-foreground">Nenhum registro na lista de espera</div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -661,7 +744,7 @@ export default function Admin() {
             <Card>
               <CardHeader><CardTitle className="text-lg">Leads Capturados</CardTitle></CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
@@ -688,6 +771,24 @@ export default function Admin() {
                     </tbody>
                   </table>
                 </div>
+                <div className="md:hidden space-y-3">
+                  {leads.map((lead) => (
+                    <div key={lead.id} className="border border-border bg-card rounded-lg p-4 flex flex-col gap-2">
+                      <div className="flex justify-between items-start">
+                        <div className="font-semibold">{lead.name || "Sem nome"}</div>
+                        <Badge variant="outline">{lead.source}</Badge>
+                      </div>
+                      <div className="text-sm text-blue-500 break-all">{lead.email}</div>
+                      <div className="text-xs text-muted-foreground flex justify-between">
+                        <span>ID: {lead.id}</span>
+                        <span>{formatDate(lead.created_at)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {leads.length === 0 && (
+                    <div className="py-8 text-center text-muted-foreground">Nenhum lead capturado</div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -706,7 +807,7 @@ export default function Admin() {
               <Card>
                 <CardHeader><CardTitle className="text-lg flex items-center gap-2"><GraduationCap className="w-5 h-5 text-violet-500" />Estudantes Cadastrados</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b">
@@ -737,6 +838,38 @@ export default function Admin() {
                         )}
                       </tbody>
                     </table>
+                  </div>
+                  <div className="md:hidden space-y-4">
+                    {students.map((student) => {
+                      const accuracy = student.cases_completed > 0 ? Math.round((student.cases_correct / student.cases_completed) * 100) : 0;
+                      return (
+                        <div key={student.id} className="border border-border bg-card rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-semibold">{student.user_name || "-"}</div>
+                              <div className="text-xs text-muted-foreground">{student.user_email}</div>
+                            </div>
+                            <Badge className={accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : "bg-slate-400"}>{accuracy}% acerto</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mt-1 py-3 border-y border-border">
+                            <div className="flex items-center justify-center flex-col">
+                              <span className="text-xs text-muted-foreground uppercase">Casos Resolvidos</span>
+                              <span className="font-bold flex items-center gap-1 mt-1 text-lg"><Trophy className="w-4 h-4 text-yellow-500" /> {student.cases_completed}</span>
+                            </div>
+                            <div className="flex items-center justify-center flex-col border-l border-border">
+                              <span className="text-xs text-muted-foreground uppercase">Módulos</span>
+                              <span className="font-bold mt-1 text-lg">{student.modules_visited?.length || 0}</span>
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground text-right">
+                            Último acesso: {formatDate(student.updated_at)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {students.length === 0 && (
+                      <div className="py-8 text-center text-muted-foreground">Nenhum estudante cadastrado</div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

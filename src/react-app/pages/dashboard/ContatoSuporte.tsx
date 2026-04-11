@@ -96,7 +96,7 @@ export default function ContatoSuportePage() {
 
       setIsSubmitted(true);
       resetFormWithUser();
-    } catch (_err) {
+    } catch {
       setError("Ocorreu um erro ao enviar sua mensagem. Tente novamente.");
     } finally {
       setIsSubmitting(false);

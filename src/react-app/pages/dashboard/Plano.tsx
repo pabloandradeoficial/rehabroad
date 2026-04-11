@@ -143,7 +143,7 @@ export default function PlanoPage() {
         setError(data.error || "Erro ao criar sessão de pagamento");
         setActivating(false);
       }
-    } catch (err) {
+    } catch {
       setError("Erro ao conectar com o servidor");
       setActivating(false);
     }
@@ -169,7 +169,7 @@ export default function PlanoPage() {
         const data = await response.json();
         setError(data.error || "Erro ao cancelar assinatura");
       }
-    } catch (err) {
+    } catch {
       setError("Erro ao conectar com o servidor");
     } finally {
       setCanceling(false);

@@ -1,0 +1,51 @@
+{
+  "account": {
+    "id": "act_333806686692736",
+    "account_id": "333806686692736",
+    "name": "Pablo Andrade",
+    "currency": "BRL",
+    "timezone": "America/Los_Angeles",
+    "status": 1,
+    "fetched_at": "2026-03-29"
+  },
+  "campaigns": [
+    { "id": "6930318014161", "name": "Instagram post: Você já percebeu que na faculdade...", "status": "ACTIVE", "objective": "LINK_CLICKS", "created_time": "2026-03-09T14:12:39-0700", "start_time": "2026-03-09T14:13:09-0700", "stop_time": "2026-03-13T14:13:09-0700", "lifetime_budget": "19200" },
+    { "id": "6928030171761", "name": "Instagram Post", "status": "ACTIVE", "objective": "LINK_CLICKS", "created_time": "2026-03-03T15:15:53-0800", "start_time": "2026-03-03T15:16:23-0800", "stop_time": "2026-03-07T15:16:23-0800", "lifetime_budget": "10400" },
+    { "id": "6927971079961", "name": "Instagram Post", "status": "ACTIVE", "objective": "LINK_CLICKS", "created_time": "2026-03-03T09:00:50-0800", "start_time": "2026-03-03T09:01:20-0800", "stop_time": "2026-03-09T10:01:20-0700", "lifetime_budget": "15600" },
+    { "id": "6921472918961", "name": "[17/02/2026] Promovendo rehabroad.com.br", "status": "ACTIVE", "objective": "LINK_CLICKS", "created_time": "2026-02-17T16:25:25-0800", "start_time": "2026-02-17T16:25:55-0800", "stop_time": "2026-02-21T16:25:55-0800", "daily_budget": "2500" },
+    { "id": "6641085257561", "name": "Publicação do Instagram: A dor tá amando né?...", "status": "ACTIVE", "objective": "MESSAGES", "created_time": "2025-01-19T12:24:08-0800", "start_time": "2025-01-19T12:24:38-0800", "stop_time": "2025-01-22T12:24:38-0800", "lifetime_budget": "11100" },
+    { "id": "6639326121961", "name": "Publicação do Instagram: CALOMBINHO?...", "status": "ACTIVE", "objective": "MESSAGES", "created_time": "2025-01-16T11:55:56-0800", "start_time": "2025-01-16T11:56:26-0800", "stop_time": "2025-01-19T11:56:26-0800", "lifetime_budget": "11100" },
+    { "id": "6638682515161", "name": "Publicação do Instagram: Descubra o Poder da...", "status": "ACTIVE", "objective": "LINK_CLICKS", "created_time": "2025-01-15T11:19:44-0800", "start_time": "2025-01-15T11:20:14-0800", "stop_time": "2025-01-18T11:20:14-0800", "lifetime_budget": "9300" },
+    { "id": "6637539601761", "name": "Publicação do Instagram: Dor na coluna? Você não...", "status": "ACTIVE", "objective": "LINK_CLICKS", "created_time": "2025-01-12T13:23:15-0800", "start_time": "2025-01-12T13:23:45-0800", "stop_time": "2025-01-16T13:23:45-0800", "lifetime_budget": "36800" },
+    { "id": "6612543908561", "name": "Publicação do Instagram: 🙏🏻 Chegamos ao final...", "status": "ACTIVE", "objective": "LINK_CLICKS", "created_time": "2024-09-14T14:21:25-0700", "start_time": "2024-09-14T14:21:55-0700", "stop_time": "2024-09-21T14:21:55-0700", "lifetime_budget": "25676" },
+    { "id": "6611151088961", "name": "Publicação do Instagram: Hoje o texto é um...", "status": "ACTIVE", "objective": "LINK_CLICKS", "created_time": "2024-09-09T14:31:18-0700", "start_time": "2024-09-09T14:31:48-0700", "stop_time": "2024-09-14T14:31:48-0700", "lifetime_budget": "23905" },
+    { "id": "6568211728561", "name": "Publicação do Instagram: CONVERSAR...", "status": "ACTIVE", "objective": "LINK_CLICKS", "created_time": "2024-03-26T10:32:22-0700", "start_time": "2024-03-26T10:32:52-0700", "stop_time": "2024-04-01T10:32:52-0700", "lifetime_budget": "15000" }
+  ],
+  "campaign_insights": [
+    { "campaign_id": "6568211728561", "campaign_name": "CONVERSAR", "impressions": 22939, "reach": 13735, "clicks": 281, "spend": 150.00, "cpc": 0.533808, "ctr": 1.224988, "cpm": 6.539082, "frequency": 1.670113, "link_clicks": 282, "video_views": 5555, "messaging_connections": 16 },
+    { "campaign_id": "6611151088961", "campaign_name": "Hoje o texto é um...", "impressions": 32670, "reach": 15200, "clicks": 341, "spend": 239.00, "cpc": 0.70088, "ctr": 1.043771, "cpm": 7.31558, "frequency": 2.149342, "link_clicks": 338, "video_views": 5102, "messaging_connections": 21 },
+    { "campaign_id": "6612543908561", "campaign_name": "Chegamos ao final...", "impressions": 29266, "reach": 13353, "clicks": 464, "spend": 256.69, "cpc": 0.553211, "ctr": 1.585458, "cpm": 8.770929, "frequency": 2.191717, "link_clicks": 456, "video_views": 6359, "messaging_connections": 17 },
+    { "campaign_id": "6637539601761", "campaign_name": "Dor na coluna?", "impressions": 47501, "reach": 41818, "clicks": 1120, "spend": 367.94, "cpc": 0.328518, "ctr": 2.357845, "cpm": 7.745942, "frequency": 1.135898, "link_clicks": 1065, "video_views": 10324, "messaging_connections": 0 },
+    { "campaign_id": "6638682515161", "campaign_name": "Descubra o Poder da...", "impressions": 12564, "reach": 8060, "clicks": 249, "spend": 93.00, "cpc": 0.373494, "ctr": 1.981853, "cpm": 7.402101, "frequency": 1.558809, "link_clicks": 192, "video_views": 2425, "messaging_connections": 0 },
+    { "campaign_id": "6639326121961", "campaign_name": "CALOMBINHO?", "impressions": 7684, "reach": 2689, "clicks": 67, "spend": 110.57, "cpc": 1.650299, "ctr": 0.871942, "cpm": 14.389641, "frequency": 2.857568, "link_clicks": 26, "video_views": 927, "messaging_connections": 16 },
+    { "campaign_id": "6641085257561", "campaign_name": "A dor tá amando né?", "impressions": 8228, "reach": 6093, "clicks": 217, "spend": 110.98, "cpc": 0.511429, "ctr": 2.637336, "cpm": 13.488089, "frequency": 1.350402, "link_clicks": 116, "video_views": 1920, "messaging_connections": 38 },
+    { "campaign_id": "6921461434961", "campaign_name": "Desenvolvi o RehabRoad para...", "impressions": 6397, "reach": 5361, "clicks": 415, "spend": 45.10, "cpc": 0.108675, "ctr": 6.487416, "cpm": 7.05018, "frequency": 1.193248, "link_clicks": 283, "landing_page_views": 97, "video_views": 633, "messaging_connections": 0 },
+    { "campaign_id": "6921472918961", "campaign_name": "[17/02/2026] Promovendo rehabroad.com.br", "impressions": 8436, "reach": 7281, "clicks": 1122, "spend": 54.13, "cpc": 0.048244, "ctr": 13.300142, "cpm": 6.416548, "frequency": 1.158632, "link_clicks": 795, "landing_page_views": 682, "video_views": 675, "messaging_connections": 0 },
+    { "campaign_id": "6925595257961", "campaign_name": "Post do Instagram (jan/26)", "impressions": 6462, "reach": 3094, "clicks": 162, "spend": 103.95, "cpc": 0.641667, "ctr": 2.506964, "cpm": 16.086351, "frequency": 2.088559, "link_clicks": 50, "video_views": 1141, "messaging_connections": 60 },
+    { "campaign_id": "6927341942961", "campaign_name": "Sabia disso? Faz o teste e...", "impressions": 15582, "reach": 9979, "clicks": 253, "spend": 129.93, "cpc": 0.513557, "ctr": 1.623668, "cpm": 8.338467, "frequency": 1.561479, "link_clicks": 242, "video_views": 3349, "messaging_connections": 6 },
+    { "campaign_id": "6927971079961", "campaign_name": "Instagram Post (mar/26 A)", "impressions": 2982, "reach": 2765, "clicks": 33, "spend": 19.87, "cpc": 0.602121, "ctr": 1.10664, "cpm": 6.663313, "frequency": 1.078481, "link_clicks": 30, "landing_page_views": 17, "video_views": 156, "messaging_connections": 0 },
+    { "campaign_id": "6928030171761", "campaign_name": "Instagram Post (mar/26 B)", "impressions": 8687, "reach": 7477, "clicks": 648, "spend": 103.87, "cpc": 0.160293, "ctr": 7.459422, "cpm": 11.956947, "frequency": 1.16183, "link_clicks": 642, "landing_page_views": 501, "video_views": 0, "messaging_connections": 0 },
+    { "campaign_id": "6930318014161", "campaign_name": "Você já percebeu que na faculdade...", "impressions": 53661, "reach": 22747, "clicks": 424, "spend": 191.76, "cpc": 0.452264, "ctr": 0.790146, "cpm": 3.573545, "frequency": 2.359036, "link_clicks": 363, "landing_page_views": 290, "video_views": 26, "messaging_connections": 0 },
+    { "campaign_id": "6933235338961", "campaign_name": "Post do Instagram (mar/26 C)", "impressions": 20953, "reach": 10776, "clicks": 742, "spend": 134.61, "cpc": 0.181415, "ctr": 3.541259, "cpm": 6.424378, "frequency": 1.944414, "link_clicks": 467, "landing_page_views": 385, "video_views": 5019, "messaging_connections": 10 }
+  ],
+  "totals": {
+    "total_impressions": 284012,
+    "total_reach": 170428,
+    "total_clicks": 6538,
+    "total_spend_brl": 2111.40,
+    "avg_ctr": 2.30,
+    "avg_cpc_brl": 0.323,
+    "avg_cpm_brl": 7.43,
+    "avg_frequency": 1.64
+  }
+}

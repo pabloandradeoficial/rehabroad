@@ -158,7 +158,7 @@ export default function StudentCommunity({ onBack }: Props) {
         setLikedPosts(data.post_ids || []);
         setLikedComments(data.comment_ids || []);
       }
-    } catch (_e) {
+    } catch {
       // ignore
     }
   };

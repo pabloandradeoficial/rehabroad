@@ -118,7 +118,7 @@ export function useOnboarding() {
         setFirstEvaluationPatientId(data.firstEvaluationPatientId);
         localStorage.setItem(REPORT_PROMPT_SHOWN_KEY, "true");
       }
-    } catch (err) {
+    } catch {
       setProgress((prev) => ({ ...prev, loading: false }));
     }
   }, []);

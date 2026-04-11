@@ -252,7 +252,7 @@ export default function Forum() {
       } else {
         toast.showError("Erro ao comentar");
       }
-    } catch (_err) {
+    } catch {
       toast.showError("Erro ao comentar");
     } finally {
       setSubmitting(false);
@@ -366,7 +366,7 @@ export default function Forum() {
       } else {
         toast.showError("Erro ao atualizar");
       }
-    } catch (_err) {
+    } catch {
       toast.showError("Erro ao atualizar");
     } finally {
       setSubmitting(false);
@@ -397,7 +397,7 @@ export default function Forum() {
       } else {
         toast.showError("Erro ao atualizar comentário");
       }
-    } catch (_err) {
+    } catch {
       toast.showError("Erro ao atualizar");
     } finally {
       setSubmitting(false);

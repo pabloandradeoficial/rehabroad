@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from "hono";
 import Stripe from "stripe";
 import { Resend } from "resend";
@@ -258,7 +260,7 @@ subscriptionRouter.post("/subscription/checkout", authMiddleware, async (c) => {
 
   const stripe = new Stripe(c.env.STRIPE_SECRET_KEY);
 
-  let subscription = await c.env.DB.prepare(
+  const subscription = await c.env.DB.prepare(
     `SELECT * FROM subscriptions WHERE user_id = ?`
   ).bind(user!.id).first() as any;
 

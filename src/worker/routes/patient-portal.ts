@@ -39,16 +39,7 @@ type HepExerciseRow = {
   created_at: string;
 };
 
-type HepCheckinRow = {
-  id: number;
-  plan_id: number;
-  exercise_id: number;
-  completed: number;
-  pain_level: number | null;
-  difficulty: string | null;
-  notes: string | null;
-  checked_at: string;
-};
+
 
 type PatientCommentRow = {
   id: number;
