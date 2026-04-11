@@ -283,6 +283,14 @@ async function sendStreakRiskEmails(env: Env) {
   }
 }
 
+app.onError((err, c) => {
+  console.error("Global Error Handler caught:", err);
+  if (err instanceof SyntaxError && err.message.includes("JSON")) {
+    return c.json({ error: "Invalid JSON format" }, 400);
+  }
+  return c.json({ error: "Internal Server Error" }, 500);
+});
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     return app.fetch(request, env, ctx);
