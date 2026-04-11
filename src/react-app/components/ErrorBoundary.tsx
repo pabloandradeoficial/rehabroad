@@ -32,6 +32,16 @@ export class ErrorBoundary extends Component<Props, State> {
           <p className="text-muted-foreground mb-4 max-w-md">
             Ocorreu um erro inesperado ao carregar esta parte do sistema. Tente recarregar a página.
           </p>
+          {this.state.error && (
+            <div className="bg-red-950/20 text-red-400 p-4 rounded-md mb-4 max-w-2xl overflow-auto text-left text-sm border border-red-900/50">
+              <p className="font-mono break-all">{this.state.error.message}</p>
+              {this.state.error.stack && (
+                <pre className="mt-2 text-xs opacity-70 whitespace-pre-wrap">
+                  {this.state.error.stack.split('\n').slice(0, 5).join('\n')}
+                </pre>
+              )}
+            </div>
+          )}
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"

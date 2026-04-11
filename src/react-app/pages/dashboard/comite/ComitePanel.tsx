@@ -38,12 +38,13 @@ import {
   Percent
 } from "lucide-react";
 
+import { motion, AnimatePresence } from "framer-motion";
+import { apiFetch } from "@/react-app/lib/api";
+
 // Icon mapper helper
 const ICON_MAP: Record<string, any> = {
   LibraryBig, ClipboardCheck, Activity, Zap, HandMetal, Stethoscope, HeartPulse, Wind, Baby, Users, Syringe, Dumbbell, ShieldCheck, Sparkles, GraduationCap, FileText, BarChart, Star, Scale, ShoppingBag, Lock, Briefcase, Building, PiggyBank, Calculator, TrendingUp, FileX, Percent
 };
-import { motion, AnimatePresence } from "framer-motion";
-import { apiFetch } from "@/react-app/lib/api";
 
 type Agent = {
   id: string;
