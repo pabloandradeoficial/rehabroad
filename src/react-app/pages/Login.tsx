@@ -54,23 +54,11 @@ export default function LoginPage() {
     }
   };
 
-  if (isPending || isSubmitting) {
+  if (isPending) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="relative">
-          <div className="absolute inset-0 w-32 h-32 bg-primary/30 rounded-full blur-2xl animate-pulse" />
-          <div className="relative text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary via-teal-500 to-emerald-500 rounded-3xl shadow-2xl mb-6">
-              <Activity className="w-10 h-10 text-white" />
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <span className="text-muted-foreground font-medium">
-                {isSubmitting ? "Redirecionando..." : "Carregando..."}
-              </span>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-muted-foreground font-medium text-sm">Carregando...</p>
       </div>
     );
   }
