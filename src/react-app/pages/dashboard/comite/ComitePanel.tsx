@@ -10,8 +10,38 @@ import {
   ArrowRight,
   Sparkles,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  LibraryBig, 
+  ClipboardCheck, 
+  Activity, 
+  Zap, 
+  HandMetal, 
+  Stethoscope, 
+  HeartPulse, 
+  Wind, 
+  Baby, 
+  Syringe, 
+  Dumbbell, 
+  ShieldCheck,
+  GraduationCap, 
+  FileText, 
+  BarChart, 
+  Star, 
+  Scale, 
+  ShoppingBag, 
+  Lock, 
+  Building, 
+  PiggyBank, 
+  Calculator, 
+  TrendingUp, 
+  FileX, 
+  Percent
 } from "lucide-react";
+
+// Icon mapper helper
+const ICON_MAP: Record<string, any> = {
+  LibraryBig, ClipboardCheck, Activity, Zap, HandMetal, Stethoscope, HeartPulse, Wind, Baby, Users, Syringe, Dumbbell, ShieldCheck, Sparkles, GraduationCap, FileText, BarChart, Star, Scale, ShoppingBag, Lock, Briefcase, Building, PiggyBank, Calculator, TrendingUp, FileX, Percent
+};
 import { motion, AnimatePresence } from "framer-motion";
 import { apiFetch } from "@/react-app/lib/api";
 
@@ -60,7 +90,24 @@ export default function ComitePanel() {
         
         
         const agentsData = await agentsRes.json();
-        setAgents(Array.isArray(agentsData) ? agentsData : (agentsData.agents || []));
+        const rawAgents = Array.isArray(agentsData) ? agentsData : (agentsData.agents || []);
+        
+        const mappedAgents: Agent[] = rawAgents.map((a: any) => {
+          let cat = (a.categoria || "").toLowerCase();
+          if (cat === "prática clínica") cat = "clínico";
+          else if (cat === "jurídico" || cat === "contábil") cat = "jurídico_contábil";
+
+          return {
+            id: a.id,
+            name: a.nome || a.name || "Agente",
+            category: cat || a.category || "geral",
+            short_description: a.descricao_curta || a.short_description || "",
+            icon: a.icone || a.icon,
+            color_theme: "teal" 
+          };
+        });
+        
+        setAgents(mappedAgents);
         
 
         if (xpRes.ok) {
@@ -238,7 +285,10 @@ export default function ComitePanel() {
                         agent.color_theme === 'purple' ? 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400' :
                         'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
                       }`}>
-                        {agent.icon}
+                        {(() => {
+                           const IconComp = ICON_MAP[agent.icon] || Users;
+                           return <IconComp className="w-6 h-6" />;
+                        })()}
                       </div>
                       <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 px-2 py-1 bg-slate-100 dark:bg-slate-900 rounded-lg">
                         {agent.category.replace('_', ' ')}
