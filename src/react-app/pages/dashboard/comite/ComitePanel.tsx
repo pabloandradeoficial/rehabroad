@@ -58,8 +58,10 @@ export default function ComitePanel() {
 
         if (!agentsRes.ok) throw new Error("Falha ao carregar agentes");
         
+        
         const agentsData = await agentsRes.json();
-        setAgents(agentsData.agents || []);
+        setAgents(Array.isArray(agentsData) ? agentsData : (agentsData.agents || []));
+        
 
         if (xpRes.ok) {
           const xpData = await xpRes.json();
