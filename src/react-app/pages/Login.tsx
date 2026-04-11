@@ -26,13 +26,17 @@ export default function LoginPage() {
       const loginMode = localStorage.getItem("loginMode");
       if (loginMode === "student") {
         navigate("/estudante");
+      } else if (loginMode === "patient") {
+        navigate("/patient");
       } else {
         navigate("/dashboard");
       }
     }
   }, [user, navigate]);
 
-  const handleLogin = async (mode: "professional" | "student") => {
+  const handleLogin = async (
+    mode: "professional" | "student" | "patient"
+  ) => {
     try {
       setLoginError(null);
       localStorage.setItem("loginMode", mode);
