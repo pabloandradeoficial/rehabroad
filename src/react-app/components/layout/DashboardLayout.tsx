@@ -18,6 +18,7 @@ import {
   Home,
   Bot,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
 import { MobileLayout } from "./MobileLayout";
@@ -245,7 +246,17 @@ export default function DashboardLayout() {
     return (
       <>
         <MobileLayout onOpenRehabFriend={() => setRehabFriendOpen(true)}>
-          {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
+            </motion.div>
+          </AnimatePresence>
         </MobileLayout>
         {sharedOverlays}
       </>
@@ -363,8 +374,18 @@ export default function DashboardLayout() {
             }}
           />
 
-          <div className="relative p-4 sm:p-6 lg:p-8">
-            {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
+          <div className="relative p-4 sm:p-6 lg:p-8 overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 

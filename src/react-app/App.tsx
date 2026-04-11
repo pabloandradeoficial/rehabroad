@@ -114,29 +114,12 @@ function PageLoader() {
   );
 }
 
-// Blocks all route rendering until Supabase resolves the initial session.
-// This eliminates the flash of the landing page before auth redirects.
-function AuthGate({ children }: { children: ReactNode }) {
-  const { isPending } = useAppAuth();
-  if (isPending) {
-    return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" className="w-12 h-12">
-            <rect width="64" height="64" rx="14" fill="#0f766e" />
-            <text x="50%" y="53%" dominantBaseline="middle" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="26" fontWeight="700" fill="white">RR</text>
-          </svg>
-          <div className="w-4 h-4 rounded-full border-2 border-[#1D9E75] border-t-transparent animate-spin" />
-        </div>
-      </div>
-    );
-  }
-  return <>{children}</>;
-}
+// Removed AuthGate in favor of per-route AuthGuard
 
 // Redirects authenticated users to /dashboard; shows landing page otherwise.
 function RootRedirect() {
-  const { user } = useAppAuth();
+  const { user, isPending } = useAppAuth();
+  if (isPending) return null;
   if (user) return <Navigate to="/dashboard" replace />;
   return <HomePage />;
 }
@@ -165,7 +148,6 @@ export default function App() {
           <SubscriptionProvider>
             <ToastProvider>
               <Router>
-                <AuthGate>
                 <Suspense fallback={<PageLoader />}>
                   <ErrorBoundary>
                     <Toaster position="top-right" theme="dark" richColors />
@@ -293,7 +275,6 @@ export default function App() {
                     </Routes>
                   </ErrorBoundary>
                 </Suspense>
-                </AuthGate>
               </Router>
             </ToastProvider>
           </SubscriptionProvider>

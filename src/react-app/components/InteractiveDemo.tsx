@@ -26,7 +26,7 @@ export function InteractiveDemo({ onCTA }: { onCTA: () => void }) {
     setStep("intro");
   };
 
-  const selectAnswer = (key: keyof Answer, _value: string) => {
+  const selectAnswer = (key: keyof Answer) => {
     if (key === "location") setStep("q2");
     else if (key === "test") setStep("q3");
     else if (key === "symptom") setStep("result");
@@ -99,7 +99,7 @@ export function InteractiveDemo({ onCTA }: { onCTA: () => void }) {
                     <OptionButton
                       key={opt.value}
                       label={opt.label}
-                      onClick={() => selectAnswer("location", opt.value)}
+                      onClick={() => selectAnswer("location")}
                       highlight={opt.value === "lombar_irradiacao"}
                     />
                   ))}
@@ -126,7 +126,7 @@ export function InteractiveDemo({ onCTA }: { onCTA: () => void }) {
                     <OptionButton
                       key={opt.value}
                       label={opt.label}
-                      onClick={() => selectAnswer("test", opt.value)}
+                      onClick={() => selectAnswer("test")}
                       highlight={opt.value === "lasegue" || opt.value === "slump"}
                     />
                   ))}
@@ -153,7 +153,7 @@ export function InteractiveDemo({ onCTA }: { onCTA: () => void }) {
                     <OptionButton
                       key={opt.value}
                       label={opt.label}
-                      onClick={() => selectAnswer("symptom", opt.value)}
+                      onClick={() => selectAnswer("symptom")}
                       highlight={opt.value === "parestesia"}
                     />
                   ))}
