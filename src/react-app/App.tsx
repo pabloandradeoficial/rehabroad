@@ -63,12 +63,8 @@ const HepOverviewPage = lazy(() => import("@/react-app/pages/dashboard/HepOvervi
 const HepPatientPortalPage = lazy(
   () => import("@/react-app/pages/HepPatientPortal")
 );
-const PatientGuardPage = lazy(
-  () => import("@/react-app/pages/patient/PatientGuard")
-);
-const PatientLayoutPage = lazy(
-  () => import("@/react-app/pages/patient/PatientLayout")
-);
+import PatientGuardPage from "@/react-app/pages/patient/PatientGuard";
+import PatientLayoutPage from "@/react-app/pages/patient/PatientLayout";
 const PatientDashboardPage = lazy(
   () => import("@/react-app/pages/patient/PatientDashboard")
 );

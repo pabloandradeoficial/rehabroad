@@ -3,6 +3,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import {
   Menu,
   X,
+  Loader2,
   LogOut,
   Activity,
   ChevronLeft,
@@ -254,7 +255,9 @@ export default function DashboardLayout() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
+              <Suspense fallback={<div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>}>
+                {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </MobileLayout>
@@ -383,7 +386,9 @@ export default function DashboardLayout() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
+                <Suspense fallback={<div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>}>
+                  {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
+                </Suspense>
               </motion.div>
             </AnimatePresence>
           </div>

@@ -1,4 +1,5 @@
-import { Activity, LogOut } from "lucide-react";
+import { Suspense } from "react";
+import { Activity, LogOut, Loader2 } from "lucide-react";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
 interface Props {
@@ -53,7 +54,11 @@ export default function PatientLayout({ children }: Props) {
       </header>
 
       {/* Content */}
-      <main className="max-w-lg mx-auto px-4 py-6">{children}</main>
+      <main className="max-w-lg mx-auto px-4 py-6">
+        <Suspense fallback={<div className="flex h-32 items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}>
+          {children}
+        </Suspense>
+      </main>
     </div>
   );
 }
