@@ -3,13 +3,12 @@ import { useNavigate } from "react-router";
 import {
   Activity,
   Loader2,
-  Shield,
-  Zap,
-  Award,
   GraduationCap,
   Briefcase,
   Globe,
   User,
+  ShieldCheck,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { useLanguage } from "@/react-app/contexts/LanguageContext";
@@ -132,56 +131,62 @@ export default function LoginPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                   <button
                     onClick={() => void handleLogin("professional")}
                     disabled={isSubmitting}
-                    className="group p-4 rounded-xl border-2 border-primary/50 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.97] active:opacity-80"
+                    className="group flex sm:flex-col items-center sm:items-start gap-4 sm:gap-0 p-4 rounded-2xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.97]"
                     type="button"
                   >
-                    <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      <Briefcase className="w-5 h-5 text-primary" />
+                    <div className="shrink-0 w-12 h-12 sm:w-10 sm:h-10 bg-primary/20 rounded-xl flex items-center justify-center sm:mb-3 group-hover:scale-110 transition-transform">
+                      <Briefcase className="w-6 h-6 sm:w-5 sm:h-5 text-primary" />
                     </div>
-                    <h3 className="font-semibold text-foreground mb-1">
-                      Profissional
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Gerencie pacientes e clínica
-                    </p>
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-0.5 sm:mb-1">
+                        Profissional
+                      </h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed sm:leading-snug">
+                        Gerencie pacientes e clínica
+                      </p>
+                    </div>
                   </button>
 
                   <button
                     onClick={() => void handleLogin("student")}
                     disabled={isSubmitting}
-                    className="group p-4 rounded-xl border-2 border-violet-500/50 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500 transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.97] active:opacity-80"
+                    className="group flex sm:flex-col items-center sm:items-start gap-4 sm:gap-0 p-4 rounded-2xl border-2 border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500 transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.97]"
                     type="button"
                   >
-                    <div className="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      <GraduationCap className="w-5 h-5 text-violet-500" />
+                    <div className="shrink-0 w-12 h-12 sm:w-10 sm:h-10 bg-violet-500/20 rounded-xl flex items-center justify-center sm:mb-3 group-hover:scale-110 transition-transform">
+                      <GraduationCap className="w-6 h-6 sm:w-5 sm:h-5 text-violet-500" />
                     </div>
-                    <h3 className="font-semibold text-foreground mb-1">
-                      Estudante
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Pratique casos clínicos
-                    </p>
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-0.5 sm:mb-1">
+                        Estudante
+                      </h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed sm:leading-snug">
+                        Pratique casos clínicos
+                      </p>
+                    </div>
                   </button>
 
                   <button
-                    onClick={() => void handleLogin("professional")}
+                    onClick={() => void handleLogin("patient")}
                     disabled={isSubmitting}
-                    className="group p-4 rounded-xl border-2 border-blue-500/50 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500 transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.97] active:opacity-80"
+                    className="group flex sm:flex-col items-center sm:items-start gap-4 sm:gap-0 p-4 rounded-2xl border-2 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500 transition-all duration-300 text-left disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.97]"
                     type="button"
                   >
-                    <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      <User className="w-5 h-5 text-blue-400" />
+                    <div className="shrink-0 w-12 h-12 sm:w-10 sm:h-10 bg-blue-500/20 rounded-xl flex items-center justify-center sm:mb-3 group-hover:scale-110 transition-transform">
+                      <User className="w-6 h-6 sm:w-5 sm:h-5 text-blue-500" />
                     </div>
-                    <h3 className="font-semibold text-foreground mb-1">
-                      Paciente
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Acesse seu plano
-                    </p>
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-0.5 sm:mb-1">
+                        Paciente
+                      </h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed sm:leading-snug">
+                        Acesse seu plano
+                      </p>
+                    </div>
                   </button>
                 </div>
 
@@ -228,33 +233,21 @@ export default function LoginPage() {
                   </p>
                 ) : null}
 
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-white/10" />
-                  </div>
-                  <div className="relative flex justify-center">
-                    <span className="px-4 text-xs uppercase tracking-wider text-muted-foreground bg-card/80">
-                      Acesso seguro
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  {[
-                    { icon: Shield, label: "LGPD" },
-                    { icon: Zap, label: "Rápido" },
-                    { icon: Award, label: "Seguro" },
-                  ].map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/[0.03] border border-white/5"
-                    >
-                      <item.icon className="w-5 h-5 text-primary" />
-                      <span className="text-xs text-muted-foreground">
-                        {item.label}
-                      </span>
+                {/* Clinical Security Trust Banner */}
+                <div className="mt-8 pt-6 border-t border-border">
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4 text-left">
+                    <ShieldCheck className="w-8 h-8 text-emerald-500 shrink-0 mt-0.5 hidden sm:block" />
+                    <Lock className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5 sm:hidden" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+                        Proteção de Nível Clínico
+                      </h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Nossos servidores utilizam criptografia de ponta a ponta (AES-256). 
+                        100% em conformidade com a <strong>LGPD e resoluções do COFFITO</strong> para garantir o absoluto sigilo dos seus pacientes.
+                      </p>
                     </div>
-                  ))}
+                  </div>
                 </div>
 
                 <p className="text-xs text-center text-muted-foreground">
