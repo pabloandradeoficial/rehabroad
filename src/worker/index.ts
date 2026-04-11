@@ -23,6 +23,7 @@ import { scribeRouter } from "./routes/scribe";
 import { profileRouter } from "./routes/profile";
 import { studentCasesRouter, generateWeeklyCases } from "./routes/student-cases";
 import { studentAnamneseRouter } from "./routes/student-anamnese";
+import { comiteRouter } from "./routes/comite";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -137,6 +138,7 @@ app.route("/api", clinicalContextRouter);
 app.route("/api/hep", hepRouter);
 app.route("/api/rehab-friend", rehabFriendRouter);
 app.route("/api/scribe", scribeRouter);
+app.route("/api/comite", comiteRouter);
 app.route("/api", patientPortalRouter);
 
 // Misc routes: sitemap.xml, robots.txt, PDF downloads, /api/contato, /api/leads, /api/track-view

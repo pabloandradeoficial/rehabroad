@@ -15,9 +15,9 @@ import {
   LayoutDashboard,
   Calendar,
   HeartPulse,
-  Route,
   Home,
   Bot,
+  Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
@@ -39,8 +39,8 @@ const RehabFriendChat = lazy(() => import("@/react-app/components/RehabFriendCha
 const BOTTOM_NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", end: true },
   { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", end: false },
+  { to: "/dashboard/comite", icon: Users, label: "Comitê", end: false },
   { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", end: false },
-  { to: "/dashboard/caminho", icon: Route, label: "Caminho", end: false },
   { to: "/dashboard/hep", icon: Home, label: "HEP", end: false },
 ];
 

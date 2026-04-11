@@ -14,6 +14,7 @@ import {
   Activity,
   CreditCard,
   LogOut,
+  Library,
 } from "lucide-react";
 import { cn } from "@/react-app/lib/utils";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
@@ -23,7 +24,9 @@ import { useAppAuth } from "@/react-app/contexts/AuthContext";
 const mainItems = [
   { to: "/dashboard", icon: Users, label: "Prontuário", end: true },
   { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", end: false },
+  { to: "/dashboard/comite", icon: Users, label: "Comitê Executivo", end: false },
   { to: "/dashboard/caminho", icon: Route, label: "Caminho Clínico", end: false },
+  { to: "/dashboard/biblioteca", icon: Library, label: "Minha Biblioteca", end: false },
   { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", end: false },
   { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", end: false },
   { to: "/dashboard/exportacao", icon: FileText, label: "Exportação", end: false },

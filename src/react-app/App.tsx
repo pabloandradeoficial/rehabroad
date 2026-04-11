@@ -58,6 +58,9 @@ const IndicacaoPage = lazy(
   () => import("@/react-app/pages/dashboard/Indicacao")
 );
 const PerfilPage = lazy(() => import("@/react-app/pages/dashboard/Perfil"));
+const ComitePanelPage = lazy(() => import("@/react-app/pages/dashboard/comite/ComitePanel"));
+const ComiteAgentPage = lazy(() => import("@/react-app/pages/dashboard/comite/ComiteAgent"));
+const ComiteLibraryPage = lazy(() => import("@/react-app/pages/dashboard/comite/ComiteLibrary"));
 const HepOverviewPage = lazy(() => import("@/react-app/pages/dashboard/HepOverview"));
 
 const HepPatientPortalPage = lazy(
@@ -234,6 +237,9 @@ export default function App() {
                         <Route path="indicacao" element={<IndicacaoPage />} />
                         <Route path="perfil" element={<PerfilPage />} />
                         <Route path="hep" element={<HepOverviewPage />} />
+                        <Route path="comite" element={<ComitePanelPage />} />
+                        <Route path="comite/agente/:agentId" element={<ComiteAgentPage />} />
+                        <Route path="biblioteca" element={<ComiteLibraryPage />} />
                       </Route>
 
                       {/* Public HEP patient portal — no auth required */}

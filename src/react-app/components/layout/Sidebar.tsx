@@ -23,6 +23,7 @@ import {
   GraduationCap,
   MapPin,
   Home,
+  Library,
 } from "lucide-react";
 import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
@@ -34,8 +35,10 @@ const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
 const navItems = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", premium: false, dataOnboarding: undefined },
   { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", premium: false, dataOnboarding: undefined },
+  { to: "/dashboard/comite", icon: Users, label: "Comitê Executivo", premium: false, dataOnboarding: undefined },
   { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", premium: true, dataOnboarding: "apoio-clinico-link" },
   { to: "/dashboard/caminho", icon: Route, label: "Caminho", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/biblioteca", icon: Library, label: "Minha Biblioteca", premium: false, dataOnboarding: undefined },
   { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", premium: false, dataOnboarding: undefined },
   { to: "/dashboard/alertas", icon: Bell, label: "Indicadores", premium: true, dataOnboarding: undefined },
   { to: "/dashboard/exportacao", icon: FileText, label: "Exportação", premium: true, dataOnboarding: undefined },
