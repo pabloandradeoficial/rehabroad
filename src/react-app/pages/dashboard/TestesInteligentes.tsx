@@ -397,10 +397,9 @@ function TestesInteligentesContent() {
   const localDor = suporte?.evaluation?.pain_location || "";
   const queixaPrincipal = suporte?.evaluation?.chief_complaint || "";
 
-  // Loading
-  if (patientsLoading) {
-    return (
-      <PageTransition>
+  return (
+    <PageTransition>
+      {patientsLoading ? (
         <div className="space-y-6">
           <div className="rounded-2xl bg-card border border-border shadow-sm p-6 animate-pulse">
             <div className="h-6 bg-muted rounded w-48 mb-2" />
@@ -416,14 +415,9 @@ function TestesInteligentesContent() {
             ))}
           </div>
         </div>
-      </PageTransition>
-    );
-  }
-
-  return (
-    <PageTransition>
-      <div className="space-y-8">
-        {/* Header */}
+      ) : (
+        <div className="space-y-8">
+          {/* Header */}
         <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-teal-500 to-emerald-500" />
           <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -618,17 +612,18 @@ function TestesInteligentesContent() {
           </Card>
         )}
 
-        {/* Aviso legal */}
-        <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardContent className="flex gap-4 py-4">
-            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-muted-foreground">
-              <strong>Aviso:</strong> As informações são para apoio clínico e <strong>não substituem o julgamento profissional</strong>. 
-              Este módulo não diagnostica e não prescreve tratamentos.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          {/* Aviso legal */}
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardContent className="flex gap-4 py-4">
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                <strong>Aviso:</strong> As informações são para apoio clínico e <strong>não substituem o julgamento profissional</strong>. 
+                Este módulo não diagnostica e não prescreve tratamentos.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </PageTransition>
   );
 }
