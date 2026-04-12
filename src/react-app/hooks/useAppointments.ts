@@ -33,9 +33,7 @@ export interface AppointmentInput {
   is_paid?: boolean;
 }
 
-type MutationOptions = {
-  skipRefetch?: boolean;
-};
+
 
 async function parseErrorMessage(response: Response, fallback: string) {
   try {
@@ -98,7 +96,7 @@ export function useAppointments(startDate?: string, endDate?: string) {
       }
       return response.json();
     },
-    onSuccess: (_, variables, context) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
     }
   });
@@ -137,12 +135,12 @@ export function useAppointments(startDate?: string, endDate?: string) {
   return {
     appointments,
     loading: isLoading,
-    error: error instanceof Error ? error.message : error?.toString() || null,
+    error: error instanceof Error ? error.message : error ? String(error) : null,
     refetch: async () => { await queryClient.invalidateQueries({ queryKey }); },
     createAppointment: createMutation.mutateAsync,
-    updateAppointment: (id: number, input: AppointmentInput, options?: MutationOptions) => 
+    updateAppointment: (id: number, input: AppointmentInput) => 
       updateMutation.mutateAsync({ id, input }),
-    deleteAppointment: (id: number, options?: MutationOptions) => 
+    deleteAppointment: (id: number) => 
       deleteMutation.mutateAsync(id),
   };
 }

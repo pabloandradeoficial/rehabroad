@@ -297,7 +297,7 @@ export default function AgendaPage() {
   const appointmentsByDate = useMemo(() => {
     const grouped: Record<string, Appointment[]> = {};
 
-    appointments.forEach((apt) => {
+    appointments.forEach((apt: typeof appointments[0]) => {
       const dateKey = apt.appointment_date;
       if (!grouped[dateKey]) grouped[dateKey] = [];
       grouped[dateKey].push(apt);
@@ -448,8 +448,7 @@ export default function AgendaPage() {
               {
                 ...payload,
                 appointment_date: formatDate(appointmentDate),
-              },
-              { skipRefetch: true }
+              }
             );
           }
 
@@ -1358,6 +1357,7 @@ export default function AgendaPage() {
             </div>
           </DialogContent>
         </Dialog>
+      </div>
       </PageTransition>
     </RouteGuard>
   );

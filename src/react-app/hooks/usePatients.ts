@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { apiFetch } from "@/react-app/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -227,7 +227,7 @@ export function usePatients() {
   return {
     patients,
     loading: isLoading,
-    error: error instanceof Error ? error.message : error?.toString() || null,
+    error: error instanceof Error ? error.message : error ? String(error) : null,
     fetchPatients: async () => { await queryClient.invalidateQueries({ queryKey: PATIENTS_QUERY_KEY }); },
     createPatient: createMutation.mutateAsync,
     updatePatient: (id: number, data: PatientFormData) => updateMutation.mutateAsync({ id, data }),

@@ -10,10 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/react-app/components/ui/dialog";
 import { Label } from "@/react-app/components/ui/label";
 import { Input } from "@/react-app/components/ui/input";
-import { PageTransition } from "@/react-app/components/layout/PageTransition";
+import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
 import { RouteGuard } from "@/react-app/components/layout/RouteGuard";
 import { PatientDetailSkeleton } from "@/react-app/components/DashboardSkeletons";
-import { Spinner } from "@/react-app/components/ui/spinner";
 import { DateInput } from "@/react-app/components/ui/DateInput";
 import { Textarea } from "@/react-app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
@@ -849,7 +848,7 @@ export default function PatientDetailPage() {
                     <p className="text-sm text-muted-foreground">Prescreva exercícios para o paciente realizar entre as sessões</p>
                   </div>
                 </div>
-                <HepPlanManager patientId={patient?.id || ""} patientPhone={patient?.phone || ""} patientEmail={patient?.email || ""} />
+                <HepPlanManager patientId={Number(patient?.id) || 0} patientPhone={patient?.phone || ""} patientEmail={patient?.email || ""} />
               </TabsContent>
             </Tabs>
           </Card>
@@ -953,7 +952,7 @@ export default function PatientDetailPage() {
             {!editingEvolution && (
               <div className="pb-2" data-onboarding="scribe-btn">
                 <ScribeButton
-                  patientId={patient?.id || ""}
+                  patientId={Number(patient?.id) || 0}
                   onResult={(result: ScribeResult) => {
                     if (!result.extracted) return;
                     const filled: string[] = [];

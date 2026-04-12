@@ -121,7 +121,6 @@ export default function DashboardLayout() {
   const { logout, user } = useAppAuth();
   const tour = useProductTour();
   const [showWelcome, setShowWelcome] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
