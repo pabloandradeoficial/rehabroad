@@ -220,7 +220,7 @@ const stepConfig = [
   { key: "aggravatingFactors", icon: AlertCircle, label: "Fatores de Piora", color: "rose", items: aggravatingFactors },
   { key: "relievingFactors", icon: CheckCircle2, label: "Fatores de Alívio", color: "emerald", items: relievingFactors },
   { key: "functionalLimitations", icon: Target, label: "Limitações Funcionais", color: "amber", items: functionalLimitations },
-  { key: "treatmentGoals", icon: Sparkles, label: "Objetivos", color: "violet", items: treatmentGoals },
+  { key: "treatmentGoals", icon: Sparkles, label: "Objetivos", color: "primary", items: treatmentGoals },
   { key: "redFlags", icon: Shield, label: "Red Flags", color: "red", items: redFlags },
 ];
 

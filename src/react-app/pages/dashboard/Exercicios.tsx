@@ -572,7 +572,7 @@ function ExerciciosContent() {
                       Passo a Passo
                     </h4>
                     <ol className="space-y-3">
-                      {selectedExercise.instructions.map((instruction, i) => (
+                      {(selectedExercise.instructions || []).map((instruction, i) => (
                         <li key={i} className="flex gap-3">
                           <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-teal-500 text-white flex items-center justify-center shrink-0 text-sm font-bold shadow-lg">
                             {i + 1}
@@ -584,14 +584,14 @@ function ExerciciosContent() {
                   </div>
 
                   {/* Equipment */}
-                  {selectedExercise.equipment.length > 0 && (
+                  {(selectedExercise.equipment || []).length > 0 && (
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20">
                       <h4 className="font-bold text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         Equipamentos
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {selectedExercise.equipment.map((item, i) => (
+                        {(selectedExercise.equipment || []).map((item, i) => (
                           <Badge key={i} className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20 font-medium">
                             {item}
                           </Badge>

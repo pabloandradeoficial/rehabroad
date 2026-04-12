@@ -923,7 +923,7 @@ export default function PainelPage() {
                   <div>
                     <span>Prontuários Ativos</span>
                     <p className="text-xs text-muted-foreground font-normal mt-0.5">
-                      {pacientesFiltrados.length} paciente(s) cadastrado(s)
+                      {pacientesFiltrados.length} paciente{pacientesFiltrados.length !== 1 ? 's' : ''} cadastrado{pacientesFiltrados.length !== 1 ? 's' : ''}
                     </p>
                   </div>
                 </CardTitle>
@@ -984,7 +984,7 @@ export default function PainelPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-foreground truncate" title={paciente.name}>
+                          <h3 className="font-bold text-foreground line-clamp-1 sm:line-clamp-none break-all sm:break-normal" title={paciente.name}>
                             {paciente.name}
                           </h3>
                           {paciente.birth_date && (
