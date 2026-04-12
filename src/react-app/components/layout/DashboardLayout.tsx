@@ -22,7 +22,6 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
-import { MobileLayout } from "./MobileLayout";
 import { queryClient } from "@/react-app/App";
 import { PATIENTS_QUERY_KEY, fetchPatientsQueryFn } from "@/react-app/hooks/usePatients";
 import { APPOINTMENTS_QUERY_KEY, fetchAppointmentsQueryFn } from "@/react-app/hooks/useAppointments";
@@ -119,21 +118,18 @@ export default function DashboardLayout() {
     return false;
   });
 
-  // Flash-free mobile detection (< 768px = dedicated MobileLayout)
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth < 768 : false
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
   const { logout, user } = useAppAuth();
   const tour = useProductTour();
   const [showWelcome, setShowWelcome] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handler = () => setSidebarOpen(true);
+    window.addEventListener("rehabroad-open-sidebar", handler);
+    return () => window.removeEventListener("rehabroad-open-sidebar", handler);
+  }, []);
+
   const [tourRunning, setTourRunning] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
 
@@ -180,7 +176,6 @@ export default function DashboardLayout() {
     isAdmin,
     isPremium,
   } = useSubscription();
-  const location = useLocation();
 
   const isAllowedPage = ALLOWED_PAGES_FOR_EXPIRED.some((page) =>
     location.pathname.startsWith(page)
@@ -259,33 +254,7 @@ export default function DashboardLayout() {
     </>
   );
 
-  // ── Mobile branch (< 768px) ───────────────────────────────────────────────
-
-  if (isMobile) {
-    return (
-      <>
-        <MobileLayout onOpenRehabFriend={() => setRehabFriendOpen(true)}>
-          <Suspense fallback={<div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 text-teal-500 animate-spin" /></div>}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full h-full"
-              >
-                {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
-              </motion.div>
-            </AnimatePresence>
-          </Suspense>
-        </MobileLayout>
-        {sharedOverlays}
-      </>
-    );
-  }
-
-  // ── Desktop branch (≥ 768px) — UNCHANGED ─────────────────────────────────
+  // ── Unified Responsive Layout ───────────────────────────────────────────────
 
   return (
     <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
@@ -345,7 +314,7 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <Sidebar
         className={cn(
-          "fixed top-0 left-0 z-[40] h-dvh transition-all duration-300 ease-out lg:translate-x-0",
+          "fixed top-0 left-0 z-[40] h-dvh transition-all duration-200 ease-out lg:translate-x-0",
           sidebarCollapsed ? "lg:w-20" : "lg:w-64",
           "w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"

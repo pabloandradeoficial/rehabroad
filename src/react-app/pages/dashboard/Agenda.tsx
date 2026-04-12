@@ -61,7 +61,8 @@ import {
   createReminderMessage,
 } from "@/react-app/lib/whatsapp";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
-
+import { RouteGuard } from "@/react-app/components/layout/RouteGuard";
+import { AgendaSkeleton } from "@/react-app/components/DashboardSkeletons";
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MONTHS = [
   "Janeiro",
@@ -551,43 +552,14 @@ export default function AgendaPage() {
     return date.toDateString() === today.toDateString();
   };
 
-  if (loading) {
-    return (
-      <PageTransition>
-        <div className="space-y-6">
-          <div className="rounded-2xl bg-card border border-border shadow-sm p-6 animate-pulse">
-            <div className="h-6 bg-muted rounded w-32 mb-2" />
-            <div className="h-4 bg-muted rounded w-56" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 rounded-2xl bg-card border border-border p-4 animate-pulse">
-              <div className="grid grid-cols-7 gap-2 mb-3">
-                {[...Array(7)].map((_, i) => (
-                  <div key={i} className="h-4 bg-muted rounded" />
-                ))}
-              </div>
-              {[...Array(5)].map((_, row) => (
-                <div key={row} className="grid grid-cols-7 gap-2 mb-2">
-                  {[...Array(7)].map((_, col) => (
-                    <div key={col} className="h-9 bg-muted rounded-lg" />
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div className="rounded-2xl bg-card border border-border p-4 animate-pulse space-y-3">
-              <div className="h-5 bg-muted rounded w-32" />
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 bg-muted rounded-xl" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </PageTransition>
-    );
-  }
-
   return (
-    <>
+    <RouteGuard
+      isLoading={loading}
+      isError={!!error}
+      error={error}
+      onRetry={refetch}
+      skeleton={<AgendaSkeleton />}
+    >
       <div className="md:hidden">
         <MobileHeader
           actions={
@@ -1386,9 +1358,8 @@ export default function AgendaPage() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-    </PageTransition>
-    </>
+      </PageTransition>
+    </RouteGuard>
   );
 }
 

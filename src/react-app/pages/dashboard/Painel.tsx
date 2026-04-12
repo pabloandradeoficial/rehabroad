@@ -531,7 +531,7 @@ export default function PainelPage() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-rose-700 dark:text-rose-400">
-                  {stats.red} paciente{stats.red !== 1 ? "s" : ""} precisam de atenção imediata
+                  {stats.red} paciente{stats.red !== 1 ? "s" : ""} precisa{stats.red !== 1 ? "m" : ""} de atenção imediata
                 </p>
                 <p className="text-xs text-rose-600/70 dark:text-rose-400/70 mt-0.5">
                   Clique para ver os alertas críticos

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router";
-import { ArrowLeft, Activity } from "lucide-react";
+import { ArrowLeft, Menu } from "lucide-react";
 
 // ── Page title map ────────────────────────────────────────────────────────────
 
@@ -62,9 +62,13 @@ export function MobileHeader({ title, showBack, actions }: MobileHeaderProps) {
             <ArrowLeft size={20} />
           </button>
         ) : (
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center flex-shrink-0">
-            <Activity size={14} className="text-white" />
-          </div>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("rehabroad-open-sidebar"))}
+            className="-ml-1 w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground active:bg-muted"
+            aria-label="Abrir Menu"
+          >
+            <Menu size={20} />
+          </button>
         )}
 
         <h1 className="text-base font-semibold text-foreground truncate leading-tight">

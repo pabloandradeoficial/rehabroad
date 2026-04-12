@@ -10,6 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/react-app/components/ui/dialog";
 import { Label } from "@/react-app/components/ui/label";
 import { Input } from "@/react-app/components/ui/input";
+import { PageTransition } from "@/react-app/components/layout/PageTransition";
+import { RouteGuard } from "@/react-app/components/layout/RouteGuard";
+import { PatientDetailSkeleton } from "@/react-app/components/DashboardSkeletons";
+import { Spinner } from "@/react-app/components/ui/spinner";
 import { DateInput } from "@/react-app/components/ui/DateInput";
 import { Textarea } from "@/react-app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
@@ -22,7 +26,7 @@ import { regioes } from "@/react-app/data/testesOrtopedicos";
 import ClinicalSummary from "@/react-app/components/ClinicalSummary";
 import EvolutionChart from "@/react-app/components/EvolutionChart";
 import NeuroFluxQuickAccess from "@/react-app/components/NeuroFluxQuickAccess";
-import { PageTransition, Spinner, useToast } from "@/react-app/components/ui/microinteractions";
+import { useToast } from "@/react-app/components/ui/microinteractions";
 import { PatientAvatar } from "@/react-app/components/PatientAvatar";
 import { openWhatsApp, createContactMessage, createReminderMessage } from "@/react-app/lib/whatsapp";
 import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
@@ -249,19 +253,6 @@ export default function PatientDetailPage() {
     }
   };
 
-  if (patientLoading) {
-    return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>;
-  }
-
-  if (!patient) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Paciente não encontrado</p>
-        <Button onClick={() => navigate("/dashboard")} variant="outline" className="mt-4">Voltar ao Painel</Button>
-      </div>
-    );
-  }
-
   const isNewPatient = evaluations.length === 0 && evolutions.length === 0;
   const statusColors = {
     green: { bg: "bg-emerald-500", text: "text-emerald-500", border: "border-emerald-500/40", bgLight: "bg-emerald-500/10" },
@@ -272,6 +263,11 @@ export default function PatientDetailPage() {
   const colors = statusColors[currentStatus];
 
   return (
+    <RouteGuard
+      isLoading={patientLoading}
+      isError={false}
+      skeleton={<PatientDetailSkeleton />}
+    >
     <>
       <div className="md:hidden">
         <MobileHeader showBack />
@@ -312,7 +308,7 @@ export default function PatientDetailPage() {
                 {/* Avatar Section */}
                 <div className="flex items-center gap-5">
                   <div className="relative">
-                    <PatientAvatar name={patient.name} size="xl" />
+                    <PatientAvatar name={patient?.name || ""} size="xl" />
                     <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full ${colors.bg} border-4 border-white flex items-center justify-center`}>
                       {currentStatus === "green" && <CheckCircle className="w-3 h-3 text-white" />}
                       {currentStatus === "yellow" && <Clock className="w-3 h-3 text-white" />}
@@ -321,20 +317,20 @@ export default function PatientDetailPage() {
                   </div>
                   
                   <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground truncate" title={patient.name}>{patient.name}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground truncate" title={patient?.name}>{patient?.name}</h1>
                     <p className="text-sm text-muted-foreground mt-1">Prontuário Eletrônico</p>
                   </div>
                 </div>
 
                 {/* Patient Info Cards */}
                 <div className="flex-1 flex flex-wrap items-center gap-3 md:justify-end">
-                  {patient.birth_date && (
+                  {patient?.birth_date && (
                     <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted/50 border border-border">
                       <Calendar className="w-4 h-4 text-primary" />
                       <span className="text-sm font-semibold text-foreground">{calculateAge(patient.birth_date)} anos</span>
                     </div>
                   )}
-                  {patient.phone && (
+                  {patient?.phone && (
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted/50 border border-border">
                         <Phone className="w-4 h-4 text-emerald-500" />
@@ -359,7 +355,7 @@ export default function PatientDetailPage() {
                       </Button>
                     </div>
                   )}
-                  {patient.email && (
+                  {patient?.email && (
                     <div className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted/50 border border-border">
                       <Mail className="w-4 h-4 text-violet-500" />
                       <span className="text-sm text-foreground">{patient.email}</span>
@@ -374,7 +370,7 @@ export default function PatientDetailPage() {
               </div>
 
               {/* Patient Notes */}
-              {patient.notes && (
+              {patient?.notes && (
                 <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-border">
                   <p className="text-sm text-slate-300 leading-relaxed">{patient.notes}</p>
                 </div>
@@ -412,7 +408,7 @@ export default function PatientDetailPage() {
         {/* === CLINICAL SUMMARY === */}
         {!evalLoading && !evolLoading && !isNewPatient && (
           <motion.div variants={itemVariants}>
-            <ClinicalSummary patientId={id!} patientName={patient.name} />
+            <ClinicalSummary patientId={id!} patientName={patient?.name || ""} />
           </motion.div>
         )}
 
@@ -853,7 +849,7 @@ export default function PatientDetailPage() {
                     <p className="text-sm text-muted-foreground">Prescreva exercícios para o paciente realizar entre as sessões</p>
                   </div>
                 </div>
-                <HepPlanManager patientId={patient.id} patientPhone={patient.phone} patientEmail={patient.email} />
+                <HepPlanManager patientId={patient?.id || ""} patientPhone={patient?.phone || ""} patientEmail={patient?.email || ""} />
               </TabsContent>
             </Tabs>
           </Card>
@@ -957,7 +953,7 @@ export default function PatientDetailPage() {
             {!editingEvolution && (
               <div className="pb-2" data-onboarding="scribe-btn">
                 <ScribeButton
-                  patientId={patient.id}
+                  patientId={patient?.id || ""}
                   onResult={(result: ScribeResult) => {
                     if (!result.extracted) return;
                     const filled: string[] = [];
@@ -1054,7 +1050,7 @@ export default function PatientDetailPage() {
                 Lembrete via WhatsApp
               </DialogTitle>
               <DialogDescription>
-                Envie um lembrete de consulta para {patient.name}
+                Envie um lembrete de consulta para {patient?.name}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -1183,8 +1179,9 @@ export default function PatientDetailPage() {
         </Dialog>
 
       </motion.div>
-    </PageTransition>
+      </PageTransition>
     </>
+    </RouteGuard>
   );
 }
 

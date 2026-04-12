@@ -84,6 +84,42 @@ export function PainelSkeleton() {
 }
 
 // ============================================
+// AGENDA SKELETON
+// ============================================
+export function AgendaSkeleton() {
+  return (
+    <div className="p-4 md:p-6 space-y-6 w-full animate-in fade-in duration-300">
+      <div className="rounded-2xl bg-card border shadow-sm p-6 flex flex-col gap-2">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-56" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 rounded-2xl bg-card border p-4">
+          <div className="grid grid-cols-7 gap-2 mb-3">
+            {[...Array(7)].map((_, i) => (
+              <Skeleton key={i} className="h-4" />
+            ))}
+          </div>
+          {[...Array(5)].map((_, row) => (
+            <div key={row} className="grid grid-cols-7 gap-2 mb-2">
+              {[...Array(7)].map((_, col) => (
+                <Skeleton key={col} className="h-9 rounded-lg" />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="rounded-2xl bg-card border p-4 space-y-3">
+          <Skeleton className="h-5 w-32" />
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // PATIENT DETAIL SKELETON
 // ============================================
 export function PatientDetailSkeleton() {
