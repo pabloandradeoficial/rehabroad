@@ -125,7 +125,7 @@ body[data-scroll-locked] {
 @layer base {
   :root {
     /* Premium light theme - warm whites with teal accents */
-    --background: 180 10% 99%;
+    --background: 160 15% 96%;
     --foreground: 200 50% 10%;
     --card: 0 0% 100%;
     --card-foreground: 200 50% 10%;
@@ -133,10 +133,10 @@ body[data-scroll-locked] {
     --popover-foreground: 200 50% 10%;
     --primary: 168 80% 42%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 200 20% 96%;
+    --secondary: 160 10% 92%;
     --secondary-foreground: 200 50% 10%;
     --muted: 200 15% 94%;
-    --muted-foreground: 200 15% 45%;
+    --muted-foreground: 215 16% 47%; /* #6B7280 Equivalent */
     --accent: 168 60% 94%;
     --accent-foreground: 168 80% 30%;
     --destructive: 0 84% 60%;
@@ -144,7 +144,7 @@ body[data-scroll-locked] {
     --border: 200 20% 90%;
     --input: 200 20% 90%;
     --ring: 168 80% 42%;
-    --radius: 0.625rem;
+    --radius: 0.75rem; /* 12px base */
     
     /* Premium gradients */
     --gradient-primary: linear-gradient(135deg, hsl(168 80% 42%) 0%, hsl(175 75% 35%) 50%, hsl(185 70% 32%) 100%);

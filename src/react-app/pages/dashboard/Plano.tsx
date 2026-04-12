@@ -219,7 +219,7 @@ export default function PlanoPage() {
 
       {/* Success Message */}
       {success && (
-        <Card className="mb-6 border-emerald-500/50 bg-emerald-500/10">
+        <Card className="mb-6 bg-card border-border border-l-4 border-l-emerald-500 shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
             <CheckCircle2 className="w-6 h-6 text-emerald-500" />
             <div>
@@ -236,7 +236,7 @@ export default function PlanoPage() {
 
       {/* Canceled Message */}
       {canceled && (
-        <Card className="mb-6 border-yellow-500/50 bg-yellow-500/10">
+        <Card className="mb-6 bg-card border-border border-l-4 border-l-amber-500 shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
             <AlertTriangle className="w-6 h-6 text-yellow-500" />
             <div>
@@ -253,7 +253,7 @@ export default function PlanoPage() {
 
       {/* Beta Trial Status */}
       {isBetaTrial && trialDaysRemaining !== null && (
-        <Card className="mb-6 border-primary/50 bg-primary/10">
+        <Card className="mb-6 bg-card border-border border-l-4 border-l-primary shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
             <Clock className="w-6 h-6 text-primary" />
             <div className="flex-1">
@@ -289,7 +289,7 @@ export default function PlanoPage() {
 
       {/* Error Message */}
       {error && (
-        <Card className="mb-6 border-red-500/50 bg-red-500/10">
+        <Card className="mb-6 bg-card border-border border-l-4 border-l-red-500 shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
             <XCircle className="w-6 h-6 text-red-500" />
             <div>
@@ -306,7 +306,7 @@ export default function PlanoPage() {
 
       {/* Active Subscription Status */}
       {isPremium && (
-        <Card className="mb-6 border-emerald-500/30 bg-emerald-500/5">
+        <Card className="mb-6 bg-card border-border border-l-4 border-l-emerald-500 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">

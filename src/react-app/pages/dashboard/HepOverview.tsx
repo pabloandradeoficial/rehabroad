@@ -9,29 +9,26 @@ const STATUS_CONFIG = {
   green: {
     label: "Em dia",
     icon: CheckCircle,
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-    text: "text-emerald-400",
-    badge: "bg-emerald-500/20 text-emerald-300",
-    dot: "bg-emerald-400",
+    bg: "bg-card shadow-sm border-border border-l-4 border-l-emerald-500",
+    text: "text-emerald-500",
+    badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    dot: "bg-emerald-500",
   },
   yellow: {
     label: "Atenção",
     icon: AlertTriangle,
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-    text: "text-amber-400",
-    badge: "bg-amber-500/20 text-amber-300",
-    dot: "bg-amber-400",
+    bg: "bg-card shadow-sm border-border border-l-4 border-l-amber-500",
+    text: "text-amber-500",
+    badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    dot: "bg-amber-500",
   },
   red: {
     label: "Baixa adesão",
     icon: AlertTriangle,
-    bg: "bg-red-500/10",
-    border: "border-red-500/20",
-    text: "text-red-400",
-    badge: "bg-red-500/20 text-red-300",
-    dot: "bg-red-400",
+    bg: "bg-card shadow-sm border-border border-l-4 border-l-red-500",
+    text: "text-red-500",
+    badge: "bg-red-500/10 text-red-600 dark:text-red-400",
+    dot: "bg-red-500",
   },
 };
 
@@ -82,17 +79,17 @@ export default function HepOverview() {
       {/* Summary cards */}
       {overview.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
-            <p className="text-2xl font-bold text-emerald-400">{greenCount}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Em dia</p>
+          <div className="rounded-xl bg-card border border-border border-l-4 border-l-emerald-500 shadow-sm p-3 text-center">
+            <p className="text-2xl font-bold text-emerald-500">{greenCount}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Em dia</p>
           </div>
-          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-center">
-            <p className="text-2xl font-bold text-amber-400">{yellowCount}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Atenção</p>
+          <div className="rounded-xl bg-card border border-border border-l-4 border-l-amber-500 shadow-sm p-3 text-center">
+            <p className="text-2xl font-bold text-amber-500">{yellowCount}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Atenção</p>
           </div>
-          <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-center">
-            <p className="text-2xl font-bold text-red-400">{redCount}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Baixa adesão</p>
+          <div className="rounded-xl bg-card border border-border border-l-4 border-l-red-500 shadow-sm p-3 text-center">
+            <p className="text-2xl font-bold text-red-500">{redCount}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Baixa adesão</p>
           </div>
         </div>
       )}
@@ -140,7 +137,7 @@ export default function HepOverview() {
                   onClick={() => void navigate(`/dashboard/paciente/${entry.patientId}`)}
                   className={cn(
                     "w-full rounded-xl border p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.99]",
-                    cfg.bg, cfg.border
+                    cfg.bg
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">

@@ -524,7 +524,7 @@ export default function PainelPage() {
             <button
               type="button"
               onClick={() => navigate("/dashboard/alertas")}
-              className="w-full flex items-center gap-3 px-5 py-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-left hover:bg-rose-500/15 transition-colors"
+              className="w-full flex items-center gap-3 px-5 py-4 rounded-xl bg-card border border-border border-l-4 border-l-rose-500 shadow-sm text-left hover:bg-muted/50 transition-colors"
             >
               <div className="w-9 h-9 rounded-lg bg-rose-500 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-white" />
