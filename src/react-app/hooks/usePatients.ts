@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { apiFetch } from "@/react-app/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface Patient {
   id: number;
@@ -147,113 +148,90 @@ async function parseErrorMessage(
   }
 }
 
+export const PATIENTS_QUERY_KEY = ["patients"];
+
+export async function fetchPatientsQueryFn() {
+  const res = await apiFetch("/api/patients", {
+    method: "GET",
+    // Removemos cache="no-store" pois o react-query agora cuida do cache
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, "Erro ao carregar pacientes"));
+  }
+
+  const data: unknown = await res.json();
+  return parsePatientsResponse(data);
+}
+
 export function usePatients() {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchPatients = useCallback(async () => {
-    try {
-      setLoading(true);
-
+  const { data: patients = [], isLoading, error } = useQuery({
+    queryKey: PATIENTS_QUERY_KEY,
+    queryFn: fetchPatientsQueryFn,
+  });
+  const createMutation = useMutation({
+    mutationFn: async (data: PatientFormData) => {
+      const payload = buildPatientPayload(data);
       const res = await apiFetch("/api/patients", {
-        method: "GET",
-        cache: "no-store",
+        method: "POST",
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        throw new Error(await parseErrorMessage(res, "Erro ao carregar pacientes"));
-      }
-
-      const data: unknown = await res.json();
-      const normalizedPatients = parsePatientsResponse(data);
-
-      setPatients(normalizedPatients);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
-    } finally {
-      setLoading(false);
+      if (!res.ok) throw new Error(await parseErrorMessage(res, "Erro ao criar paciente"));
+      const responseData: unknown = await res.json();
+      const newPatient = parseSinglePatientResponse(responseData);
+      if (!newPatient) throw new Error("Resposta inválida do paciente");
+      return newPatient;
+    },
+    onSuccess: (newPatient) => {
+      queryClient.setQueryData(PATIENTS_QUERY_KEY, (old: Patient[] = []) => [newPatient, ...old]);
     }
-  }, []);
+  });
 
-  const createPatient = useCallback(async (data: PatientFormData) => {
-    const payload = buildPatientPayload(data);
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: PatientFormData }) => {
+      const payload = buildPatientPayload(data);
+      const res = await apiFetch(`/api/patients/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
 
-    const res = await apiFetch("/api/patients", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      throw new Error(await parseErrorMessage(res, "Erro ao criar paciente"));
+      if (!res.ok) throw new Error(await parseErrorMessage(res, "Erro ao atualizar paciente"));
+      const responseData: unknown = await res.json();
+      const updated = parseSinglePatientResponse(responseData);
+      if (!updated) throw new Error("Resposta inválida do paciente");
+      return updated;
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(PATIENTS_QUERY_KEY, (old: Patient[] = []) => 
+        old.map((patient) => (patient.id === updated.id ? updated : patient))
+      );
     }
+  });
 
-    const responseData: unknown = await res.json();
-    const newPatient = parseSinglePatientResponse(responseData);
-
-    if (!newPatient) {
-      throw new Error("Resposta inválida do paciente");
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiFetch(`/api/patients/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(await parseErrorMessage(res, "Erro ao excluir paciente"));
+      return id;
+    },
+    onSuccess: (deletedId) => {
+      queryClient.setQueryData(PATIENTS_QUERY_KEY, (old: Patient[] = []) => 
+        old.filter((patient) => patient.id !== deletedId)
+      );
     }
-
-    setPatients((prev) => [newPatient, ...prev]);
-    setError(null);
-
-    return newPatient;
-  }, []);
-
-  const updatePatient = useCallback(async (id: number, data: PatientFormData) => {
-    const payload = buildPatientPayload(data);
-
-    const res = await apiFetch(`/api/patients/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      throw new Error(await parseErrorMessage(res, "Erro ao atualizar paciente"));
-    }
-
-    const responseData: unknown = await res.json();
-    const updated = parseSinglePatientResponse(responseData);
-
-    if (!updated) {
-      throw new Error("Resposta inválida do paciente");
-    }
-
-    setPatients((prev) =>
-      prev.map((patient) => (patient.id === id ? updated : patient))
-    );
-    setError(null);
-
-    return updated;
-  }, []);
-
-  const deletePatient = useCallback(async (id: number) => {
-    const res = await apiFetch(`/api/patients/${id}`, {
-      method: "DELETE",
-    });
-
-    if (!res.ok) {
-      throw new Error(await parseErrorMessage(res, "Erro ao excluir paciente"));
-    }
-
-    setPatients((prev) => prev.filter((patient) => patient.id !== id));
-    setError(null);
-  }, []);
-
-  useEffect(() => {
-    void fetchPatients();
-  }, [fetchPatients]);
+  });
 
   return {
     patients,
-    loading,
-    error,
-    fetchPatients,
-    createPatient,
-    updatePatient,
-    deletePatient,
+    loading: isLoading,
+    error: error instanceof Error ? error.message : error?.toString() || null,
+    fetchPatients: async () => { await queryClient.invalidateQueries({ queryKey: PATIENTS_QUERY_KEY }); },
+    createPatient: createMutation.mutateAsync,
+    updatePatient: (id: number, data: PatientFormData) => updateMutation.mutateAsync({ id, data }),
+    deletePatient: deleteMutation.mutateAsync,
   };
 }
 

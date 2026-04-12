@@ -7,6 +7,18 @@ import { LanguageProvider } from "@/react-app/contexts/LanguageContext";
 import { AppAuthProvider, useAppAuth } from "@/react-app/contexts/AuthContext";
 import { ErrorBoundary } from "@/react-app/components/ErrorBoundary";
 import { Toaster } from "sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 // Intercepta OAuth return na raiz ANTES de qualquer render do React
 if (
@@ -141,7 +153,8 @@ function OwnerOnlyRoute({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <AppAuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AppAuthProvider>
       <LanguageProvider>
         <ThemeProvider>
           <SubscriptionProvider>
@@ -282,6 +295,8 @@ export default function App() {
           </SubscriptionProvider>
         </ThemeProvider>
       </LanguageProvider>
-    </AppAuthProvider>
+      </AppAuthProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }

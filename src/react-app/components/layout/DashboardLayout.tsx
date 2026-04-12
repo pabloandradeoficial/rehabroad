@@ -23,6 +23,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
 import { MobileLayout } from "./MobileLayout";
+import { queryClient } from "@/react-app/App";
+import { PATIENTS_QUERY_KEY, fetchPatientsQueryFn } from "@/react-app/hooks/usePatients";
+import { APPOINTMENTS_QUERY_KEY, fetchAppointmentsQueryFn } from "@/react-app/hooks/useAppointments";
 import { Button } from "@/react-app/components/ui/button";
 import { cn } from "@/react-app/lib/utils";
 import { BetaCountdownBanner } from "@/react-app/components/BetaCountdownBanner";
@@ -197,6 +200,21 @@ export default function DashboardLayout() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Prefetch base data for fast navigation
+  useEffect(() => {
+    if (user && !shouldBlockAccess) {
+      queryClient.prefetchQuery({
+        queryKey: PATIENTS_QUERY_KEY,
+        queryFn: fetchPatientsQueryFn,
+      });
+      // Prefetch agenda sem datas para garantir cache warm (ou ajeitar caso a caso depois)
+      queryClient.prefetchQuery({
+        queryKey: APPOINTMENTS_QUERY_KEY(),
+        queryFn: fetchAppointmentsQueryFn,
+      });
+    }
+  }, [user, shouldBlockAccess]);
+
   // Auto-close sidebar on navigation (mobile)
   useEffect(() => {
     setSidebarOpen(false);
@@ -247,19 +265,20 @@ export default function DashboardLayout() {
     return (
       <>
         <MobileLayout onOpenRehabFriend={() => setRehabFriendOpen(true)}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Suspense fallback={<div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>}>
+          <Suspense fallback={<div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 text-teal-500 animate-spin" /></div>}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full"
+              >
                 {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
-              </Suspense>
-            </motion.div>
-          </AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
         </MobileLayout>
         {sharedOverlays}
       </>
@@ -378,14 +397,15 @@ export default function DashboardLayout() {
           />
 
           <div className="relative p-4 sm:p-6 lg:p-8 overflow-hidden">
-            <Suspense fallback={<div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>}>
+            <Suspense fallback={<div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 text-teal-500 animate-spin" /></div>}>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={location.pathname}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.15 }}
+                  className="w-full h-full"
                 >
                   {shouldBlockAccess ? <SubscriptionExpiredWall /> : <Outlet />}
                 </motion.div>
