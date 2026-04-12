@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router";
 import { 
   ArrowLeft, 
   Send, 
@@ -13,9 +13,7 @@ import {
   Brain, 
   Briefcase, 
   Gavel, 
-  ArrowRight,
   Sparkles,
-  AlertTriangle,
   LibraryBig, 
   ClipboardCheck, 
   Activity, 
