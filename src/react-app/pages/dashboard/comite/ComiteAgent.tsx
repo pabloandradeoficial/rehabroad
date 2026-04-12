@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, 
   Send, 
@@ -8,11 +8,48 @@ import {
   Trophy, 
   BookOpen, 
   Lightbulb, 
-  Loader2
+  Loader2,
+  Users, 
+  Brain, 
+  Briefcase, 
+  Gavel, 
+  ArrowRight,
+  Sparkles,
+  AlertTriangle,
+  LibraryBig, 
+  ClipboardCheck, 
+  Activity, 
+  Zap, 
+  HandMetal, 
+  Stethoscope, 
+  HeartPulse, 
+  Wind, 
+  Baby, 
+  Syringe, 
+  Dumbbell, 
+  ShieldCheck,
+  GraduationCap, 
+  FileText, 
+  BarChart, 
+  Star, 
+  Scale, 
+  ShoppingBag, 
+  Lock, 
+  Building, 
+  PiggyBank, 
+  Calculator, 
+  TrendingUp, 
+  FileX, 
+  Percent
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { apiFetch } from "@/react-app/lib/api";
 import ReactMarkdown from "react-markdown";
+
+// Icon mapper helper
+const ICON_MAP: Record<string, any> = {
+  LibraryBig, ClipboardCheck, Activity, Zap, HandMetal, Stethoscope, HeartPulse, Wind, Baby, Users, Syringe, Dumbbell, ShieldCheck, Sparkles, GraduationCap, FileText, BarChart, Star, Scale, ShoppingBag, Lock, Briefcase, Building, PiggyBank, Calculator, TrendingUp, FileX, Percent, Brain, BookOpen, Trophy, Gavel
+};
 
 type Message = {
   role: "user" | "assistant";
@@ -48,6 +85,7 @@ function processReferencialTeorico(text: string) {
 export default function ComiteAgent() {
   const { agentId } = useParams<{ agentId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [agent, setAgent] = useState<Agent | null>(null);
   const [xpInfo, setXpInfo] = useState<XpInfo | null>(null);
@@ -98,7 +136,25 @@ export default function ComiteAgent() {
 
         if (xpRes.ok) {
           const xpData = await xpRes.json();
-          setXpInfo(xpData);
+          setXpInfo({
+            total_xp: xpData.xp || 0,
+            level: xpData.level || 'Iniciante',
+            next_level_xp: xpData.xp < 50 ? 50 : xpData.xp < 100 ? 100 : xpData.xp < 250 ? 250 : xpData.xp < 500 ? 500 : 1000
+          });
+        }
+        
+        // Load history if 'case' query param is present
+        const caseId = searchParams.get("case");
+        if (caseId) {
+          const libRes = await apiFetch("/api/comite/library");
+          if (libRes.ok) {
+            const library = await libRes.json();
+            const existingCase = library.find((c: any) => c.id === caseId);
+            if (existingCase && existingCase.history_json) {
+              setMessages(JSON.parse(existingCase.history_json));
+              setSavedCaseId(caseId);
+            }
+          }
         }
       } catch (err) {
         console.error("Falha ao carregar dados", err);
@@ -149,7 +205,10 @@ export default function ComiteAgent() {
     if (!agentId || isSaving) return;
     try {
       setIsSaving(true);
-      const title = messages.find(m => m.role === "user")?.content.slice(0, 40) + "..." || "Discussão Aberta";
+      const userMsg = messages.find(m => m.role === "user");
+      const title = userMsg 
+        ? userMsg.content.slice(0, 40) + "..." 
+        : "Discussão Aberta";
 
       const res = await apiFetch("/api/comite/library/save", {
         method: "POST",
@@ -220,13 +279,16 @@ export default function ComiteAgent() {
 
         {/* Agent Card */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm text-center">
-          <div className="text-4xl mb-4 bg-slate-100 dark:bg-slate-700 w-20 h-20 mx-auto rounded-full flex items-center justify-center">
-            {agent.icone || "🧠"}
+          <div className="text-4xl mb-4 bg-slate-100 dark:bg-slate-700 w-20 h-20 mx-auto rounded-full flex items-center justify-center text-teal-600 dark:text-teal-400">
+            {(() => {
+               const IconComp = ICON_MAP[agent.icone] || Brain;
+               return <IconComp className="w-10 h-10" />;
+            })()}
           </div>
           <span className="text-[10px] uppercase tracking-wider font-bold text-teal-600 dark:text-teal-400 px-2 py-1 bg-teal-50 dark:bg-teal-500/10 rounded-lg mb-2 inline-block">
-            {agent.category.replace('_', ' ')}
+            {(agent.category || "geral").replace('_', ' ')}
           </span>
-          <h2 className="text-xl font-bold text-slate-900 dark:text- সাদা mb-2">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
             {agent.name}
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">
