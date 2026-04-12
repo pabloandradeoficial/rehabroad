@@ -267,9 +267,9 @@ export default function ComiteAgent() {
   }
 
   return (
-    <div className="flex-1 flex h-[100dvh] overflow-hidden bg-white dark:bg-slate-950">
+    <div className="flex-1 flex flex-col lg:flex-row h-[100dvh] fixed inset-0 z-[60] lg:static lg:h-[calc(100vh-2rem)] overflow-hidden bg-slate-50 dark:bg-slate-950">
       {/* Sidebar: Mentor Profile & XP Info */}
-      <div className="hidden lg:flex flex-col w-80 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-white/5 p-6">
+      <div className="hidden lg:flex flex-col w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-white/5 p-6 overflow-y-auto">
         <Link to="/dashboard/comite" className="flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors mb-8 w-fit font-medium">
           <ArrowLeft className="w-4 h-4" />
           Voltar ao Comitê
@@ -333,16 +333,21 @@ export default function ComiteAgent() {
       </div>
 
       {/* Main Chat Interface */}
-      <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-950 relative">
+      <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-950/50 relative">
         
         {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-950 z-10">
-          <Link to="/dashboard/comite" className="p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
+        <div className="lg:hidden flex items-center justify-between p-4 px-5 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 shadow-sm z-30">
+          <Link to="/dashboard/comite" className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex items-center gap-2">
-            <span className="text-xl">{agent.icone}</span>
-            <span className="font-bold text-slate-900 dark:text-white truncate max-w-[120px]">{agent.name}</span>
+          <div className="flex items-center gap-2.5 flex-1 ml-2">
+            <div className="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center text-teal-600 dark:text-teal-400 shrink-0">
+              {(() => {
+                const IconComp = ICON_MAP[agent.icone] || Brain;
+                return <IconComp className="w-4 h-4" />;
+              })()}
+            </div>
+            <span className="font-bold text-slate-900 dark:text-white truncate max-w-[180px]">{agent.name}</span>
           </div>
           {xpInfo && (
             <div className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-full text-xs font-bold">
@@ -390,9 +395,12 @@ export default function ComiteAgent() {
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                   message.role === "user" 
                     ? "bg-slate-200 dark:bg-slate-800" 
-                    : "bg-teal-100 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 text-lg shadow-sm"
+                    : "bg-teal-100 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 shadow-sm"
                 }`}>
-                  {message.role === "user" ? <UserIcon /> : agent.icone}
+                  {message.role === "user" ? <UserIcon /> : (() => {
+                    const IconComp = ICON_MAP[agent.icone] || Brain;
+                    return <IconComp className="w-4 h-4" />;
+                  })()}
                 </div>
 
                 {/* Message Bubble */}
@@ -423,8 +431,11 @@ export default function ComiteAgent() {
           
           {isLoading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3 text-slate-400">
-              <div className="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center text-lg shadow-sm opacity-50">
-                {agent.icone}
+              <div className="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center shadow-sm opacity-50">
+                {(() => {
+                  const IconComp = ICON_MAP[agent.icone] || Brain;
+                  return <IconComp className="w-4 h-4 text-teal-600 dark:text-teal-400" />;
+                })()}
               </div>
               <div className="flex gap-1">
                 <span className="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -438,27 +449,30 @@ export default function ComiteAgent() {
         </div>
 
         {/* Mobile Complete Actions */}
-        <div className="lg:hidden absolute bottom-20 left-0 right-0 px-4 pb-2 z-10 flex gap-2">
+        <div className="lg:hidden absolute bottom-[72px] left-0 right-0 px-4 pb-2 z-20 flex gap-3 bg-gradient-to-t from-white dark:from-slate-950 via-white/80 dark:via-slate-950/80 to-transparent pt-8">
             <button 
               onClick={handleSaveToLibrary}
               disabled={isSaving}
-              className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 shadow-lg rounded-xl py-2 flex justify-center items-center gap-2 font-medium"
+              className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 rounded-full py-2.5 flex justify-center items-center gap-2 font-medium transition-colors"
             >
-              <Save className="w-4 h-4 text-teal-500" />
-              Salvar
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin text-teal-500" /> : <Save className="w-4 h-4 text-teal-500" />}
+              <span>Salvar</span>
             </button>
             <button 
               onClick={handleCompleteCase}
               disabled={isCompleting || messages.length < 3}
-              className="flex-1 bg-teal-500 text-white shadow-lg rounded-xl py-2 flex justify-center items-center gap-2 font-bold disabled:opacity-50"
+              className="flex-1 bg-teal-500 hover:bg-teal-600 text-white shadow-md rounded-full py-2.5 flex justify-center items-center gap-2 font-bold disabled:opacity-50 transition-colors"
             >
-              <CheckCircle2 className="w-4 h-4" />
-              Concluir
+              {isCompleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              <span>Concluir</span>
             </button>
         </div>
 
         {/* Input Area */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-t border-slate-200 dark:border-white/5 z-20">
+        <div 
+          className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-white/5 z-30"
+          style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}
+        >
           <form 
             className="max-w-4xl mx-auto relative flex items-center"
             onSubmit={(e) => { e.preventDefault(); handleSend(); }}
@@ -468,15 +482,15 @@ export default function ComiteAgent() {
               value={input}
               onChange={e => setInput(e.target.value)}
               placeholder="Descreva seu raciocínio ou tire uma dúvida..."
-              className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-full py-4 pl-6 pr-14 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 outline-none"
+              className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 shadow-inner rounded-full py-3.5 pl-5 pr-12 text-sm text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-teal-500/50 outline-none transition-shadow"
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center text-white hover:bg-teal-600 disabled:opacity-50 disabled:hover:bg-teal-500 transition-colors shadow-sm"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 text-slate-400 hover:text-teal-500 disabled:opacity-50 transition-colors flex items-center justify-center p-0 bg-transparent hover:bg-transparent"
             >
-              <Send className="w-4 h-4 ml-0.5" />
+              <Send className="w-5 h-5 ml-0.5" />
             </button>
           </form>
         </div>
