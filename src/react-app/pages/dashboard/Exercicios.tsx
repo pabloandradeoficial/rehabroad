@@ -306,10 +306,10 @@ function ExerciciosContent() {
                     <Target className="w-4 h-4 text-violet-500" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm text-foreground">
+                    <p className="font-semibold text-sm text-foreground truncate">
                       Filtrado para {clinicalContext.patient.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground truncate">
                       {clinicalContext.clinicalFlags.isChronic
                         ? "Fase crônica"
                         : clinicalContext.clinicalFlags.isSubacute
@@ -324,7 +324,7 @@ function ExerciciosContent() {
                         ? "↑ Piorando"
                         : "→ Estável"}
                     </p>
-                    <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5">
+                    <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5 truncate">
                       Mostrando {recommendations.recommended.length} de{" "}
                       {recommendations.totalAvailable} exercícios adequados ao quadro
                     </p>

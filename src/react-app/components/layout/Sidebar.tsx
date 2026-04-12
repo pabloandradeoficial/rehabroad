@@ -180,7 +180,7 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                 {...(item.dataOnboarding ? { "data-onboarding": item.dataOnboarding } : {})}
                 className={({ isActive }) =>
                   cn(
-                    "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                    "group flex items-center rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
                     collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                     isActive
                       ? "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
@@ -218,7 +218,7 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
                   cn(
-                    "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                    "group flex items-center rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
                     collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                     isActive
                       ? item.color === "violet"

@@ -375,8 +375,8 @@ export default function PainelPage() {
         </motion.div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto border-primary/20">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-md max-h-[90dvh] flex flex-col p-0 overflow-hidden border-primary/20">
+            <DialogHeader className="px-6 pt-6 pb-2">
               <DialogTitle className="flex items-center gap-2 text-xl">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-white" />
@@ -387,7 +387,7 @@ export default function PainelPage() {
                 Preencha os campos principais para iniciar.
               </DialogDescription>
             </DialogHeader>
-            <div ref={focusRef} className="space-y-4 py-4">
+            <div ref={focusRef} className="space-y-4 py-4 px-6 overflow-y-auto flex-1">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo *</Label>
                 <Input
@@ -444,14 +444,14 @@ export default function PainelPage() {
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <DialogFooter className="px-6 py-4 bg-card border-t sticky bottom-0 z-10 w-full mt-auto">
+              <Button variant="outline" onClick={() => setDialogOpen(false)} className="h-11">
                 Cancelar
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={saving || !formData.name.trim()}
-                className="bg-gradient-to-r from-primary to-emerald-600"
+                className="h-11 bg-gradient-to-r from-primary to-emerald-600"
               >
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Cadastrar
