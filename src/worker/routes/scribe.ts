@@ -18,6 +18,13 @@ scribeRouter.post("/transcribe", authMiddleware, async (c) => {
     return c.json({ error: "Áudio obrigatório" }, 400);
   }
 
+  // ~10MB base64 ≈ 7.5MB of raw audio. atob() is synchronous on the Worker —
+  // a larger payload can exhaust CPU time and cause a 500 or DoS.
+  const MAX_BASE64_SIZE = 10 * 1024 * 1024;
+  if (body.audioBase64.length > MAX_BASE64_SIZE) {
+    return c.json({ error: "Arquivo de áudio muito grande. Limite: 7.5 MB." }, 413);
+  }
+
   // ── 1. Transcribe with Whisper ──
   const audioBuffer = Uint8Array.from(atob(body.audioBase64), (ch) =>
     ch.charCodeAt(0)

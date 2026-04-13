@@ -12,7 +12,7 @@ const adminMiddleware = async (c: any, next: any) => {
     return c.json({ error: "Não autenticado" }, 401);
   }
 
-  if (!isOwnerAdminEmail(user.email)) {
+  if (!isOwnerAdminEmail(user.email, c.env as Record<string, unknown>)) {
     return c.json({ error: "Acesso não autorizado" }, 403);
   }
 
@@ -23,7 +23,7 @@ const adminMiddleware = async (c: any, next: any) => {
 adminRouter.get("/admin/students", authMiddleware, async (c) => {
   const user = c.get("user");
 
-  if (!user || !isOwnerAdminEmail(user.email)) {
+  if (!user || !isOwnerAdminEmail(user.email, c.env as Record<string, unknown>)) {
     return c.json({ error: "Unauthorized" }, 403);
   }
 

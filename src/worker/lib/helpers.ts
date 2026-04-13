@@ -28,8 +28,14 @@ export const LEGACY_AUTH_COOKIE_NAMES = [
 
 export const OWNER_ADMIN_EMAIL = "pabloandradeoficial@gmail.com";
 
-export function isOwnerAdminEmail(email: string | null | undefined): boolean {
-  return typeof email === "string" && email.trim().toLowerCase() === OWNER_ADMIN_EMAIL;
+export function getOwnerAdminEmail(env?: Record<string, unknown>): string {
+  const fromEnv = getEnvString(env, "ADMIN_EMAIL");
+  return fromEnv ?? OWNER_ADMIN_EMAIL;
+}
+
+export function isOwnerAdminEmail(email: string | null | undefined, env?: Record<string, unknown>): boolean {
+  const adminEmail = getOwnerAdminEmail(env).trim().toLowerCase();
+  return typeof email === "string" && email.trim().toLowerCase() === adminEmail;
 }
 
 export function extractTokenFromCookieValue(cookieValue: string): string | null {

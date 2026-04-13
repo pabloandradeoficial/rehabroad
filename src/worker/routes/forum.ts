@@ -143,7 +143,7 @@ forumRouter.delete("/posts/:id", authMiddleware, async (c) => {
   }
 
   const isOwner = post.user_id === user.id;
-  const isAdmin = isOwnerAdminEmail(user.email);
+  const isAdmin = isOwnerAdminEmail(user.email, c.env as Record<string, unknown>);
 
   if (!isOwner && !isAdmin) {
     console.error(`[forum delete] unauthorized: post.user_id=${post.user_id} user.id=${user.id} user.email=${user.email}`);

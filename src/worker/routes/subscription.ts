@@ -3,7 +3,7 @@
 import { Hono } from "hono";
 import Stripe from "stripe";
 import { Resend } from "resend";
-import { authMiddleware, isOwnerAdminEmail } from "../lib/helpers";
+import { authMiddleware, isOwnerAdminEmail, getOwnerAdminEmail } from "../lib/helpers";
 
 export const subscriptionRouter = new Hono<{ Bindings: Env }>();
 
@@ -35,7 +35,7 @@ subscriptionRouter.post("/beta-waitlist", async (c) => {
       const resend = new Resend(c.env.RESEND_API_KEY);
       await resend.emails.send({
         from: "REHABROAD <onboarding@resend.dev>",
-        to: "pabloandradeoficial@gmail.com",
+        to: getOwnerAdminEmail(c.env as Record<string, unknown>),
         subject: "🆕 Novo cadastro na lista de espera - REHABROAD",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -117,9 +117,8 @@ subscriptionRouter.get("/subscription", authMiddleware, async (c) => {
 
   const now = new Date().toISOString();
 
-  const ADMIN_EMAIL = "pabloandradeoficial@gmail.com";
   const normalizedUserEmail = String(user?.email || "").trim().toLowerCase();
-  const normalizedAdminEmail = ADMIN_EMAIL.trim().toLowerCase();
+  const normalizedAdminEmail = getOwnerAdminEmail(c.env as Record<string, unknown>).trim().toLowerCase();
   const isOwnerEmail = normalizedUserEmail === normalizedAdminEmail;
 
   if (!subscription) {
