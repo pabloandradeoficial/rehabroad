@@ -1,7 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
 import { authMiddleware, getInsertedId, normalizeDelimitedTextValue, splitDelimitedText, normalizeCaminhoRecord } from "../lib/helpers";
+
+const patientSchema = z.object({
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome deve ter no máximo 100 caracteres"),
+  birth_date: z.string().optional().nullable(),
+  phone: z.string().max(20, "Telefone deve ter no máximo 20 caracteres").optional().nullable(),
+  email: z.string().email("E-mail inválido").optional().nullable(),
+  notes: z.string().max(2000, "Notas devem ter no máximo 2000 caracteres").optional().nullable(),
+});
 
 export const patientsRouter = new Hono<{ Bindings: Env }>();
 
@@ -34,9 +44,9 @@ patientsRouter.get("/patients/:id", authMiddleware, async (c) => {
   return c.json(patient);
 });
 
-patientsRouter.post("/patients", authMiddleware, async (c) => {
+patientsRouter.post("/patients", authMiddleware, zValidator("json", patientSchema), async (c) => {
   const user = c.get("user");
-  const body = await c.req.json();
+  const body = c.req.valid("json");
 
   const result = await c.env.DB.prepare(
     `INSERT INTO patients (user_id, name, birth_date, phone, email, notes)
@@ -54,10 +64,10 @@ patientsRouter.post("/patients", authMiddleware, async (c) => {
   return c.json(result, 201);
 });
 
-patientsRouter.put("/patients/:id", authMiddleware, async (c) => {
+patientsRouter.put("/patients/:id", authMiddleware, zValidator("json", patientSchema), async (c) => {
   const user = c.get("user");
   const patientId = c.req.param("id");
-  const body = await c.req.json();
+  const body = c.req.valid("json");
 
   const result = await c.env.DB.prepare(
     `UPDATE patients SET
