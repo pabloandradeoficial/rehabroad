@@ -172,6 +172,15 @@ export function getAppBaseUrl(c: any): string {
   return "https://rehabroad.com.br";
 }
 
+const ALLOWED_REDIRECT_HOSTS = ["rehabroad.com.br", "localhost", "127.0.0.1"];
+
+function isSafeRedirectUrl(url: URL): boolean {
+  const hostname = url.hostname.toLowerCase();
+  return ALLOWED_REDIRECT_HOSTS.some(
+    (allowed) => hostname === allowed || hostname.endsWith(`.${allowed}`)
+  );
+}
+
 export function getAuthCallbackUrl(c: any): string {
   const env = c.env as Record<string, unknown> | undefined;
   const queryRedirect = c.req.query("redirectTo") || c.req.query("redirect_to");
@@ -179,7 +188,10 @@ export function getAuthCallbackUrl(c: any): string {
   if (typeof queryRedirect === "string" && queryRedirect.trim()) {
     try {
       const redirectUrl = new URL(queryRedirect.trim());
-      if (redirectUrl.protocol === "https:" || redirectUrl.protocol === "http:") {
+      if (
+        (redirectUrl.protocol === "https:" || redirectUrl.protocol === "http:") &&
+        isSafeRedirectUrl(redirectUrl)
+      ) {
         return redirectUrl.toString();
       }
     } catch {
