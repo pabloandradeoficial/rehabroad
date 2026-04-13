@@ -15,17 +15,11 @@ dashboardRouter.get("/dashboard/stats", authMiddleware, async (c) => {
     `SELECT COUNT(*) as count FROM patients WHERE user_id = ?`
   ).bind(user!.id).first() as any;
 
-  const { results: patientIds } = await c.env.DB.prepare(
-    `SELECT id FROM patients WHERE user_id = ?`
-  ).bind(user!.id).all();
-
-  const patientIdList = patientIds.map((p: any) => p.id);
-
   let totalEvaluations = 0;
   let totalEvolutions = 0;
   let recentActivities: any[] = [];
 
-  if (patientIdList.length > 0) {
+  if ((patientsResult?.count || 0) > 0) {
     const evalResult = await c.env.DB.prepare(
       `SELECT COUNT(*) as count FROM evaluations WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?)`
     ).bind(user!.id).first() as any;
@@ -205,28 +199,41 @@ dashboardRouter.get("/dashboard/charts", authMiddleware, async (c) => {
     });
   });
 
-  for (const patientId of patientIdList) {
-    const { results: evolutions } = await c.env.DB.prepare(
-      `SELECT pain_level, session_date FROM evolutions
-       WHERE patient_id = ? ORDER BY session_date DESC LIMIT 3`
-    ).bind(patientId).all();
+  // Single query: last 3 pain levels per patient via window function.
+  // Avoids N queries (one per patient) for status distribution.
+  const { results: painRanked } = await c.env.DB.prepare(
+    `SELECT patient_id, pain_level, rn
+     FROM (
+       SELECT patient_id, pain_level,
+         ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY session_date DESC) as rn
+       FROM evolutions
+       WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?)
+         AND pain_level IS NOT NULL
+     ) WHERE rn <= 3`
+  ).bind(user!.id).all();
 
-    if (evolutions.length === 0) {
+  // Build per-patient map: { patientId -> [pain1 (latest), pain2, pain3] }
+  const painByPatient = new Map<number, number[]>();
+  for (const row of painRanked as any[]) {
+    if (!painByPatient.has(row.patient_id)) painByPatient.set(row.patient_id, []);
+    painByPatient.get(row.patient_id)!.push(row.pain_level);
+  }
+
+  for (const patientId of patientIdList) {
+    const pains = painByPatient.get(patientId) ?? [];
+    if (pains.length === 0) {
       chartData.statusDistribution.yellow += 1;
-    } else {
-      const recentPains = evolutions.map((e: any) => e.pain_level).filter((p: any) => p !== null);
-      if (recentPains.length >= 2) {
-        const trend = recentPains[0] - recentPains[recentPains.length - 1];
-        if (trend < 0) {
-          chartData.statusDistribution.green += 1;
-        } else if (trend > 2 || recentPains[0] >= 7) {
-          chartData.statusDistribution.red += 1;
-        } else {
-          chartData.statusDistribution.yellow += 1;
-        }
+    } else if (pains.length >= 2) {
+      const trend = pains[0] - pains[pains.length - 1];
+      if (trend < 0) {
+        chartData.statusDistribution.green += 1;
+      } else if (trend > 2 || pains[0] >= 7) {
+        chartData.statusDistribution.red += 1;
       } else {
         chartData.statusDistribution.yellow += 1;
       }
+    } else {
+      chartData.statusDistribution.yellow += 1;
     }
   }
 
@@ -368,41 +375,75 @@ dashboardRouter.post("/onboarding/report-exported", authMiddleware, async (c) =>
 dashboardRouter.get("/smart-alerts", authMiddleware, async (c) => {
   const user = c.get("user");
 
+  // 3 fixed queries instead of N*3-4 queries (one set per patient).
+  // Query 1: all patients + their latest evolution + latest evaluation via window functions.
   const { results: patients } = await c.env.DB.prepare(
-    `SELECT p.id, p.name, p.created_at FROM patients p WHERE p.user_id = ?`
+    `SELECT
+       p.id, p.name, p.created_at,
+       ev.pain_level  AS ev_pain,
+       ev.session_date AS ev_session_date,
+       ev.created_at  AS ev_created_at,
+       e.pain_level   AS eval_pain,
+       e.created_at   AS eval_created_at
+     FROM patients p
+     LEFT JOIN (
+       SELECT patient_id, pain_level, session_date, created_at,
+         ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY created_at DESC) AS rn
+       FROM evolutions
+     ) ev ON ev.patient_id = p.id AND ev.rn = 1
+     LEFT JOIN (
+       SELECT patient_id, pain_level, created_at,
+         ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY created_at DESC) AS rn
+       FROM evaluations
+     ) e ON e.patient_id = p.id AND e.rn = 1
+     WHERE p.user_id = ?`
   ).bind(user!.id).all();
+
+  // Query 2: evolution counts per patient.
+  const { results: evolCounts } = await c.env.DB.prepare(
+    `SELECT patient_id, COUNT(*) as count
+     FROM evolutions
+     WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?)
+     GROUP BY patient_id`
+  ).bind(user!.id).all();
+
+  const evolCountMap = new Map<number, number>();
+  for (const row of evolCounts as any[]) {
+    evolCountMap.set(row.patient_id, row.count);
+  }
+
+  // Query 3: last 2 evolutions with pain per patient (for stagnant pain detection).
+  const { results: lastTwoPains } = await c.env.DB.prepare(
+    `SELECT patient_id, pain_level, rn
+     FROM (
+       SELECT patient_id, pain_level,
+         ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY created_at DESC) AS rn
+       FROM evolutions
+       WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?)
+         AND pain_level IS NOT NULL
+     ) WHERE rn <= 2`
+  ).bind(user!.id).all();
+
+  const lastTwoPainMap = new Map<number, { latest: number; previous: number }>();
+  for (const row of lastTwoPains as any[]) {
+    if (!lastTwoPainMap.has(row.patient_id)) {
+      lastTwoPainMap.set(row.patient_id, { latest: row.pain_level, previous: row.pain_level });
+    } else if (row.rn === 2) {
+      lastTwoPainMap.get(row.patient_id)!.previous = row.pain_level;
+    }
+  }
 
   const alerts: any[] = [];
   const weeklyPriorities: any[] = [];
   const now = new Date();
 
   for (const patient of patients as any[]) {
-    const latestEvolution = await c.env.DB.prepare(
-      `SELECT ev.id, ev.pain_level, ev.session_date, ev.created_at
-       FROM evolutions ev
-       WHERE ev.patient_id = ?
-       ORDER BY ev.created_at DESC
-       LIMIT 1`
-    ).bind(patient.id).first() as any;
+    const evolutionCount = evolCountMap.get(patient.id) ?? 0;
 
-    const latestEvaluation = await c.env.DB.prepare(
-      `SELECT e.id, e.pain_level, e.created_at
-       FROM evaluations e
-       WHERE e.patient_id = ?
-       ORDER BY e.created_at DESC
-       LIMIT 1`
-    ).bind(patient.id).first() as any;
-
-    const evolCount = await c.env.DB.prepare(
-      `SELECT COUNT(*) as count FROM evolutions WHERE patient_id = ?`
-    ).bind(patient.id).first() as any;
-
-    const evolutionCount = evolCount?.count || 0;
-
-    const latestActivityDate = latestEvolution?.created_at || latestEvaluation?.created_at || patient.created_at;
+    const latestActivityDate = patient.ev_created_at || patient.eval_created_at || patient.created_at;
     const daysSinceActivity = Math.floor((now.getTime() - new Date(latestActivityDate).getTime()) / (1000 * 60 * 60 * 24));
 
-    const currentPainLevel = latestEvolution?.pain_level ?? latestEvaluation?.pain_level ?? null;
+    const currentPainLevel = patient.ev_pain ?? patient.eval_pain ?? null;
 
     if (currentPainLevel !== null && currentPainLevel >= 7) {
       alerts.push({
@@ -418,8 +459,8 @@ dashboardRouter.get("/smart-alerts", authMiddleware, async (c) => {
       });
     }
 
-    if (evolutionCount === 0 && latestEvaluation) {
-      const daysSinceEval = Math.floor((now.getTime() - new Date(latestEvaluation.created_at).getTime()) / (1000 * 60 * 60 * 24));
+    if (evolutionCount === 0 && patient.eval_created_at) {
+      const daysSinceEval = Math.floor((now.getTime() - new Date(patient.eval_created_at).getTime()) / (1000 * 60 * 60 * 24));
       if (daysSinceEval >= 3) {
         alerts.push({
           id: alerts.length + 1,
@@ -450,25 +491,19 @@ dashboardRouter.get("/smart-alerts", authMiddleware, async (c) => {
     }
 
     if (evolutionCount >= 2) {
-      const { results: lastTwoEvols } = await c.env.DB.prepare(
-        `SELECT pain_level FROM evolutions WHERE patient_id = ? AND pain_level IS NOT NULL ORDER BY created_at DESC LIMIT 2`
-      ).bind(patient.id).all();
-
-      if (lastTwoEvols.length === 2) {
-        const [latest, previous] = lastTwoEvols as any[];
-        if (latest.pain_level !== null && previous.pain_level !== null && latest.pain_level >= previous.pain_level && latest.pain_level >= 5) {
-          alerts.push({
-            id: alerts.length + 1,
-            patientId: patient.id,
-            patientName: patient.name,
-            type: "stagnant_pain",
-            severity: "warning",
-            title: "Dor Não Evoluindo",
-            description: `Dor mantida ou aumentada nas últimas sessões (${previous.pain_level} → ${latest.pain_level}).`,
-            actionLabel: "Revisar Conduta",
-            painLevel: latest.pain_level,
-          });
-        }
+      const pains = lastTwoPainMap.get(patient.id);
+      if (pains && pains.latest >= pains.previous && pains.latest >= 5) {
+        alerts.push({
+          id: alerts.length + 1,
+          patientId: patient.id,
+          patientName: patient.name,
+          type: "stagnant_pain",
+          severity: "warning",
+          title: "Dor Não Evoluindo",
+          description: `Dor mantida ou aumentada nas últimas sessões (${pains.previous} → ${pains.latest}).`,
+          actionLabel: "Revisar Conduta",
+          painLevel: pains.latest,
+        });
       }
     }
 
@@ -478,7 +513,7 @@ dashboardRouter.get("/smart-alerts", authMiddleware, async (c) => {
     if (currentPainLevel !== null && currentPainLevel >= 7) {
       priorityReason = `Dor elevada (EVA ${currentPainLevel})`;
       priorityLevel = 1;
-    } else if (evolutionCount === 0 && latestEvaluation) {
+    } else if (evolutionCount === 0 && patient.eval_created_at) {
       priorityReason = "Aguardando primeira evolução";
       priorityLevel = 2;
     } else if (daysSinceActivity >= 7 && daysSinceActivity < 14) {

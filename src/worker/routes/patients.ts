@@ -22,11 +22,29 @@ export const patientsRouter = new Hono<{ Bindings: Env }>();
 patientsRouter.get("/patients", authMiddleware, async (c) => {
   const user = c.get("user");
 
-  const { results } = await c.env.DB.prepare(
-    `SELECT * FROM patients WHERE user_id = ? ORDER BY created_at DESC`
-  ).bind(user!.id).all();
+  const pageParam = parseInt(c.req.query("page") ?? "1", 10);
+  const limitParam = parseInt(c.req.query("limit") ?? "50", 10);
+  const page = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+  const limit = isNaN(limitParam) || limitParam < 1 || limitParam > 100 ? 50 : limitParam;
+  const offset = (page - 1) * limit;
 
-  return c.json(results);
+  const [{ results }, totalRow] = await Promise.all([
+    c.env.DB.prepare(
+      `SELECT * FROM patients WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    ).bind(user!.id, limit, offset).all(),
+    c.env.DB.prepare(
+      `SELECT COUNT(*) as count FROM patients WHERE user_id = ?`
+    ).bind(user!.id).first() as Promise<{ count: number } | null>,
+  ]);
+
+  const total = totalRow?.count ?? 0;
+
+  return c.json({
+    data: results,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  });
 });
 
 patientsRouter.get("/patients/:id", authMiddleware, async (c) => {
