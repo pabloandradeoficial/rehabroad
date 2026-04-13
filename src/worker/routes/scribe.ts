@@ -1,10 +1,11 @@
 import { Hono } from "hono";
+import type { HonoApp } from "../lib/helpers";
 import { authMiddleware } from "../lib/helpers";
 
-export const scribeRouter = new Hono<{ Bindings: Env }>();
+export const scribeRouter = new Hono<HonoApp>();
 
 scribeRouter.post("/transcribe", authMiddleware, async (c) => {
-  const user = c.get("user" as never) as { id: string };
+  const user = c.get("user");
   const userId = user.id;
   const db = c.env.DB;
 

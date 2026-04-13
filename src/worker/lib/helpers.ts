@@ -1,5 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Context, MiddlewareHandler, Next } from "hono";
 import { getCookie } from "hono/cookie";
+
+export type HonoVariables = {
+  user: AppUser;
+  accessToken: string;
+};
+
+export type HonoApp = { Bindings: Env; Variables: HonoVariables };
+export type AppContext = Context<HonoApp>;
 
 export type AppUser = {
   id: string;
@@ -9,8 +17,8 @@ export type AppUser = {
     name: string | null;
     avatar_url: string | null;
   };
-  user_metadata?: Record<string, any> | null;
-  app_metadata?: Record<string, any> | null;
+  user_metadata?: Record<string, unknown> | null;
+  app_metadata?: Record<string, unknown> | null;
 };
 
 export type D1InsertResult = {
@@ -82,7 +90,7 @@ export function extractTokenFromCookieValue(cookieValue: string): string | null 
   return null;
 }
 
-export function getPossibleAuthCookieNames(c: any): string[] {
+export function getPossibleAuthCookieNames(c: AppContext): string[] {
   const cookieNames = new Set<string>(LEGACY_AUTH_COOKIE_NAMES);
 
   const rawCookieHeader =
@@ -157,7 +165,7 @@ export function sanitizeBaseUrl(value: string | null): string | null {
   }
 }
 
-export function getAppBaseUrl(c: any): string {
+export function getAppBaseUrl(c: AppContext): string {
   const env = c.env as Record<string, unknown> | undefined;
 
   const configuredBaseUrl = sanitizeBaseUrl(
@@ -187,7 +195,7 @@ function isSafeRedirectUrl(url: URL): boolean {
   );
 }
 
-export function getAuthCallbackUrl(c: any): string {
+export function getAuthCallbackUrl(c: AppContext): string {
   const env = c.env as Record<string, unknown> | undefined;
   const queryRedirect = c.req.query("redirectTo") || c.req.query("redirect_to");
 
@@ -216,7 +224,7 @@ export function getAuthCallbackUrl(c: any): string {
   return `${getAppBaseUrl(c)}/auth/callback`;
 }
 
-export function extractAccessToken(c: any): string | null {
+export function extractAccessToken(c: AppContext): string | null {
   const authorizationHeader =
     c.req.header("authorization") || c.req.header("Authorization");
 
@@ -269,8 +277,8 @@ export async function getSupabaseUserFromAccessToken(
     );
   }
 
-  const rawUser = (await response.json()) as Record<string, any>;
-  const metadata = (rawUser.user_metadata ?? rawUser.raw_user_meta_data ?? {}) as Record<string, any>;
+  const rawUser = (await response.json()) as Record<string, unknown>;
+  const metadata = ((rawUser.user_metadata ?? rawUser.raw_user_meta_data ?? {}) as Record<string, unknown>);
 
   const resolvedName =
     (typeof metadata.full_name === "string" && metadata.full_name.trim()) ||
@@ -294,12 +302,12 @@ export async function getSupabaseUserFromAccessToken(
       name: resolvedName,
       avatar_url: typeof metadata.avatar_url === "string" ? metadata.avatar_url : null,
     },
-    user_metadata: metadata,
-    app_metadata: (rawUser.app_metadata ?? null) as Record<string, any> | null,
+    user_metadata: metadata as Record<string, unknown>,
+    app_metadata: (rawUser.app_metadata ?? null) as Record<string, unknown> | null,
   };
 }
 
-export const authMiddleware = async (c: any, next: any) => {
+export const authMiddleware: MiddlewareHandler<HonoApp> = async (c, next) => {
   // E2E test bypass — requires ENVIRONMENT !== 'production' AND TEST_SECRET set
   const _env = c.env as Record<string, string | undefined>;
   const envTestSecret = _env.TEST_SECRET;
@@ -359,7 +367,7 @@ export const authMiddleware = async (c: any, next: any) => {
   }
 };
 
-export const optionalAuthMiddleware = async (c: any, next: any) => {
+export const optionalAuthMiddleware: MiddlewareHandler<HonoApp> = async (c, next) => {
   try {
     const accessToken = extractAccessToken(c);
 
