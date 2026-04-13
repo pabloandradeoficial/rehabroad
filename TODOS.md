@@ -121,3 +121,99 @@
 **Comando de busca:** `grep -r "text-teal-500" src/`
 **Esforço:** ~30min
 **Depende de:** Nada
+
+---
+
+## Engenharia — Alta Prioridade
+
+### TODO-E1: Validação com Zod em POST/PUT de pacientes
+**O que:** Adicionar schema Zod em `src/worker/routes/patients.ts` para validar body em POST e PUT. Usar `@hono/zod-validator` (já instalado).
+**Por que:** `body.name` e outros campos são inseridos no D1 sem qualquer validação. Qualquer string chega direto no banco.
+**Schema mínimo:** `name` (string, 2-100 chars), `email` (email opcional), `phone` (string opcional, max 20).
+**Arquivo:** `src/worker/routes/patients.ts`
+**Esforço:** ~45min
+**Depende de:** Nada
+
+---
+
+### TODO-E2: Validação de tamanho de áudio no Scribe antes do atob()
+**O que:** Checar `audioBase64.length` antes de chamar `atob()` em `src/worker/routes/scribe.ts`. Rejeitar com 413 se exceder ~10MB base64 (~7.5MB de áudio).
+**Por que:** `atob()` é síncrono no Worker. Um arquivo grande bloqueia a CPU e pode estourar o limite de tempo do Cloudflare Worker (50ms CPU time no free tier).
+**Fix:** `if (audioBase64.length > 10_000_000) return c.json({ error: 'Arquivo muito grande' }, 413)`
+**Arquivo:** `src/worker/routes/scribe.ts`
+**Esforço:** ~15min
+**Depende de:** Nada
+
+---
+
+### TODO-E3: Mover email de admin para variável de ambiente
+**O que:** Remover `"pabloandradeoficial@gmail.com"` hardcoded de `helpers.ts:29`, `subscription.ts:38` e `subscription.ts:120`. Usar `c.env.OWNER_ADMIN_EMAIL`.
+**Por que:** Email hardcoded no bundle significa trocar o email = novo deploy. Também expõe o email pessoal no repositório.
+**Como:** Adicionar `OWNER_ADMIN_EMAIL` no `wrangler.toml` (vars) e no Cloudflare dashboard (secrets).
+**Arquivos:** `src/worker/lib/helpers.ts`, `src/worker/routes/subscription.ts`
+**Esforço:** ~20min
+**Depende de:** Nada
+
+---
+
+## Engenharia — Média Prioridade
+
+### TODO-E4: Corrigir N+1 no endpoint de stats do dashboard
+**O que:** Refatorar `src/worker/routes/dashboard.ts` para não buscar todos os IDs de pacientes em memória. Consolidar em queries SQL com subselects.
+**Por que:** Hoje: `SELECT id FROM patients` → array de IDs → queries separadas. Com 200 pacientes = 200+ roundtrips D1 por carregamento do painel.
+**Fix:** Single query com subqueries: `SELECT (SELECT COUNT(*) FROM patients WHERE user_id=?) as patients, (SELECT COUNT(*) FROM sessions WHERE ...) as sessions`
+**Arquivo:** `src/worker/routes/dashboard.ts`
+**Esforço:** ~1h
+**Depende de:** Nada
+
+---
+
+### TODO-E5: Paginação no GET /patients
+**O que:** Adicionar `?page=1&limit=20` em `src/worker/routes/patients.ts` GET. Adicionar `LIMIT ? OFFSET ?` na query SQL.
+**Por que:** `SELECT * FROM patients WHERE user_id = ?` sem LIMIT retorna todos os pacientes de uma vez. Com 100+ pacientes, payload grande + resposta lenta.
+**Response:** Incluir `{ data: [...], total, page, totalPages }` no retorno.
+**Arquivo:** `src/worker/routes/patients.ts`
+**Esforço:** ~1h
+**Depende de:** Nada
+
+---
+
+### TODO-E6: Corrigir tipagem any no worker (ESLint)
+**O que:** Substituir `any` explícitos nos arquivos de rotas do worker por tipos concretos. Priorizar `patients.ts`, `dashboard.ts`, `scribe.ts`.
+**Por que:** `MiddlewareHandler<{Bindings: Env}>` já está disponível no Hono. Usar `any` esconde bugs de tipo e impede autocomplete correto.
+**Esforço:** ~1-2h
+**Depende de:** Nada
+
+---
+
+### TODO-E8: Corrigir open redirect em getAuthCallbackUrl
+**O que:** Em `src/worker/lib/helpers.ts:175`, a função aceita `?redirectTo=https://qualquersite.com` e valida apenas o protocolo (https/http), não o domínio.
+**Por que:** Permite phishing: atacante envia `rehabroad.com.br/api/oauth/google/redirect_url?redirectTo=https://evil.com` e o usuário é redirecionado para o domínio malicioso após OAuth.
+**Fix:** Validar que o redirectUrl.hostname termina em `rehabroad.com.br` antes de aceitar.
+```typescript
+if (redirectUrl.hostname !== 'rehabroad.com.br' && !redirectUrl.hostname.endsWith('.rehabroad.com.br')) {
+  // ignorar e usar callback padrão
+}
+```
+**Arquivo:** `src/worker/lib/helpers.ts:175`
+**Esforço:** ~15min
+**Depende de:** Nada
+
+---
+
+### TODO-E9: Adicionar Content-Security-Policy no netlify.toml
+**O que:** Adicionar header `Content-Security-Policy` ao bloco `[[headers]]` em `netlify.toml`.
+**Por que:** Sem CSP, qualquer script injetado via XSS pode roubar cookies de sessão ou fazer chamadas externas. Netlify já serve todos os assets — CSP é trivial de adicionar.
+**Valor mínimo:** `"default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://api.openai.com; img-src 'self' data: blob: https:"`
+**Arquivo:** `netlify.toml`
+**Esforço:** ~20min
+**Depende de:** Nada
+
+---
+
+### TODO-E7: Ampliar cobertura E2E para fluxos clínicos críticos
+**O que:** Adicionar testes Playwright para: criação de paciente, geração de evolução com Scribe, envio de mensagem no Rehab Friend, prescrição de HEP.
+**Por que:** Hoje só existem 6 testes (Financeiro, Fórum, 2 smoke). Os fluxos que geram valor (Scribe, Rehab Friend) não têm cobertura.
+**Arquivo:** `e2e/fluxos-criticos.spec.ts`
+**Esforço:** ~3-4h
+**Depende de:** Nada
