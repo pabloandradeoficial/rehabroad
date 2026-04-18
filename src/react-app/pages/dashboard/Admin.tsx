@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components
 import { Badge } from "@/react-app/components/ui/badge";
 import { Button } from "@/react-app/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components/ui/tabs";
-import { PageTransition, Spinner, useToast } from "@/react-app/components/ui/microinteractions";
+import { Spinner, useToast } from "@/react-app/components/ui/microinteractions";
 import { apiFetch } from "@/react-app/lib/api";
 
 interface AdminStats {
@@ -310,7 +310,7 @@ export default function Admin() {
 
   if (error) {
     return (
-      <PageTransition>
+      <>
         <div className="p-8">
           <Card className="border-destructive bg-destructive/5">
             <CardContent className="pt-6">
@@ -321,12 +321,12 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
-      </PageTransition>
+      </>
     );
   }
 
   return (
-    <PageTransition>
+    <>
       <div className="p-4 md:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -877,7 +877,7 @@ export default function Admin() {
           </TabsContent>
         </Tabs>
       </div>
-    </PageTransition>
+    </>
   );
 }
 

@@ -8,7 +8,7 @@ import { Checkbox } from "@/react-app/components/ui/checkbox";
 import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
 import { cn } from "@/react-app/lib/utils";
 import { motion } from "framer-motion";
-import { PageTransition, Spinner, useToast } from "@/react-app/components/ui/microinteractions";
+import { Spinner, useToast } from "@/react-app/components/ui/microinteractions";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 
 const benefits = [
@@ -191,7 +191,7 @@ export default function PlanoPage() {
       <div className="md:hidden">
         <MobileHeader />
       </div>
-      <PageTransition>
+      <>
       <div className="max-w-5xl mx-auto">
       {/* Header */}
       <motion.div 
@@ -636,7 +636,7 @@ export default function PlanoPage() {
         </div>
       </div>
     </div>
-    </PageTransition>
+    </>
     </>
   );
 }

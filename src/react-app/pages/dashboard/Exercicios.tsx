@@ -7,7 +7,7 @@ import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/react-app/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
-import { PageTransition, useToast } from "@/react-app/components/ui/microinteractions";
+import { useToast } from "@/react-app/components/ui/microinteractions";
 import { exercises, exerciseCategories, getExercisesByCategory, searchExercises, type Exercise } from "@/data/exercises";
 import { usePatients } from "@/react-app/hooks/usePatients";
 import { useClinicalContext } from "@/react-app/hooks/useClinicalContext";
@@ -73,7 +73,7 @@ function ExerciciosContent() {
   };
 
   return (
-    <PageTransition>
+    <>
       <div className="space-y-6 pb-6">
         {/* Hero Header */}
         <motion.div
@@ -757,7 +757,7 @@ function ExerciciosContent() {
           </DialogContent>
         </Dialog>
       </div>
-    </PageTransition>
+    </>
   );
 }
 

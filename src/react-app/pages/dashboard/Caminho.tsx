@@ -12,7 +12,7 @@ import PremiumGate from "@/react-app/components/PremiumGate";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import ClinicalSummary from "@/react-app/components/ClinicalSummary";
 import { motion, AnimatePresence } from "framer-motion";
-import { Spinner, useToast, PageTransition } from "@/react-app/components/ui/microinteractions";
+import { Spinner, useToast } from "@/react-app/components/ui/microinteractions";
 
 // Mapping from diagnostic conditions to suggested Caminho values
 const diagnosticMappings: Record<string, {
@@ -604,7 +604,7 @@ function CaminhoContent() {
 
   if (!selectedPatientId) {
     return (
-      <PageTransition>
+      <>
         <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6 p-8 text-center">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary to-emerald-500 rounded-2xl blur-lg opacity-30" />
@@ -635,7 +635,7 @@ function CaminhoContent() {
             </SelectContent>
           </Select>
         </div>
-      </PageTransition>
+      </>
     );
   }
 
@@ -661,7 +661,7 @@ function CaminhoContent() {
   }
 
   return (
-    <PageTransition>
+    <>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -674,17 +674,17 @@ function CaminhoContent() {
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-violet-500" />
 
             <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="hidden sm:block">
+              <div className="flex flex-1 min-w-0 items-start gap-4">
+                <div className="hidden sm:block shrink-0">
                   <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary via-emerald-500 to-violet-500 flex items-center justify-center shadow-lg">
                     <Route className="w-7 h-7 text-white" />
                   </div>
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">
                     Caminho Clínico
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2 md:truncate">
                     {selectedPatient?.name ?? "Estruture o raciocínio clínico do seu paciente"}
                   </p>
                 </div>
@@ -719,7 +719,7 @@ function CaminhoContent() {
                 </div>
 
                 <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
-                  <SelectTrigger className="w-28 sm:w-40 bg-white/[0.03] border-white/10 text-sm">
+                  <SelectTrigger className="w-32 sm:w-48 bg-white/[0.03] border-white/10 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper">
@@ -839,7 +839,7 @@ function CaminhoContent() {
           </Button>
         </motion.div>
       </motion.div>
-    </PageTransition>
+    </>
   );
 }
 

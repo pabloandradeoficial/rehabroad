@@ -58,7 +58,6 @@ import {
   DropdownMenuTrigger,
 } from "@/react-app/components/ui/dropdown-menu";
 import {
-  PageTransition,
   useToast,
 } from "@/react-app/components/ui/microinteractions";
 import {
@@ -351,7 +350,7 @@ export default function FinanceiroPage() {
 
   if (loading) {
     return (
-      <PageTransition>
+      <>
         <div className="space-y-6">
           <div className="rounded-2xl bg-card border border-border shadow-sm p-6 animate-pulse">
             <div className="h-6 bg-muted rounded w-40 mb-2" />
@@ -375,7 +374,7 @@ export default function FinanceiroPage() {
             ))}
           </div>
         </div>
-      </PageTransition>
+      </>
     );
   }
 
@@ -394,7 +393,7 @@ export default function FinanceiroPage() {
           }
         />
       </div>
-      <PageTransition>
+      <>
       <div className="space-y-6">
         {/* Header */}
         <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
@@ -815,7 +814,7 @@ export default function FinanceiroPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </PageTransition>
+    </>
     </>
   );
 }

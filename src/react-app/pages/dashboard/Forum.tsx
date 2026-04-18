@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
-import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { Spinner } from "@/react-app/components/ui/microinteractions";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { useToast } from "@/react-app/components/ui/microinteractions";
 import { apiFetch } from "@/react-app/lib/api";
@@ -445,7 +445,7 @@ export default function Forum() {
           }
         />
       </div>
-      <PageTransition>
+      <>
       <div className="space-y-5">
         {/* ── Standardized Header — hidden on mobile (MobileHeader takes over) ── */}
         <div className="hidden md:block relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
@@ -953,7 +953,7 @@ export default function Forum() {
           )}
         </DialogContent>
       </Dialog>
-    </PageTransition>
+    </>
     </>
   );
 }

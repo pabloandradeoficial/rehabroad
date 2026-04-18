@@ -37,7 +37,6 @@ import { useSuporte, type ClinicalInsight, type DiagnosticHypothesis } from "@/r
 import { useClinicalContext, type ClinicalAlert } from "@/react-app/hooks/useClinicalContext";
 import PremiumGate from "@/react-app/components/PremiumGate";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
-import { PageTransition } from "@/react-app/components/ui/microinteractions";
 import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
 import { Link } from "react-router";
 
@@ -326,7 +325,7 @@ function SuporteContent() {
   // Empty state
   if (!selectedPatientId) {
     return (
-      <PageTransition>
+      <>
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Header */}
           <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
@@ -387,7 +386,7 @@ function SuporteContent() {
             ))}
           </div>
         </div>
-      </PageTransition>
+      </>
     );
   }
 
@@ -484,7 +483,7 @@ function SuporteContent() {
   };
 
   return (
-    <PageTransition>
+    <>
       <div className="space-y-8">
         {/* Header */}
         <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
@@ -769,7 +768,7 @@ function SuporteContent() {
           Ferramenta de apoio ao raciocínio clínico. A decisão terapêutica é responsabilidade do profissional.
         </p>
       </div>
-    </PageTransition>
+    </>
   );
 }
 

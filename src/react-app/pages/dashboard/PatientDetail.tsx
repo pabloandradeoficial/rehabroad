@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/react-app/components/ui/dialog";
 import { Label } from "@/react-app/components/ui/label";
 import { Input } from "@/react-app/components/ui/input";
-import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { Spinner } from "@/react-app/components/ui/microinteractions";
 import { RouteGuard } from "@/react-app/components/layout/RouteGuard";
 import { PatientDetailSkeleton } from "@/react-app/components/DashboardSkeletons";
 import { DateInput } from "@/react-app/components/ui/DateInput";
@@ -271,7 +271,7 @@ export default function PatientDetailPage() {
       <div className="md:hidden">
         <MobileHeader showBack />
       </div>
-      <PageTransition>
+      <>
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         
         {/* === HEADER LIMPO === */}
@@ -1178,7 +1178,7 @@ export default function PatientDetailPage() {
         </Dialog>
 
       </motion.div>
-      </PageTransition>
+      </>
     </>
     </RouteGuard>
   );

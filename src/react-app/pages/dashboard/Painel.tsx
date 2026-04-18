@@ -55,7 +55,7 @@ import { useOnboarding } from "@/react-app/hooks/useOnboarding";
 import { OnboardingChecklist } from "@/react-app/components/OnboardingChecklist";
 import { useSmartAlerts } from "@/react-app/hooks/useSmartAlerts";
 import { SmartAlerts } from "@/react-app/components/SmartAlerts";
-import { PageTransition, useToast } from "@/react-app/components/ui/microinteractions";
+import { useToast } from "@/react-app/components/ui/microinteractions";
 import { PatientAvatar } from "@/react-app/components/PatientAvatar";
 import { WelcomeWizard } from "@/react-app/components/WelcomeWizard";
 import { PainelSkeleton } from "@/react-app/components/DashboardSkeletons";
@@ -478,7 +478,7 @@ export default function PainelPage() {
           }
         />
       </div>
-      <PageTransition>
+      <>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -491,18 +491,18 @@ export default function PainelPage() {
 
             <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className="hidden sm:block">
+                <div className="hidden sm:block shrink-0">
                   <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary via-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
                     <Activity className="w-7 h-7 text-white" />
                   </div>
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">
                     Central de Prontuários
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
                     <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span>{motivationalMessage}</span>
+                    <span className="truncate">{motivationalMessage}</span>
                   </p>
                 </div>
               </div>
@@ -1180,7 +1180,7 @@ export default function PainelPage() {
           </DialogContent>
         </Dialog>
       </motion.div>
-    </PageTransition>
+    </>
     </>
   );
 }

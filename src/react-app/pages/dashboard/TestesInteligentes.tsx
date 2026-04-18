@@ -25,7 +25,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePatients } from "@/react-app/hooks/usePatients";
 import { useSuporte } from "@/react-app/hooks/useSuporte";
 import PremiumGate from "@/react-app/components/PremiumGate";
-import { PageTransition } from "@/react-app/components/ui/microinteractions";
 import { 
   testesOrtopedicos,
   regioes, 
@@ -398,7 +397,7 @@ function TestesInteligentesContent() {
   const queixaPrincipal = suporte?.evaluation?.chief_complaint || "";
 
   return (
-    <PageTransition>
+    <>
       {patientsLoading ? (
         <div className="space-y-6">
           <div className="rounded-2xl bg-card border border-border shadow-sm p-6 animate-pulse">
@@ -624,7 +623,7 @@ function TestesInteligentesContent() {
           </Card>
         </div>
       )}
-    </PageTransition>
+    </>
   );
 }
 

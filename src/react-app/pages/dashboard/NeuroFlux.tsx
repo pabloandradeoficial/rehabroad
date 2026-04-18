@@ -19,7 +19,6 @@ import { getRecommendations, type ClinicalData, type Recommendation } from "@/re
 import { useNeuroflux } from "@/react-app/hooks/useNeuroflux";
 import { apiFetch } from "@/react-app/lib/api";
 import type { ClinicalContext } from "@/react-app/hooks/useClinicalContext";
-import { PageTransition } from "@/react-app/components/ui/microinteractions";
 
 // ─────────────────────────────────────────────
 // Types
@@ -794,7 +793,7 @@ function NeuroFluxContent() {
   );
 
   return (
-    <PageTransition>
+    <>
       <div className="space-y-6 pb-6">
 
         {/* ── SEÇÃO A: Hero Header ──────────────────── */}
@@ -1468,7 +1467,7 @@ function NeuroFluxContent() {
           patientName={selectedPatient?.name}
         />
       </div>
-    </PageTransition>
+    </>
   );
 }
 

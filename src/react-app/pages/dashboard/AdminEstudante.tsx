@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Badge } from "@/react-app/components/ui/badge";
-import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { Spinner } from "@/react-app/components/ui/microinteractions";
 import { apiFetch } from "@/react-app/lib/api";
 
 interface Student {
@@ -114,7 +114,7 @@ export default function AdminEstudante() {
 
   if (error) {
     return (
-      <PageTransition>
+      <>
         <div className="p-8">
           <Card className="border-destructive bg-destructive/5">
             <CardContent className="pt-6">
@@ -125,12 +125,12 @@ export default function AdminEstudante() {
             </CardContent>
           </Card>
         </div>
-      </PageTransition>
+      </>
     );
   }
 
   return (
-    <PageTransition>
+    <>
       <div className="p-4 md:p-8 space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -289,6 +289,6 @@ export default function AdminEstudante() {
           </CardContent>
         </Card>
       </div>
-    </PageTransition>
+    </>
   );
 }

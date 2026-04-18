@@ -7,7 +7,7 @@ import { Button } from "@/react-app/components/ui/button";
 import { useAlertasOverview } from "@/react-app/hooks/useAlertas";
 import PremiumGate from "@/react-app/components/PremiumGate";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
-import { PageTransition, Spinner } from "@/react-app/components/ui/microinteractions";
+import { Spinner } from "@/react-app/components/ui/microinteractions";
 import { PatientAvatar } from "@/react-app/components/PatientAvatar";
 import { useHepOverview } from "@/react-app/hooks/useHep";
 import { AdherenceBadge } from "@/react-app/components/HepPlanManager";
@@ -84,7 +84,7 @@ function AlertasContent() {
   }
 
   return (
-    <PageTransition>
+    <>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -318,7 +318,7 @@ function AlertasContent() {
           Indicadores baseados em registros do prontuário. A interpretação é responsabilidade do profissional.
         </motion.p>
       </motion.div>
-    </PageTransition>
+    </>
   );
 }
 

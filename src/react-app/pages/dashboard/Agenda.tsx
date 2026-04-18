@@ -47,7 +47,6 @@ import {
   DropdownMenuTrigger,
 } from "@/react-app/components/ui/dropdown-menu";
 import {
-  PageTransition,
   useToast,
 } from "@/react-app/components/ui/microinteractions";
 import {
@@ -572,7 +571,7 @@ export default function AgendaPage() {
           }
         />
       </div>
-      <PageTransition>
+      <>
       <div className="space-y-6">
         <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
@@ -1358,7 +1357,7 @@ export default function AgendaPage() {
           </DialogContent>
         </Dialog>
       </div>
-      </PageTransition>
+      </>
     </RouteGuard>
   );
 }

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/rea
 import { Button } from "@/react-app/components/ui/button";
 import { Input } from "@/react-app/components/ui/input";
 import { Label } from "@/react-app/components/ui/label";
-import { PageTransition, useToast } from "@/react-app/components/ui/microinteractions";
+import { useToast } from "@/react-app/components/ui/microinteractions";
 
 export default function Indicacao() {
   const [email, setEmail] = useState("");
@@ -73,7 +73,7 @@ Teste grátis por 30 dias: ${referralLink}`;
       <div className="md:hidden">
         <MobileHeader />
       </div>
-      <PageTransition>
+      <>
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="relative rounded-2xl bg-card border border-border shadow-sm overflow-hidden p-6">
@@ -263,7 +263,7 @@ Teste grátis por 30 dias: ${referralLink}`;
           </div>
         </div>
       </div>
-    </PageTransition>
+    </>
     </>
   );
 }

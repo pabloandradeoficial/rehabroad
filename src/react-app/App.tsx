@@ -117,9 +117,17 @@ const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background transition-colors">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-muted-foreground font-medium text-sm">Carregando...</p>
+      <div className="flex flex-col items-center gap-6">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-tr from-primary/10 via-emerald-500/10 to-transparent blur-xl" />
+          <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+        </div>
+        <div className="flex items-center justify-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
       </div>
     </div>
   );

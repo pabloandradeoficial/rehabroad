@@ -41,7 +41,6 @@ import QRCode from "qrcode";
 import PremiumGate from "@/react-app/components/PremiumGate";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import {
-  PageTransition,
   Spinner,
   useToast,
 } from "@/react-app/components/ui/microinteractions";
@@ -570,7 +569,7 @@ function ExportacaoContent() {
   };
 
   return (
-    <PageTransition>
+    <>
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -875,7 +874,7 @@ function ExportacaoContent() {
           </div>
         )}
       </div>
-    </PageTransition>
+    </>
   );
 }
 
