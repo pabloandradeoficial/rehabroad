@@ -146,7 +146,7 @@ forumRouter.delete("/posts/:id", authMiddleware, async (c) => {
   const isAdmin = isOwnerAdminEmail(user.email, c.env as Record<string, unknown>);
 
   if (!isOwner && !isAdmin) {
-    console.error(`[forum delete] unauthorized: post.user_id=${post.user_id} user.id=${user.id} user.email=${user.email}`);
+    console.error(`[forum delete] unauthorized: post.user_id=${post.user_id} user.id=${user.id}`);
     return c.json({ error: "Not authorized" }, 403);
   }
 

@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/react-app/components/ui/button";
 import { AnimateOnScroll } from "@/react-app/components/ui/motion";
 import { getBlogPostBySlug, blogPosts } from "@/data/blogPosts";
@@ -330,7 +331,7 @@ export default function BlogPostPage() {
 
           {/* Content */}
           <AnimateOnScroll animation="fadeUp">
-            <div 
+            <div
               className="prose prose-invert prose-lg max-w-none
                 prose-headings:!text-white prose-headings:font-bold
                 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
@@ -344,8 +345,9 @@ export default function BlogPostPage() {
                 prose-blockquote:border-l-teal-500 prose-blockquote:bg-slate-800/50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:!text-white
                 [&_*]:!text-white [&_a]:!text-teal-400
               "
-              dangerouslySetInnerHTML={{ __html: formatContent(post.content) }}
-            />
+            >
+              <ReactMarkdown>{post.content}</ReactMarkdown>
+            </div>
           </AnimateOnScroll>
 
           {/* Mini Clinical Case - Interactive learning */}
@@ -447,31 +449,3 @@ export default function BlogPostPage() {
   );
 }
 
-// Simple markdown-like content formatter
-function formatContent(content: string): string {
-  return content
-    // Headers
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    // Bold
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Lists
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
-    // Wrap consecutive li items in ul
-    .replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`)
-    // Horizontal rule
-    .replace(/^---$/gm, '<hr />')
-    // Paragraphs (lines that don't start with special chars)
-    .split('\n\n')
-    .map(block => {
-      if (block.trim() && 
-          !block.startsWith('<h') && 
-          !block.startsWith('<ul') &&
-          !block.startsWith('<hr')) {
-        return `<p>${block}</p>`;
-      }
-      return block;
-    })
-    .join('\n');
-}

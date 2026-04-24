@@ -20,13 +20,7 @@ const adminMiddleware = async (c: any, next: any) => {
 };
 
 // Get all students (admin only)
-adminRouter.get("/admin/students", authMiddleware, async (c) => {
-  const user = c.get("user");
-
-  if (!user || !isOwnerAdminEmail(user.email, c.env as Record<string, unknown>)) {
-    return c.json({ error: "Unauthorized" }, 403);
-  }
-
+adminRouter.get("/admin/students", authMiddleware, adminMiddleware, async (c) => {
   const { results } = await c.env.DB.prepare(`
     SELECT * FROM student_progress ORDER BY updated_at DESC
   `).all();

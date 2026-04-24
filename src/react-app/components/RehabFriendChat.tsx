@@ -12,6 +12,7 @@ import {
   Paperclip,
   Search,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/react-app/components/ui/button";
 import { Textarea } from "@/react-app/components/ui/textarea";
 import { apiFetch } from "@/react-app/lib/api";
@@ -69,23 +70,6 @@ const QUICK_PROMPTS_WITH_PATIENT = (name: string) => [
 
 const AUTO_ANALYSIS_PROMPT =
   "Analise os dados clínicos deste paciente e me dê um resumo do quadro atual com sugestões de conduta.";
-
-// ─────────────────────────────────────────────
-// Markdown renderer (minimal)
-// ─────────────────────────────────────────────
-
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/^### (.+)$/gm, '<p class="font-bold text-sm mt-3 mb-1">$1</p>')
-    .replace(/^## (.+)$/gm, '<p class="font-bold text-sm mt-3 mb-1">$1</p>')
-    .replace(/^# (.+)$/gm, '<p class="font-bold text-base mt-3 mb-1">$1</p>')
-    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
-    .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
-    .replace(/\n\n/g, '</p><p class="mt-2">')
-    .replace(/\n/g, "<br />");
-}
 
 // ─────────────────────────────────────────────
 // Component
@@ -402,12 +386,9 @@ export default function RehabFriendChat({
                       />
                     )}
                     {msg.role === "assistant" ? (
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: renderMarkdown(msg.content),
-                        }}
-                        className="prose-sm"
-                      />
+                      <div className="prose-sm">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
                     ) : (
                       msg.content && <span>{msg.content}</span>
                     )}

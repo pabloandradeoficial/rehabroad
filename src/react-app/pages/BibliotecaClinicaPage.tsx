@@ -431,7 +431,7 @@ export default function BibliotecaClinicaPage() {
       {/* Schema */}
       <script 
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(generateSchema()) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(generateSchema()).replace(/</g, "\\u003c") }}
       />
 
       {/* Header */}
