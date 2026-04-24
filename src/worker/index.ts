@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Hono } from "hono";
 import { getSEOForRoute, injectSEOTags } from "./seo";
 import { sendEmail, emailTemplates } from "./lib/email";

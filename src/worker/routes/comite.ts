@@ -141,7 +141,6 @@ comiteRouter.post("/complete-case", async (c) => {
 // POST /chat — chat with an agent
 // ─────────────────────────────────────────────
 comiteRouter.post("/chat", async (c) => {
-  const user = c.get("user" as never) as { id: string };
   const db = c.env.DB;
   const body = await c.req.json<{
     agentId: string;

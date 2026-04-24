@@ -1,4 +1,4 @@
-import type { Context, MiddlewareHandler, Next } from "hono";
+import type { Context, MiddlewareHandler } from "hono";
 import { getCookie } from "hono/cookie";
 
 export type HonoVariables = {

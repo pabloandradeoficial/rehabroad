@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useNavigate } from "react-router";
 import { Lock, CheckCircle2, Sparkles, ArrowRight, Clock } from "lucide-react";
