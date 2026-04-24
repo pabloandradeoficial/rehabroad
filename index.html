@@ -3,6 +3,18 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover"/>
     <meta name="theme-color" content="#0f172a"/>
+    <!-- Anti-FOUC: aplica classe de tema antes do primeiro paint -->
+    <script>
+      (function(){
+        try {
+          var t = localStorage.getItem('rehabroad-theme') || 'system';
+          var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.add(dark ? 'dark' : 'light');
+        } catch(e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
     

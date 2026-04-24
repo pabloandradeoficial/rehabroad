@@ -7,7 +7,7 @@ plugins = []
 [functions."*"]
 
 [build]
-publish = "C:\\Users\\Pablo Andrade\\Desktop\\rehabroad\\rehabroad-main\\dist"
+publish = "C:\\Users\\Pablo Andrade\\Desktop\\Fisioterapia e Projetos\\rehabroad\\rehabroad-main\\dist"
 publishOrigin = "config"
 commandOrigin = "config"
 command = "npm run build"
@@ -60,6 +60,7 @@ X-Frame-Options = "DENY"
 X-Content-Type-Options = "nosniff"
 X-XSS-Protection = "1; mode=block"
 Referrer-Policy = "strict-origin-when-cross-origin"
+Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://api.openai.com https://*.rehabroad.workers.dev; frame-ancestors 'none'"
 
 [[redirects]]
 from = "/api/*"
