@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Hono } from "hono";
 import { authMiddleware, splitDelimitedText } from "../../lib/helpers";
 
@@ -35,7 +34,33 @@ interface StructuredSuporte {
   diagnosticHypotheses: DiagnosticHypothesis[];
 }
 
-function generateStructuredSuporte(evaluation: any, caminho: any, evolution: any): StructuredSuporte {
+interface EvaluationRow {
+  pain_level: number | null;
+  pain_location: string | null;
+  chief_complaint: string | null;
+  history?: string | null;
+  functional_status?: string | null;
+}
+
+interface EvolutionRow {
+  pain_level: number | null;
+  patient_response?: string | null;
+  observations?: string | null;
+  functional_status?: string | null;
+  procedures?: string | null;
+  session_date?: string;
+}
+
+interface CaminhoRow {
+  pain_pattern: string | null;
+  red_flags: string | null;
+  treatment_goals: string | null;
+  aggravating_factors?: string | null;
+  relieving_factors?: string | null;
+  functional_limitations?: string | null;
+}
+
+function generateStructuredSuporte(evaluation: EvaluationRow | null, caminho: CaminhoRow | null, evolution: EvolutionRow | null): StructuredSuporte {
   const insights: ClinicalInsight[] = [];
   const nextSteps: string[] = [];
 
@@ -208,7 +233,7 @@ function generateStructuredSuporte(evaluation: any, caminho: any, evolution: any
   };
 }
 
-function generateDiagnosticHypotheses(evaluation: any, caminho: any): DiagnosticHypothesis[] {
+function generateDiagnosticHypotheses(evaluation: EvaluationRow | null, caminho: CaminhoRow | null): DiagnosticHypothesis[] {
   const hypotheses: DiagnosticHypothesis[] = [];
 
   if (!evaluation) return hypotheses;
@@ -535,15 +560,15 @@ export function registerSuporteRoutes(router: Hono<{ Bindings: Env }>) {
 
     const evaluation = await c.env.DB.prepare(
       `SELECT * FROM evaluations WHERE patient_id = ? AND type = 'initial' ORDER BY created_at DESC LIMIT 1`
-    ).bind(patientId).first();
+    ).bind(patientId).first<EvaluationRow>();
 
     const caminho = await c.env.DB.prepare(
       `SELECT * FROM caminho WHERE patient_id = ?`
-    ).bind(patientId).first();
+    ).bind(patientId).first<CaminhoRow>();
 
     const latestEvolution = await c.env.DB.prepare(
       `SELECT * FROM evolutions WHERE patient_id = ? ORDER BY session_date DESC LIMIT 1`
-    ).bind(patientId).first();
+    ).bind(patientId).first<EvolutionRow>();
 
     const structured = generateStructuredSuporte(evaluation, caminho, latestEvolution);
 
