@@ -123,7 +123,9 @@ export default function ComiteLibrary() {
                 try {
                   const history = JSON.parse(item.history_json || "[]");
                   messageCount = history.filter((m: ComiteMessage) => m.role === "assistant").length;
-                } catch { }
+                } catch {
+                  // history may not parse — leave count at 0
+                }
 
                 return (
                   <motion.div

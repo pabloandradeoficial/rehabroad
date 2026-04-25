@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Hono } from "hono";
 import { authMiddleware } from "../../lib/helpers";
 

@@ -79,7 +79,6 @@ function buildWeekDots(checkins7dias: CheckinDay[]) {
 // ─── DifficultyButton ─────────────────────────────────────────────────────────
 
 function DifficultyButton({
-  value: _value,
   label,
   selected,
   onClick,
