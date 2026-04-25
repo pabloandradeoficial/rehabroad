@@ -221,14 +221,20 @@ function exportPDF(
 
 // ─── Chart tooltip ────────────────────────────────────────────────────────────
 
-function ChartTooltip({ active, payload, label }: any) {
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: { dataKey?: string; color?: string; name?: string; value?: number }[];
+  label?: string;
+}
+
+function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-background border border-border rounded-lg shadow-lg p-3 text-sm">
       <p className="font-semibold mb-1">{label}</p>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <p key={p.dataKey} style={{ color: p.color }}>
-          {p.name}: {formatCurrency(p.value)}
+          {p.name}: {formatCurrency(p.value ?? 0)}
         </p>
       ))}
     </div>

@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/react-app/lib/api";
+import type { Evolution } from "./useEvolutions";
 
 export interface AlertStatus {
   status: "green" | "yellow" | "red";
@@ -8,7 +8,7 @@ export interface AlertStatus {
   message: string;
   details: string[];
   evolutionCount: number;
-  lastEvolution: any;
+  lastEvolution: Evolution | null;
 }
 
 export interface AlertOverviewItem {

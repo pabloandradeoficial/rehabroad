@@ -1,6 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/react-app/lib/api";
+import type { Evaluation } from "./useEvaluations";
+import type { Evolution } from "./useEvolutions";
+
+export interface CaminhoRecord {
+  id?: number;
+  patient_id?: number;
+  pain_pattern: string | null;
+  aggravating_factors: string | null;
+  relieving_factors: string | null;
+  functional_limitations: string | null;
+  treatment_goals: string | null;
+  red_flags: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface ClinicalInsight {
   category: "pain" | "progression" | "region" | "caminho" | "evolution" | "alert";
@@ -33,9 +47,9 @@ export interface StructuredSuporte {
 }
 
 export interface SuporteData {
-  evaluation: any;
-  caminho: any;
-  latestEvolution: any;
+  evaluation: Evaluation | null;
+  caminho: CaminhoRecord | null;
+  latestEvolution: Evolution | null;
   suggestions: string[];
   structured?: StructuredSuporte | null;
 }

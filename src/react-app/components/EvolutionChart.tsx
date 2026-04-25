@@ -114,9 +114,9 @@ export default function EvolutionChart({ evolutions, evaluations = [] }: Evoluti
     return null;
   }
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payload: ChartDataPoint }[] }) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload as ChartDataPoint;
+      const data = payload[0].payload;
       return (
         <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-3 min-w-[140px]">
           <p className="text-xs text-muted-foreground mb-1">{data.label}</p>
@@ -293,12 +293,12 @@ export default function EvolutionChart({ evolutions, evaluations = [] }: Evoluti
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
                   fill="url(#painGradient)"
-                  dot={(props: any) => {
+                  dot={(props: { cx?: number; cy?: number; payload?: ChartDataPoint }) => {
                     const { cx, cy, payload } = props;
-                    const isEvaluation = payload.type === "evaluation";
+                    const isEvaluation = payload?.type === "evaluation";
                     return (
                       <circle
-                        key={`dot-${payload.date}`}
+                        key={`dot-${payload?.date}`}
                         cx={cx}
                         cy={cy}
                         r={isEvaluation ? 6 : 4}
