@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Hono } from "hono";
 import { authMiddleware } from "../../lib/helpers";
 
@@ -66,7 +65,15 @@ export function registerEvolutionsRoutes(router: Hono<{ Bindings: Env }>) {
       `SELECT e.* FROM evolutions e
        JOIN patients p ON e.patient_id = p.id
        WHERE e.id = ? AND p.user_id = ?`
-    ).bind(evolutionId, user!.id).first();
+    ).bind(evolutionId, user!.id).first<{
+      session_date: string;
+      pain_level: number | null;
+      functional_status: string | null;
+      procedures: string | null;
+      patient_response: string | null;
+      observations: string | null;
+      attendance_status: string | null;
+    }>();
 
     if (!evolution) {
       return c.json({ error: "Evolution not found" }, 404);
@@ -85,13 +92,13 @@ export function registerEvolutionsRoutes(router: Hono<{ Bindings: Env }>) {
        WHERE id = ?
        RETURNING *`
     ).bind(
-      body.session_date || (evolution as any).session_date,
-      body.pain_level ?? (evolution as any).pain_level,
-      body.functional_status || (evolution as any).functional_status,
-      body.procedures || (evolution as any).procedures,
-      body.patient_response || (evolution as any).patient_response,
-      body.observations || (evolution as any).observations,
-      body.attendance_status || (evolution as any).attendance_status,
+      body.session_date || evolution.session_date,
+      body.pain_level ?? evolution.pain_level,
+      body.functional_status || evolution.functional_status,
+      body.procedures || evolution.procedures,
+      body.patient_response || evolution.patient_response,
+      body.observations || evolution.observations,
+      body.attendance_status || evolution.attendance_status,
       evolutionId
     ).first();
 

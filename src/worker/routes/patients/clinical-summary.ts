@@ -21,15 +21,29 @@ export function registerClinicalSummaryRoutes(router: Hono<{ Bindings: Env }>) {
 
     const { results: evaluations } = await c.env.DB.prepare(
       `SELECT * FROM evaluations WHERE patient_id = ? ORDER BY created_at ASC`
-    ).bind(patientId).all();
+    ).bind(patientId).all<{
+      type: string;
+      pain_level: number | null;
+      pain_location: string | null;
+      chief_complaint: string | null;
+      created_at: string;
+    }>();
 
     const { results: evolutions } = await c.env.DB.prepare(
       `SELECT * FROM evolutions WHERE patient_id = ? ORDER BY session_date ASC`
-    ).bind(patientId).all();
+    ).bind(patientId).all<{
+      pain_level: number | null;
+      patient_response: string | null;
+      session_date: string;
+    }>();
 
     const caminho = await c.env.DB.prepare(
       `SELECT * FROM caminho WHERE patient_id = ?`
-    ).bind(patientId).first() as any;
+    ).bind(patientId).first<{
+      pain_pattern: string | null;
+      red_flags: string | null;
+      treatment_goals: string | null;
+    }>();
 
     const initialEval = evaluations.find((e: any) => e.type === "initial") as any;
     const lastEvolution = evolutions.length > 0 ? evolutions[evolutions.length - 1] as any : null;

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Hono } from "hono";
 import { authMiddleware } from "../../lib/helpers";
 
@@ -6,7 +5,16 @@ import { authMiddleware } from "../../lib/helpers";
 // ALERTAS (ALERTS) API
 // ============================================
 
-function calculateAlertStatus(initialEval: any, evolutions: any[]): {
+interface InitialEval {
+  pain_level: number | null;
+}
+
+interface EvolutionRow {
+  pain_level: number | null;
+  patient_response: string | null;
+}
+
+function calculateAlertStatus(initialEval: InitialEval | null, evolutions: EvolutionRow[]): {
   status: "green" | "yellow" | "red";
   color: string;
   message: string;
@@ -40,7 +48,7 @@ function calculateAlertStatus(initialEval: any, evolutions: any[]): {
   const recentEvolutions = evolutions.slice(-3);
   let trend = "stable";
   if (recentEvolutions.length >= 2) {
-    const painValues = recentEvolutions.map((e: any) => e.pain_level || 0);
+    const painValues = recentEvolutions.map((e) => e.pain_level || 0);
     const firstPain = painValues[0];
     const lastPain = painValues[painValues.length - 1];
     if (lastPain < firstPain) trend = "improving";
@@ -92,13 +100,13 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
 
     const { results: evolutions } = await c.env.DB.prepare(
       `SELECT * FROM evolutions WHERE patient_id = ? ORDER BY session_date ASC`
-    ).bind(patientId).all();
+    ).bind(patientId).all<EvolutionRow>();
 
     const initialEval = await c.env.DB.prepare(
       `SELECT * FROM evaluations WHERE patient_id = ? AND type = 'initial' ORDER BY created_at ASC LIMIT 1`
-    ).bind(patientId).first();
+    ).bind(patientId).first<InitialEval>();
 
-    const alertStatus = calculateAlertStatus(initialEval, evolutions as any[]);
+    const alertStatus = calculateAlertStatus(initialEval, evolutions);
 
     return c.json({
       status: alertStatus.status,
@@ -119,9 +127,15 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
        (SELECT pain_level FROM evolutions WHERE patient_id = p.id ORDER BY session_date DESC LIMIT 1) as last_pain_level,
        (SELECT pain_level FROM evaluations WHERE patient_id = p.id AND type = 'initial' ORDER BY created_at ASC LIMIT 1) as initial_pain_level
        FROM patients p WHERE p.user_id = ?`
-    ).bind(user!.id).all();
+    ).bind(user!.id).all<{
+      id: number;
+      name: string;
+      evolution_count: number;
+      last_pain_level: number | null;
+      initial_pain_level: number | null;
+    }>();
 
-    const overview = patients.map((patient: any) => {
+    const overview = patients.map((patient) => {
       let status: "green" | "yellow" | "red" = "yellow";
       let message = "Aguardando avaliação";
 
