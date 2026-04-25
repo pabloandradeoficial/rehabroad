@@ -1,15 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "react-router";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import {
   GraduationCap,
-  MapPin,
-  Dumbbell,
-  Stethoscope,
-  FileText,
   BookOpen,
-  ArrowLeft,
   LogIn,
   LogOut,
   Flame,
@@ -19,20 +14,13 @@ import {
   Grid3X3,
   Activity,
   Check,
-  Zap,
-  ClipboardList,
   Play,
   ChevronRight,
-  Users,
   Trophy,
   Share2,
-  Copy,
-  X,
   Globe,
-  Brain,
   Lock,
   Award,
-  Briefcase,
 } from "lucide-react";
 import {
   WeeklyProgressChart,
@@ -42,299 +30,22 @@ import {
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
-import PainMapModule from "./student/PainMapModule";
-import KeyMusclesModule from "./student/KeyMusclesModule";
-import OrthopedicTestsModule from "./student/OrthopedicTestsModule";
-import InitialTreatmentsModule from "./student/InitialTreatmentsModule";
-import StudentDashboard from "./StudentDashboard";
-import DailyTrainingModule from "./student/DailyTrainingModule";
-import StudentCommunity from "./student/StudentCommunity";
-import ContentLibrary from "./student/ContentLibrary";
-import StudentReferral from "./student/StudentReferral";
-import ElectrotherapyModule from "./student/ElectrotherapyModule";
-import BiomechanicsModule from "./student/BiomechanicsModule";
-import AnamneseModule from "./student/AnamneseModule";
-import FlashcardsModule from "./student/FlashcardsModule";
-import AnamneseSimulator from "./student/AnamneseSimulator";
+import { StudentModuleRouter } from "./student/student-hub/StudentModuleRouter";
 import { useLanguage } from "@/react-app/contexts/LanguageContext";
-
-type ModuleType =
-  | "hub"
-  | "daily-training"
-  | "pain-map"
-  | "muscles"
-  | "tests"
-  | "treatments"
-  | "cases"
-  | "community"
-  | "library"
-  | "referral"
-  | "electrotherapy"
-  | "biomechanics"
-  | "anamnese"
-  | "flashcards"
-  | "anamnese-simulator";
-
-interface ModuleCard {
-  id: ModuleType;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  gradient: string;
-  iconBg: string;
-}
-
-interface StudentProgress {
-  cases_completed: number;
-  cases_correct: number;
-  modules_visited: string[];
-  last_module: string | null;
-  total_time_minutes: number;
-  streak: number;
-  last_streak_date: string | null;
-  daily_challenge_date: string | null;
-  daily_challenge_case_id: string | null;
-  avatar_url: string | null;
-  estagio_atual?: string | null;
-  ponte_pro_shown?: number;
-}
-
-interface RegionProgress {
-  regiao: string;
-  casos_resolvidos: number;
-  casos_total: number;
-  acertos: number;
-  dominio_percent: number;
-  status: "locked" | "in_progress" | "dominated";
-}
-
-interface StoredCaseProgress {
-  caseId: string;
-  correct?: boolean;
-  selectedOption?: string;
-  completedAt?: string;
-}
-
-const GUEST_PROGRESS_KEY = "rehabroad_student_progress_guest";
-const GUEST_STREAK_KEY = "rehabroad_student_streak_guest";
-
-function parseStoredCaseProgress(raw: string | null): StoredCaseProgress[] {
-  if (!raw) return [];
-
-  try {
-    const data = JSON.parse(raw);
-
-    if (!Array.isArray(data)) {
-      return [];
-    }
-
-    return data.filter(
-      (item): item is StoredCaseProgress =>
-        Boolean(item) &&
-        typeof item === "object" &&
-        typeof item.caseId === "string"
-    );
-  } catch {
-    return [];
-  }
-}
-
-function summarizeStoredCaseProgress(items: StoredCaseProgress[]) {
-  return {
-    casesCompleted: items.length,
-    casesCorrect: items.filter((item) => item.correct).length,
-  };
-}
-
-function readStoredStreak(key: string): number {
-  const value = parseInt(localStorage.getItem(key) || "0", 10);
-  return Number.isFinite(value) && value > 0 ? value : 0;
-}
-
-function mergeStoredCaseProgress(
-  existingItems: StoredCaseProgress[],
-  incomingItems: StoredCaseProgress[]
-): StoredCaseProgress[] {
-  const merged = new Map<string, StoredCaseProgress>();
-
-  const toTimestamp = (value?: string) => {
-    const timestamp = Date.parse(value ?? "");
-    return Number.isFinite(timestamp) ? timestamp : 0;
-  };
-
-  for (const item of [...existingItems, ...incomingItems]) {
-    const current = merged.get(item.caseId);
-
-    if (!current) {
-      merged.set(item.caseId, item);
-      continue;
-    }
-
-    const currentTime = toTimestamp(current.completedAt);
-    const itemTime = toTimestamp(item.completedAt);
-
-    if (itemTime > currentTime) {
-      merged.set(item.caseId, { ...current, ...item });
-      continue;
-    }
-
-    if (item.correct && !current.correct) {
-      merged.set(item.caseId, { ...current, ...item, correct: true });
-    }
-  }
-
-  return Array.from(merged.values()).sort(
-    (a, b) => toTimestamp(a.completedAt) - toTimestamp(b.completedAt)
-  );
-}
-
-function migrateGuestProgressToUser(userId: string) {
-  try {
-    const guestProgress = parseStoredCaseProgress(
-      localStorage.getItem(GUEST_PROGRESS_KEY)
-    );
-    const guestStreak = readStoredStreak(GUEST_STREAK_KEY);
-
-    if (guestProgress.length === 0 && guestStreak === 0) {
-      return;
-    }
-
-    const userProgressKey = `rehabroad_student_progress_${userId}`;
-    const userStreakKey = `rehabroad_student_streak_${userId}`;
-
-    const existingUserProgress = parseStoredCaseProgress(
-      localStorage.getItem(userProgressKey)
-    );
-
-    const mergedProgress = mergeStoredCaseProgress(
-      existingUserProgress,
-      guestProgress
-    );
-
-    localStorage.setItem(userProgressKey, JSON.stringify(mergedProgress));
-    localStorage.setItem(
-      userStreakKey,
-      String(Math.max(readStoredStreak(userStreakKey), guestStreak))
-    );
-
-    localStorage.removeItem(GUEST_PROGRESS_KEY);
-    localStorage.removeItem(GUEST_STREAK_KEY);
-  } catch {
-    // migration failure is non-critical — guest data simply isn't carried over
-  }
-}
-
-// LEVEL 2: Main clinical modules
-const mainModules: ModuleCard[] = [
-  {
-    id: "pain-map",
-    title: "Mapa da Dor",
-    description: "Relacione regiões do corpo com hipóteses clínicas",
-    icon: <MapPin className="w-5 h-5" />,
-    gradient: "from-rose-500 to-pink-500",
-    iconBg: "bg-gradient-to-br from-rose-500 to-pink-500",
-  },
-  {
-    id: "tests",
-    title: "Testes Ortopédicos",
-    description: "Execução e interpretação dos testes essenciais",
-    icon: <Stethoscope className="w-5 h-5" />,
-    gradient: "from-emerald-500 to-teal-500",
-    iconBg: "bg-gradient-to-br from-emerald-500 to-teal-500",
-  },
-  {
-    id: "muscles",
-    title: "Músculos-Chave",
-    description: "Anatomia palpatória e relação clínica",
-    icon: <Dumbbell className="w-5 h-5" />,
-    gradient: "from-violet-500 to-purple-500",
-    iconBg: "bg-gradient-to-br from-violet-500 to-purple-500",
-  },
-  {
-    id: "treatments",
-    title: "Condutas Iniciais",
-    description: "Objetivos e condutas para as principais condições",
-    icon: <FileText className="w-5 h-5" />,
-    gradient: "from-blue-500 to-indigo-500",
-    iconBg: "bg-gradient-to-br from-blue-500 to-indigo-500",
-  },
-  {
-    id: "cases",
-    title: "Casos Clínicos",
-    description: "Pratique raciocínio diagnóstico com casos simulados",
-    icon: <BookOpen className="w-5 h-5" />,
-    gradient: "from-cyan-500 to-blue-500",
-    iconBg: "bg-gradient-to-br from-cyan-500 to-blue-500",
-  },
-];
-
-// LEVEL 3: Support & library modules
-const supportModules: ModuleCard[] = [
-  {
-    id: "library",
-    title: "Biblioteca",
-    description: "Conteúdos de aula organizados por área clínica",
-    icon: <BookOpen className="w-5 h-5" />,
-    gradient: "from-indigo-500 to-violet-500",
-    iconBg: "bg-gradient-to-br from-indigo-500 to-violet-500",
-  },
-  {
-    id: "community",
-    title: "Discussão Clínica",
-    description: "Tire dúvidas e discuta casos com outros estudantes",
-    icon: <MessageCircle className="w-5 h-5" />,
-    gradient: "from-pink-500 to-rose-500",
-    iconBg: "bg-gradient-to-br from-pink-500 to-rose-500",
-  },
-  {
-    id: "biomechanics",
-    title: "Biomecânica Articular",
-    description: "Movimentos, ADM, planos e eixos das articulações",
-    icon: <Activity className="w-5 h-5" />,
-    gradient: "from-indigo-500 to-blue-600",
-    iconBg: "bg-gradient-to-br from-indigo-500 to-blue-600",
-  },
-  {
-    id: "electrotherapy",
-    title: "Eletroterapia",
-    description: "Parâmetros de TENS, ultrassom, laser e mais",
-    icon: <Zap className="w-5 h-5" />,
-    gradient: "from-violet-500 to-purple-600",
-    iconBg: "bg-gradient-to-br from-violet-500 to-purple-600",
-  },
-  {
-    id: "anamnese",
-    title: "Anamnese e Avaliação",
-    description: "Entrevista clínica, exame físico e documentação",
-    icon: <ClipboardList className="w-5 h-5" />,
-    gradient: "from-blue-500 to-cyan-500",
-    iconBg: "bg-gradient-to-br from-blue-500 to-cyan-500",
-  },
-  {
-    id: "referral",
-    title: "Convide um Colega",
-    description: "Estude com colegas e evoluam juntos",
-    icon: <Users className="w-5 h-5" />,
-    gradient: "from-pink-500 to-purple-500",
-    iconBg: "bg-gradient-to-br from-pink-500 to-purple-500",
-  },
-  {
-    id: "flashcards",
-    title: "Flashcards",
-    description: "Revise testes ortopédicos com cartões de estudo",
-    icon: <Brain className="w-5 h-5" />,
-    gradient: "from-cyan-500 to-teal-500",
-    iconBg: "bg-gradient-to-br from-cyan-500 to-teal-500",
-  },
-  {
-    id: "anamnese-simulator",
-    title: "Simulador de Anamnese",
-    description: "Pratique entrevista clínica com paciente simulado por IA",
-    icon: <MessageCircle className="w-5 h-5" />,
-    gradient: "from-violet-500 to-indigo-500",
-    iconBg: "bg-gradient-to-br from-violet-500 to-indigo-500",
-  },
-];
+import type { ModuleType, RegionProgress, StudentProgress } from "./student/student-hub/types";
+import {
+  GUEST_PROGRESS_KEY,
+  GUEST_STREAK_KEY,
+  migrateGuestProgressToUser,
+  parseStoredCaseProgress,
+  readStoredStreak,
+  summarizeStoredCaseProgress,
+} from "./student/student-hub/progress-helpers";
+import { mainModules, supportModules } from "./student/student-hub/modules-config";
+import { CelebrationModal } from "./student/student-hub/CelebrationModal";
+import { InternshipModal } from "./student/student-hub/InternshipModal";
+import { ProBridgeBanner } from "./student/student-hub/ProBridgeBanner";
+import { StudentModuleCard } from "./student/student-hub/StudentModuleCard";
 
 export default function StudentHub() {
   const { user, isPending, loginWithGoogle, logout } = useAppAuth();
@@ -748,90 +459,19 @@ export default function StudentHub() {
     }
   };
 
-  const pageTransition = {
-    initial: { opacity: 0, x: 20 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -20 },
-  };
-
   // Render modules
   if (activeModule !== "hub") {
     return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeModule}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          variants={pageTransition}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="min-h-screen"
-        >
-          {activeModule === "daily-training" && (
-            <DailyTrainingModule
-              onBack={handleBack}
-              userId={user?.id}
-              onComplete={handleDailyComplete}
-              currentStreak={currentStreak}
-              dailyChallengeCompleted={dailyChallengeCompleted}
-            />
-          )}
-          {activeModule === "pain-map" && <PainMapModule onBack={handleBack} />}
-          {activeModule === "muscles" && (
-            <KeyMusclesModule onBack={handleBack} />
-          )}
-          {activeModule === "tests" && (
-            <OrthopedicTestsModule onBack={handleBack} />
-          )}
-          {activeModule === "treatments" && (
-            <InitialTreatmentsModule onBack={handleBack} />
-          )}
-          {activeModule === "community" && (
-            <StudentCommunity onBack={handleBack} />
-          )}
-          {activeModule === "library" && (
-            <ContentLibrary
-              onBack={handleBack}
-              onTestCase={() => setActiveModule("cases")}
-            />
-          )}
-          {activeModule === "referral" && (
-            <StudentReferral onBack={handleBack} />
-          )}
-          {activeModule === "electrotherapy" && (
-            <ElectrotherapyModule onBack={handleBack} />
-          )}
-          {activeModule === "biomechanics" && (
-            <BiomechanicsModule onBack={handleBack} />
-          )}
-          {activeModule === "anamnese" && (
-            <AnamneseModule onBack={handleBack} />
-          )}
-          {activeModule === "flashcards" && (
-            <FlashcardsModule onBack={handleBack} />
-          )}
-          {activeModule === "anamnese-simulator" && (
-            <AnamneseSimulator onBack={handleBack} />
-          )}
-          {activeModule === "cases" && (
-            <div className="min-h-screen bg-gray-50">
-              <header className="bg-white border-b border-gray-200">
-                <div className="max-w-5xl mx-auto px-4 py-4">
-                  <Button
-                    variant="ghost"
-                    onClick={handleBack}
-                    className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 gap-2"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    Voltar
-                  </Button>
-                </div>
-              </header>
-              <StudentDashboard onProgressUpdate={fetchProgress} />
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+      <StudentModuleRouter
+        activeModule={activeModule}
+        onBack={handleBack}
+        onSelectModule={setActiveModule}
+        onDailyComplete={handleDailyComplete}
+        fetchProgress={fetchProgress}
+        userId={user?.id}
+        currentStreak={currentStreak}
+        dailyChallengeCompleted={dailyChallengeCompleted}
+      />
     );
   }
 
@@ -841,258 +481,21 @@ export default function StudentHub() {
       : 0;
 
   // Module Card Component
-  const ModuleCardComponent = ({
-    module,
-    size = "normal",
-  }: {
-    module: ModuleCard;
-    size?: "normal" | "small";
-  }) => {
-    const progressValue =
-      moduleProgress[module.id as keyof typeof moduleProgress] || 0;
-    const isComplete = progressValue >= 100;
-    const isSmall = size === "small";
-
-    return (
-      <motion.div
-        whileTap={{ scale: 0.97 }}
-        onClick={() => handleSelectModule(module.id)}
-        className={`
-          relative bg-white rounded-xl cursor-pointer
-          active:bg-gray-50 transition-all duration-200
-          border border-gray-200 active:border-gray-300
-          touch-manipulation group shadow-sm hover:shadow-md hover:border-gray-300
-          ${isSmall ? "p-3 min-h-[100px]" : "p-4 min-h-[130px]"}
-        `}
-      >
-        {progressValue > 0 && (
-          <div className="absolute top-2 right-2">
-            {isComplete ? (
-              <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                <Check className="w-2.5 h-2.5" />
-              </span>
-            ) : (
-              <span className="text-[9px] font-medium text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full">
-                {Math.round(progressValue)}%
-              </span>
-            )}
-          </div>
-        )}
-
-        <div
-          className={`
-          ${isSmall ? "w-8 h-8 rounded-lg mb-2" : "w-10 h-10 rounded-xl mb-3"}
-          ${module.iconBg} flex items-center justify-center text-white
-          shadow-md group-active:scale-95 transition-transform duration-200
-        `}
-        >
-          {module.icon}
-        </div>
-
-        <h3
-          className={`font-bold text-gray-900 leading-tight ${
-            isSmall ? "text-xs" : "text-sm"
-          }`}
-        >
-          {module.title}
-        </h3>
-
-        <p
-          className={`text-gray-500 leading-snug mt-0.5 line-clamp-2 ${
-            isSmall ? "text-[10px]" : "text-xs"
-          }`}
-        >
-          {module.description}
-        </p>
-
-        {progressValue > 0 && progressValue < 100 && (
-          <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressValue}%` }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            />
-          </div>
-        )}
-      </motion.div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
-      {/* 100% Completion Celebration Modal */}
-      <AnimatePresence>
-        {showCelebration && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-            onClick={() => {
-              setShowCelebration(false);
-              setCelebrationDismissed(true);
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.8, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl relative overflow-hidden"
-            >
-              {/* Confetti background */}
-              <div className="absolute inset-0 pointer-events-none">
-                {[...Array(20)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 rounded-full"
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      top: `${Math.random() * 100}%`,
-                      background: [
-                        "#10b981",
-                        "#f59e0b",
-                        "#8b5cf6",
-                        "#ef4444",
-                        "#3b82f6",
-                      ][i % 5],
-                    }}
-                    initial={{ scale: 0, rotate: 0 }}
-                    animate={{
-                      scale: [0, 1, 0.5],
-                      rotate: 360,
-                      y: [0, -20, 100],
-                    }}
-                    transition={{
-                      duration: 2,
-                      delay: i * 0.1,
-                      repeat: Infinity,
-                      repeatDelay: 1,
-                    }}
-                  />
-                ))}
-              </div>
+      <CelebrationModal
+        open={showCelebration}
+        onClose={() => { setShowCelebration(false); setCelebrationDismissed(true); }}
+        onShareWhatsApp={handleShareWhatsApp}
+        onCopyLink={handleCopyLink}
+      />
 
-              {/* Close button */}
-              <button
-                onClick={() => {
-                  setShowCelebration(false);
-                  setCelebrationDismissed(true);
-                }}
-                className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400" />
-              </button>
+      <InternshipModal
+        open={showInternshipModal}
+        onSelect={(estagio) => void handleInternshipSelect(estagio)}
+        onSkip={() => setShowInternshipModal(false)}
+      />
 
-              {/* Trophy seal */}
-              <div className="relative mx-auto w-24 h-24 mb-4">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full animate-pulse" />
-                <div className="absolute inset-1 bg-gradient-to-br from-amber-300 to-yellow-400 rounded-full flex items-center justify-center">
-                  <Trophy className="w-10 h-10 text-amber-800" />
-                </div>
-                <div className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-1.5 border-2 border-white shadow-lg">
-                  <Check className="w-4 h-4 text-white" />
-                </div>
-              </div>
-
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                🎉 Parabéns!
-              </h2>
-              <p className="text-lg font-semibold text-emerald-600 mb-1">
-                100% Concluído!
-              </p>
-              <p className="text-sm text-gray-500 mb-6">
-                Você completou todo o treinamento clínico do REHABROAD. Seu
-                raciocínio clínico está afiado!
-              </p>
-
-              {/* Achievement badge preview */}
-              <div className="bg-gray-50 rounded-xl p-4 mb-4 border border-emerald-100">
-                <p className="text-xs text-gray-500 mb-2">
-                  Seu selo de conquista:
-                </p>
-                <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 shadow-sm border border-emerald-200">
-                  <Trophy className="w-5 h-5 text-amber-500" />
-                  <span className="font-bold text-gray-900">
-                    Fisioterapeuta Clínico Completo
-                  </span>
-                </div>
-              </div>
-
-              {/* Share buttons */}
-              <p className="text-xs text-gray-500 mb-3">
-                Compartilhe sua conquista:
-              </p>
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={handleShareWhatsApp}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-sm transition-colors"
-                >
-                  <Share2 className="w-4 h-4" />
-                  WhatsApp
-                </button>
-                <button
-                  onClick={handleCopyLink}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium text-sm transition-colors"
-                >
-                  <Copy className="w-4 h-4" />
-                  Copiar Link
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Internship Mode Modal */}
-      <AnimatePresence>
-        {showInternshipModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white rounded-2xl border border-gray-200 p-6 max-w-sm w-full shadow-2xl"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center">
-                  <Briefcase className="w-6 h-6 text-violet-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Modo Estágio</h3>
-                  <p className="text-xs text-gray-500">Personaliza os casos para seu nível</p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-700 mb-4">
-                Em qual fase do estágio você está? Vamos priorizar casos relevantes para você.
-              </p>
-              <div className="space-y-2">
-                {["Pré-estágio", "Estágio básico (1º período)", "Estágio intermediário (2º período)", "Estágio avançado / internato"].map((estagio) => (
-                  <button
-                    key={estagio}
-                    onClick={() => void handleInternshipSelect(estagio)}
-                    className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 hover:border-violet-400 hover:bg-violet-50 transition-colors text-sm font-medium text-gray-700"
-                  >
-                    {estagio}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setShowInternshipModal(false)}
-                className="w-full mt-3 text-xs text-gray-500 hover:text-gray-700"
-              >
-                Pular por enquanto
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
@@ -1280,37 +683,8 @@ export default function StudentHub() {
           </Card>
         )}
 
-        {/* Pro Bridge Banner */}
         {showProBridge && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative bg-gradient-to-r from-teal-600 to-emerald-600 rounded-xl p-4 shadow-lg overflow-hidden"
-          >
-            <button
-              onClick={() => void handleDismissProBridge()}
-              className="absolute top-2 right-2 p-1 rounded-full hover:bg-black/10 transition-colors"
-            >
-              <X className="w-4 h-4 text-white/70" />
-            </button>
-            <div className="pr-6">
-              <div className="flex items-center gap-2 mb-1">
-                <Zap className="w-4 h-4 text-yellow-300" />
-                <span className="text-white font-bold text-sm">Você está evoluindo rápido!</span>
-              </div>
-              <p className="text-white/80 text-xs mb-3">
-                Fisioterapeutas Pro usam o Rehabroad para prontuário, IA diagnóstica e muito mais.
-              </p>
-              <a
-                href="/login"
-                onClick={() => localStorage.setItem("loginMode", "professional")}
-                className="inline-flex items-center gap-1.5 bg-white text-teal-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white/90 transition-colors"
-              >
-                Conhecer o Plano Pro
-                <ChevronRight className="w-3 h-3" />
-              </a>
-            </div>
-          </motion.div>
+          <ProBridgeBanner onDismiss={() => void handleDismissProBridge()} />
         )}
 
         {currentStreak > 0 && (
@@ -1451,7 +825,12 @@ export default function StudentHub() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {mainModules.map((module) => (
-              <ModuleCardComponent key={module.id} module={module} />
+              <StudentModuleCard
+                key={module.id}
+                module={module}
+                progressValue={moduleProgress[module.id as keyof typeof moduleProgress] || 0}
+                onSelect={handleSelectModule}
+              />
             ))}
           </div>
         </section>
@@ -1463,10 +842,12 @@ export default function StudentHub() {
           </h2>
           <div className="grid grid-cols-3 gap-2">
             {supportModules.map((module) => (
-              <ModuleCardComponent
+              <StudentModuleCard
                 key={module.id}
                 module={module}
                 size="small"
+                progressValue={moduleProgress[module.id as keyof typeof moduleProgress] || 0}
+                onSelect={handleSelectModule}
               />
             ))}
           </div>

@@ -1,0 +1,126 @@
+import {
+  Activity,
+  BookOpen,
+  Brain,
+  ClipboardList,
+  Dumbbell,
+  FileText,
+  MapPin,
+  MessageCircle,
+  Stethoscope,
+  Users,
+  Zap,
+} from "lucide-react";
+import type { ModuleCard } from "./types";
+
+// LEVEL 2: Main clinical modules
+export const mainModules: ModuleCard[] = [
+  {
+    id: "pain-map",
+    title: "Mapa da Dor",
+    description: "Relacione regiões do corpo com hipóteses clínicas",
+    icon: <MapPin className="w-5 h-5" />,
+    gradient: "from-rose-500 to-pink-500",
+    iconBg: "bg-gradient-to-br from-rose-500 to-pink-500",
+  },
+  {
+    id: "tests",
+    title: "Testes Ortopédicos",
+    description: "Execução e interpretação dos testes essenciais",
+    icon: <Stethoscope className="w-5 h-5" />,
+    gradient: "from-emerald-500 to-teal-500",
+    iconBg: "bg-gradient-to-br from-emerald-500 to-teal-500",
+  },
+  {
+    id: "muscles",
+    title: "Músculos-Chave",
+    description: "Anatomia palpatória e relação clínica",
+    icon: <Dumbbell className="w-5 h-5" />,
+    gradient: "from-violet-500 to-purple-500",
+    iconBg: "bg-gradient-to-br from-violet-500 to-purple-500",
+  },
+  {
+    id: "treatments",
+    title: "Condutas Iniciais",
+    description: "Objetivos e condutas para as principais condições",
+    icon: <FileText className="w-5 h-5" />,
+    gradient: "from-blue-500 to-indigo-500",
+    iconBg: "bg-gradient-to-br from-blue-500 to-indigo-500",
+  },
+  {
+    id: "cases",
+    title: "Casos Clínicos",
+    description: "Pratique raciocínio diagnóstico com casos simulados",
+    icon: <BookOpen className="w-5 h-5" />,
+    gradient: "from-cyan-500 to-blue-500",
+    iconBg: "bg-gradient-to-br from-cyan-500 to-blue-500",
+  },
+];
+
+// LEVEL 3: Support & library modules
+export const supportModules: ModuleCard[] = [
+  {
+    id: "library",
+    title: "Biblioteca",
+    description: "Conteúdos de aula organizados por área clínica",
+    icon: <BookOpen className="w-5 h-5" />,
+    gradient: "from-indigo-500 to-violet-500",
+    iconBg: "bg-gradient-to-br from-indigo-500 to-violet-500",
+  },
+  {
+    id: "community",
+    title: "Discussão Clínica",
+    description: "Tire dúvidas e discuta casos com outros estudantes",
+    icon: <MessageCircle className="w-5 h-5" />,
+    gradient: "from-pink-500 to-rose-500",
+    iconBg: "bg-gradient-to-br from-pink-500 to-rose-500",
+  },
+  {
+    id: "biomechanics",
+    title: "Biomecânica Articular",
+    description: "Movimentos, ADM, planos e eixos das articulações",
+    icon: <Activity className="w-5 h-5" />,
+    gradient: "from-indigo-500 to-blue-600",
+    iconBg: "bg-gradient-to-br from-indigo-500 to-blue-600",
+  },
+  {
+    id: "electrotherapy",
+    title: "Eletroterapia",
+    description: "Parâmetros de TENS, ultrassom, laser e mais",
+    icon: <Zap className="w-5 h-5" />,
+    gradient: "from-violet-500 to-purple-600",
+    iconBg: "bg-gradient-to-br from-violet-500 to-purple-600",
+  },
+  {
+    id: "anamnese",
+    title: "Anamnese e Avaliação",
+    description: "Entrevista clínica, exame físico e documentação",
+    icon: <ClipboardList className="w-5 h-5" />,
+    gradient: "from-blue-500 to-cyan-500",
+    iconBg: "bg-gradient-to-br from-blue-500 to-cyan-500",
+  },
+  {
+    id: "referral",
+    title: "Convide um Colega",
+    description: "Estude com colegas e evoluam juntos",
+    icon: <Users className="w-5 h-5" />,
+    gradient: "from-pink-500 to-purple-500",
+    iconBg: "bg-gradient-to-br from-pink-500 to-purple-500",
+  },
+  {
+    id: "flashcards",
+    title: "Flashcards",
+    description: "Revise testes ortopédicos com cartões de estudo",
+    icon: <Brain className="w-5 h-5" />,
+    gradient: "from-cyan-500 to-teal-500",
+    iconBg: "bg-gradient-to-br from-cyan-500 to-teal-500",
+  },
+  {
+    id: "anamnese-simulator",
+    title: "Simulador de Anamnese",
+    description: "Pratique entrevista clínica com paciente simulado por IA",
+    icon: <MessageCircle className="w-5 h-5" />,
+    gradient: "from-violet-500 to-indigo-500",
+    iconBg: "bg-gradient-to-br from-violet-500 to-indigo-500",
+  },
+];
