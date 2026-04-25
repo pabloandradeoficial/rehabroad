@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { useParams, useNavigate, Link } from "react-router";
 import { motion } from "framer-motion";
@@ -23,7 +23,7 @@ import { useEvolutions, type EvolutionFormData, type Evolution } from "@/react-a
 import { useAlertStatus } from "@/react-app/hooks/useAlertas";
 import { regioes } from "@/react-app/data/testesOrtopedicos";
 import ClinicalSummary from "@/react-app/components/ClinicalSummary";
-import EvolutionChart from "@/react-app/components/EvolutionChart";
+const EvolutionChart = lazy(() => import("@/react-app/components/EvolutionChart"));
 import NeuroFluxQuickAccess from "@/react-app/components/NeuroFluxQuickAccess";
 import { useToast } from "@/react-app/components/ui/microinteractions";
 import { PatientAvatar } from "@/react-app/components/PatientAvatar";
@@ -31,7 +31,7 @@ import { openWhatsApp, createContactMessage, createReminderMessage } from "@/rea
 import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
 import ClinicalInsights from "@/react-app/components/ClinicalInsights";
 import { HighlightedADM } from "@/react-app/lib/admHighlight";
-import PatientProgressDashboard from "@/react-app/components/PatientProgressDashboard";
+const PatientProgressDashboard = lazy(() => import("@/react-app/components/PatientProgressDashboard"));
 import HepPlanManager from "@/react-app/components/HepPlanManager";
 import ScribeButton, { type ScribeResult } from "@/react-app/components/ScribeButton";
 import { useFocusFirstInput } from "@/react-app/hooks/useFocusFirstInput";
@@ -727,7 +727,9 @@ export default function PatientDetailPage() {
 
                 {/* Evolution Chart */}
                 {!evolLoading && evolutions.length >= 1 && (
-                  <EvolutionChart evolutions={evolutions} evaluations={evaluations} />
+                  <Suspense fallback={<div className="flex justify-center py-12"><Spinner size="lg" /></div>}>
+                    <EvolutionChart evolutions={evolutions} evaluations={evaluations} />
+                  </Suspense>
                 )}
 
                 {evolLoading ? (
@@ -837,7 +839,9 @@ export default function PatientDetailPage() {
                     <p className="text-sm text-muted-foreground">Evolução clínica ao longo das sessões</p>
                   </div>
                 </div>
-                <PatientProgressDashboard patientId={id!} />
+                <Suspense fallback={<div className="flex justify-center py-12"><Spinner size="lg" /></div>}>
+                  <PatientProgressDashboard patientId={id!} />
+                </Suspense>
               </TabsContent>
 
               {/* === HEP TAB === */}

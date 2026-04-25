@@ -36,7 +36,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/react-app/components/ui/dialog";
-import jsPDF from "jspdf";
+import type jsPDFType from "jspdf";
 import QRCode from "qrcode";
 import PremiumGate from "@/react-app/components/PremiumGate";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
@@ -226,7 +226,8 @@ function ExportacaoContent() {
 
       const { evaluations, evolutions } = await fetchPatientData(patient.id);
 
-      const doc = new jsPDF();
+      const { default: jsPDF } = await import("jspdf");
+      const doc: jsPDFType = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 20;
