@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import {
@@ -115,11 +115,6 @@ export default function StudentCommunity({ onBack }: Props) {
 
   useEffect(() => { window.scrollTo(0, 0) }, []);
 
-  useEffect(() => {
-    void fetchPosts();
-    void fetchLikes();
-  }, [selectedCategory]);
-
   const startStudentLogin = async () => {
     try {
       localStorage.setItem("loginMode", "student");
@@ -129,7 +124,7 @@ export default function StudentCommunity({ onBack }: Props) {
     }
   };
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       const url =
@@ -146,9 +141,9 @@ export default function StudentCommunity({ onBack }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory]);
 
-  const fetchLikes = async () => {
+  const fetchLikes = useCallback(async () => {
     try {
       const res = await fetch("/api/student/community/likes", {
         credentials: "include",
@@ -161,7 +156,12 @@ export default function StudentCommunity({ onBack }: Props) {
     } catch {
       // ignore
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchPosts();
+    void fetchLikes();
+  }, [fetchPosts, fetchLikes]);
 
   const fetchPostDetails = async (postId: number) => {
     try {

@@ -98,6 +98,29 @@ export function useHepPlan(patientId: number | undefined) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchExercises = useCallback(async (planId: number) => {
+    const res = await apiFetch(`/api/hep/plans/${planId}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const data = await res.json() as { exercises: HepExercise[]; unreadComments?: PatientComment[] };
+      setExercises(data.exercises ?? []);
+      setUnreadComments(data.unreadComments ?? []);
+    }
+  }, []);
+
+  const fetchAdherence = useCallback(async (planId: number) => {
+    const res = await apiFetch(`/api/hep/plans/${planId}/adherence`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const data = await res.json() as HepAdherence;
+      setAdherence(data);
+    }
+  }, []);
+
   const fetchPlan = useCallback(async () => {
     if (!patientId) return;
     setLoading(true);
@@ -125,30 +148,7 @@ export function useHepPlan(patientId: number | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [patientId]);
-
-  const fetchExercises = useCallback(async (planId: number) => {
-    const res = await apiFetch(`/api/hep/plans/${planId}`, {
-      method: "GET",
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data = await res.json() as { exercises: HepExercise[]; unreadComments?: PatientComment[] };
-      setExercises(data.exercises ?? []);
-      setUnreadComments(data.unreadComments ?? []);
-    }
-  }, []);
-
-  const fetchAdherence = useCallback(async (planId: number) => {
-    const res = await apiFetch(`/api/hep/plans/${planId}/adherence`, {
-      method: "GET",
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data = await res.json() as HepAdherence;
-      setAdherence(data);
-    }
-  }, []);
+  }, [patientId, fetchAdherence, fetchExercises]);
 
   useEffect(() => {
     void fetchPlan();

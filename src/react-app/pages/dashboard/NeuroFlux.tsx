@@ -678,7 +678,7 @@ function NeuroFluxContent() {
         }
       }
     }
-  }, [allPatients.length, selectedPatient, handleSelectPatient]);
+  }, [allPatients, selectedPatient, handleSelectPatient]);
 
   // ── Clear patient (full reset — used on mode switch to free)
   const handleClearPatient = useCallback(() => {

@@ -161,7 +161,7 @@ export default function ComiteAgent() {
       }
     };
     if (agentId) fetchData();
-  }, [agentId]);
+  }, [agentId, searchParams]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading || !agentId) return;

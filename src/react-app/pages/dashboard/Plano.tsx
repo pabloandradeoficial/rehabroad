@@ -106,7 +106,7 @@ export default function PlanoPage() {
     if (canceled) {
       toast.showInfo("Checkout cancelado.");
     }
-  }, [success, canceled]);
+  }, [success, canceled, refreshSubscription, toast]);
 
   // Clear URL params after showing message
   useEffect(() => {

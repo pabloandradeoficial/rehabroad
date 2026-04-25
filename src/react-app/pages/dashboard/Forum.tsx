@@ -137,7 +137,7 @@ export default function Forum() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, toast]);
 
   useEffect(() => {
     void fetchPosts();
