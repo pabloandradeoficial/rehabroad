@@ -2,39 +2,34 @@ import { useState, useMemo, lazy, Suspense } from "react";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { useParams, useNavigate, Link } from "react-router";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Phone, Mail, FileText, Plus, Loader2, Activity, CheckCircle, ClipboardList, Clock, Lightbulb, ExternalLink, Pencil, Heart, TrendingUp, Stethoscope, AlertCircle, MessageCircle, Bell, Send, Trash2, Dumbbell, Sparkles, ChevronRight } from "lucide-react";
+import { ArrowLeft, Calendar, Phone, Mail, FileText, Plus, Activity, CheckCircle, ClipboardList, Clock, Lightbulb, Pencil, Heart, TrendingUp, Stethoscope, AlertCircle, MessageCircle, Bell, Trash2, Dumbbell, Sparkles, ChevronRight } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Badge } from "@/react-app/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/react-app/components/ui/dialog";
-import { Label } from "@/react-app/components/ui/label";
-import { Input } from "@/react-app/components/ui/input";
 import { Spinner } from "@/react-app/components/ui/microinteractions";
 import { RouteGuard } from "@/react-app/components/layout/RouteGuard";
 import { PatientDetailSkeleton } from "@/react-app/components/DashboardSkeletons";
-import { DateInput } from "@/react-app/components/ui/DateInput";
-import { Textarea } from "@/react-app/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
-import { Slider } from "@/react-app/components/ui/slider";
 import { usePatient } from "@/react-app/hooks/usePatients";
 import { useEvaluations, type EvaluationFormData, type Evaluation } from "@/react-app/hooks/useEvaluations";
 import { useEvolutions, type EvolutionFormData, type Evolution } from "@/react-app/hooks/useEvolutions";
 import { useAlertStatus } from "@/react-app/hooks/useAlertas";
-import { regioes } from "@/react-app/data/testesOrtopedicos";
 import ClinicalSummary from "@/react-app/components/ClinicalSummary";
 const EvolutionChart = lazy(() => import("@/react-app/components/EvolutionChart"));
 import NeuroFluxQuickAccess from "@/react-app/components/NeuroFluxQuickAccess";
 import { useToast } from "@/react-app/components/ui/microinteractions";
 import { PatientAvatar } from "@/react-app/components/PatientAvatar";
-import { openWhatsApp, createContactMessage, createReminderMessage } from "@/react-app/lib/whatsapp";
+import { openWhatsApp, createContactMessage } from "@/react-app/lib/whatsapp";
 import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
 import ClinicalInsights from "@/react-app/components/ClinicalInsights";
 import { HighlightedADM } from "@/react-app/lib/admHighlight";
 const PatientProgressDashboard = lazy(() => import("@/react-app/components/PatientProgressDashboard"));
 import HepPlanManager from "@/react-app/components/HepPlanManager";
-import ScribeButton, { type ScribeResult } from "@/react-app/components/ScribeButton";
 import { useFocusFirstInput } from "@/react-app/hooks/useFocusFirstInput";
+import { PatientDeleteDialog } from "@/react-app/components/patient-detail/PatientDeleteDialog";
+import { PatientReminderDialog } from "@/react-app/components/patient-detail/PatientReminderDialog";
+import { PatientEvaluationDialog } from "@/react-app/components/patient-detail/PatientEvaluationDialog";
+import { PatientEvolutionDialog } from "@/react-app/components/patient-detail/PatientEvolutionDialog";
 
 const termosParaRegiao: Record<string, string> = {
   "pescoço": "cervical", "cervical": "cervical", "nuca": "cervical",
@@ -77,19 +72,10 @@ export default function PatientDetailPage() {
   const focusEvolRef = useFocusFirstInput(evolDialogOpen);
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [editingEvaluation, setEditingEvaluation] = useState<Evaluation | null>(null);
   const [editingEvolution, setEditingEvolution] = useState<Evolution | null>(null);
   const [saving, setSaving] = useState(false);
   const toast = useToast();
-
-  // Reminder form state
-  const [reminderForm, setReminderForm] = useState({
-    type: "appointment" as "appointment" | "followup" | "custom",
-    date: "",
-    time: "",
-    customMessage: "",
-  });
 
   const [evalForm, setEvalForm] = useState<EvaluationFormData>({
     type: "initial", chief_complaint: "", history: "", pain_level: 5,
@@ -206,50 +192,6 @@ export default function PatientDetailPage() {
     setScribedFields([]);
     setEvolForm({ session_date: new Date().toISOString().split("T")[0], pain_level: 5, functional_status: "", procedures: "", patient_response: "", observations: "", attendance_status: "attended" });
     setEvolDialogOpen(true);
-  };
-
-  const handleDeletePatient = async () => {
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/patients/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete patient");
-      toast.showSuccess("Paciente excluído com sucesso");
-      navigate("/dashboard");
-    } catch {
-      toast.showError("Erro ao excluir paciente");
-    } finally {
-      setDeleting(false);
-      setDeleteDialogOpen(false);
-    }
-  };
-
-  const handleSendReminder = () => {
-    if (!patient?.phone) {
-      toast.showError("Paciente não possui telefone cadastrado");
-      return;
-    }
-
-    // Get professional name from localStorage
-    const savedProfile = localStorage.getItem("rehabroad_professional_profile");
-    const professionalName = savedProfile ? JSON.parse(savedProfile).name || "Seu Fisioterapeuta" : "Seu Fisioterapeuta";
-
-    let message = "";
-    
-    if (reminderForm.type === "appointment" && reminderForm.date) {
-      const dateFormatted = new Date(reminderForm.date + "T12:00:00").toLocaleDateString("pt-BR");
-      message = createReminderMessage(patient.name, professionalName, dateFormatted, reminderForm.time || undefined);
-    } else if (reminderForm.type === "followup") {
-      message = createReminderMessage(patient.name, professionalName);
-    } else if (reminderForm.type === "custom" && reminderForm.customMessage) {
-      message = createReminderMessage(patient.name, professionalName, undefined, undefined, reminderForm.customMessage);
-    }
-
-    if (message) {
-      openWhatsApp(patient.phone, message);
-      setReminderDialogOpen(false);
-      setReminderForm({ type: "appointment", date: "", time: "", customMessage: "" });
-      toast.showSuccess("WhatsApp aberto com a mensagem");
-    }
   };
 
   const isNewPatient = evaluations.length === 0 && evolutions.length === 0;
@@ -858,328 +800,44 @@ export default function PatientDetailPage() {
           </Card>
         </motion.div>
 
-        {/* === EVALUATION DIALOG === */}
-        <Dialog open={evalDialogOpen} onOpenChange={(open) => { setEvalDialogOpen(open); if (!open) setEditingEvaluation(null); }}>
-          <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto border-primary/20">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-xl">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                  {editingEvaluation ? <Pencil className="w-5 h-5 text-white" /> : <Stethoscope className="w-5 h-5 text-white" />}
-                </div>
-                {editingEvaluation ? "Editar Avaliação" : "Nova Avaliação"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingEvaluation ? "Atualize os dados da avaliação conforme necessário." : "Preencha os campos para registrar a avaliação clínica."}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-5 py-4">
-              <div className="space-y-2">
-                <Label className="font-semibold">Tipo de Avaliação</Label>
-                <Select value={evalForm.type} onValueChange={(v) => setEvalForm({ ...evalForm, type: v as "initial" | "followup" })}>
-                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                  <SelectContent position="popper">
-                    <SelectItem value="initial">Avaliação Inicial</SelectItem>
-                    <SelectItem value="followup">Reavaliação</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="font-semibold">Queixa Principal *</Label>
-                <Textarea value={evalForm.chief_complaint || ""} onChange={(e) => setEvalForm({ ...evalForm, chief_complaint: e.target.value })} placeholder="Descreva a queixa principal do paciente..." rows={2} />
-              </div>
-              <div className="space-y-2">
-                <Label className="font-semibold">História Clínica</Label>
-                <Textarea value={evalForm.history || ""} onChange={(e) => setEvalForm({ ...evalForm, history: e.target.value })} placeholder="Histórico relevante..." rows={2} />
-              </div>
-              <div className="space-y-3">
-                <Label className="font-semibold">Nível de Dor: {evalForm.pain_level}/10</Label>
-                <Slider value={[evalForm.pain_level || 0]} onValueChange={([v]) => setEvalForm({ ...evalForm, pain_level: v })} min={0} max={10} step={1} />
-              </div>
-              <div className="space-y-2">
-                <Label className="font-semibold">Localização da Dor</Label>
-                <Input value={evalForm.pain_location || ""} onChange={(e) => setEvalForm({ ...evalForm, pain_location: e.target.value })} placeholder="Ex: Região lombar, joelho direito..." className="h-11" />
-                {regiaoDetectada && (
-                  <div className="flex items-start gap-2 p-3 mt-2 rounded-xl bg-primary/5 border border-primary/10">
-                    <Lightbulb className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground">
-                        Consulte testes para <strong className="text-foreground">{regioes[regiaoDetectada]}</strong>
-                      </p>
-                      <Link to="/dashboard/testes" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
-                        Ver Testes <ExternalLink className="w-3 h-3" />
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label className="font-semibold">Status Funcional</Label>
-                <Textarea value={evalForm.functional_status || ""} onChange={(e) => setEvalForm({ ...evalForm, functional_status: e.target.value })} placeholder="Limitações funcionais, ADMs, força..." rows={2} />
-              </div>
-              <div className="space-y-2">
-                <Label className="font-semibold flex items-center gap-2">
-                  Testes Ortopédicos
-                  <Link to="/dashboard/testes" className="text-xs text-primary hover:underline font-normal flex items-center gap-1">
-                    <ClipboardList className="w-3 h-3" /> Consultar
-                  </Link>
-                </Label>
-                <Textarea value={evalForm.orthopedic_tests || ""} onChange={(e) => setEvalForm({ ...evalForm, orthopedic_tests: e.target.value })} placeholder="Testes realizados e resultados..." rows={2} />
-              </div>
-              <div className="space-y-2">
-                <Label className="font-semibold">Observações</Label>
-                <Textarea value={evalForm.observations || ""} onChange={(e) => setEvalForm({ ...evalForm, observations: e.target.value })} placeholder="Observações adicionais..." rows={2} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEvalDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSaveEvaluation} disabled={saving} className="bg-gradient-to-r from-primary to-primary/80">
-                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Salvar Registro
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <PatientEvaluationDialog
+          open={evalDialogOpen}
+          onOpenChange={(open) => { setEvalDialogOpen(open); if (!open) setEditingEvaluation(null); }}
+          form={evalForm}
+          setForm={setEvalForm}
+          editing={editingEvaluation}
+          saving={saving}
+          regiaoDetectada={regiaoDetectada}
+          onSave={handleSaveEvaluation}
+        />
 
-        {/* === EVOLUTION DIALOG === */}
-        <Dialog open={evolDialogOpen} onOpenChange={setEvolDialogOpen}>
-          <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto border-emerald-500/20">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-xl">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-white" />
-                </div>
-                {editingEvolution ? "Editar Evolução" : "Nova Evolução"}
-              </DialogTitle>
-              <DialogDescription>{editingEvolution ? "Atualize os dados da sessão de tratamento." : "Registre a sessão de tratamento do paciente."}</DialogDescription>
-            </DialogHeader>
-            {/* ── Scribe ── */}
-            {!editingEvolution && (
-              <div className="pb-2" data-onboarding="scribe-btn">
-                <ScribeButton
-                  patientId={Number(patient?.id) || 0}
-                  onResult={(result: ScribeResult) => {
-                    if (!result.extracted) return;
-                    const filled: string[] = [];
-                    const e = result.extracted;
-                    const updates: Partial<EvolutionFormData> = {};
-                    if (e.pain_level !== null) { updates.pain_level = e.pain_level; filled.push("pain_level"); }
-                    if (e.functional_status) { updates.functional_status = e.functional_status; filled.push("functional_status"); }
-                    if (e.procedures) { updates.procedures = e.procedures; filled.push("procedures"); }
-                    if (e.patient_response) { updates.patient_response = e.patient_response; filled.push("patient_response"); }
-                    if (e.observations) { updates.observations = e.observations; filled.push("observations"); }
-                    setEvolForm((prev) => ({ ...prev, ...updates }));
-                    setScribedFields(filled);
-                  }}
-                />
-              </div>
-            )}
-            <div ref={focusEvolRef} className="space-y-5 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="font-semibold">Data da Sessão</Label>
-                  <DateInput value={evolForm.session_date || ""} onChange={(val) => setEvolForm({ ...evolForm, session_date: val })} className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-semibold">Presença</Label>
-                  <Select value={evolForm.attendance_status || "attended"} onValueChange={(v) => setEvolForm({ ...evolForm, attendance_status: v as "attended" | "justified_absence" | "unjustified_absence" })}>
-                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                    <SelectContent position="popper">
-                      <SelectItem value="attended">Compareceu</SelectItem>
-                      <SelectItem value="justified_absence">Falta Justificada</SelectItem>
-                      <SelectItem value="unjustified_absence">Falta Não Justificada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Label className="font-semibold">Nível de Dor: {evolForm.pain_level}/10</Label>
-                  {scribedFields.includes("pain_level") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
-                </div>
-                <Slider value={[evolForm.pain_level || 0]} onValueChange={([v]) => setEvolForm({ ...evolForm, pain_level: v })} min={0} max={10} step={1} />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="font-semibold">Procedimentos Realizados</Label>
-                  {scribedFields.includes("procedures") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
-                </div>
-                <Textarea value={evolForm.procedures || ""} onChange={(e) => setEvolForm({ ...evolForm, procedures: e.target.value })} placeholder="Técnicas e exercícios aplicados..." rows={3} />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="font-semibold">Resposta do Paciente</Label>
-                  {scribedFields.includes("patient_response") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
-                </div>
-                <Select value={evolForm.patient_response || ""} onValueChange={(v) => setEvolForm({ ...evolForm, patient_response: v })}>
-                  <SelectTrigger className="h-11"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent position="popper">
-                    <SelectItem value="positive">Positiva</SelectItem>
-                    <SelectItem value="neutral">Neutra</SelectItem>
-                    <SelectItem value="negative">Negativa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="font-semibold">Status Funcional</Label>
-                  {scribedFields.includes("functional_status") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
-                </div>
-                <Textarea value={evolForm.functional_status || ""} onChange={(e) => setEvolForm({ ...evolForm, functional_status: e.target.value })} placeholder="Evolução das capacidades funcionais..." rows={2} />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="font-semibold">Observações</Label>
-                  {scribedFields.includes("observations") && <span className="text-xs text-purple-600 dark:text-purple-400">🎙️ Scribe</span>}
-                </div>
-                <Textarea value={evolForm.observations || ""} onChange={(e) => setEvolForm({ ...evolForm, observations: e.target.value })} placeholder="Observações da sessão..." rows={2} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEvolDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSaveEvolution} disabled={saving} className="bg-gradient-to-r from-emerald-500 to-emerald-600">
-                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Salvar Registro
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <PatientEvolutionDialog
+          open={evolDialogOpen}
+          onOpenChange={setEvolDialogOpen}
+          form={evolForm}
+          setForm={setEvolForm}
+          editing={editingEvolution}
+          saving={saving}
+          patientId={Number(patient?.id) || 0}
+          scribedFields={scribedFields}
+          setScribedFields={setScribedFields}
+          focusRef={focusEvolRef}
+          onSave={handleSaveEvolution}
+        />
 
-        {/* === REMINDER DIALOG === */}
-        <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
-          <DialogContent className="max-w-md max-h-[90dvh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5 text-amber-500" />
-                Lembrete via WhatsApp
-              </DialogTitle>
-              <DialogDescription>
-                Envie um lembrete de consulta para {patient?.name}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              {/* Reminder Type Selection */}
-              <div className="space-y-3">
-                <Label className="font-semibold">Tipo de Mensagem</Label>
-                <div className="grid grid-cols-1 gap-2">
-                  {[
-                    { value: "appointment", label: "Agendar Consulta", desc: "Com data e hora específica" },
-                    { value: "followup", label: "Retorno", desc: "Lembrete de acompanhamento" },
-                    { value: "custom", label: "Personalizada", desc: "Escreva sua própria mensagem" },
-                  ].map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setReminderForm({ ...reminderForm, type: type.value as "appointment" | "followup" | "custom" })}
-                      className={`p-3 rounded-lg border text-left transition-all ${
-                        reminderForm.type === type.value
-                          ? "border-amber-500 bg-amber-500/10"
-                          : "border-border hover:border-amber-500/50"
-                      }`}
-                    >
-                      <p className="font-medium text-sm">{type.label}</p>
-                      <p className="text-xs text-muted-foreground">{type.desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+        <PatientReminderDialog
+          open={reminderDialogOpen}
+          onOpenChange={setReminderDialogOpen}
+          patientName={patient?.name || ""}
+          patientPhone={patient?.phone}
+        />
 
-              {/* Appointment Fields */}
-              {reminderForm.type === "appointment" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="font-semibold">Data</Label>
-                    <DateInput
-                      value={reminderForm.date}
-                      onChange={(val) => setReminderForm({ ...reminderForm, date: val })}
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-semibold">Horário</Label>
-                    <Input
-                      type="time"
-                      value={reminderForm.time}
-                      onChange={(e) => setReminderForm({ ...reminderForm, time: e.target.value })}
-                      className="h-11"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Custom Message Field */}
-              {reminderForm.type === "custom" && (
-                <div className="space-y-2">
-                  <Label className="font-semibold">Mensagem</Label>
-                  <Textarea
-                    value={reminderForm.customMessage}
-                    onChange={(e) => setReminderForm({ ...reminderForm, customMessage: e.target.value })}
-                    placeholder="Digite sua mensagem personalizada..."
-                    rows={4}
-                  />
-                </div>
-              )}
-
-              {/* Preview */}
-              <div className="p-3 rounded-lg bg-muted/50 border">
-                <p className="text-xs text-muted-foreground mb-2">Prévia da mensagem:</p>
-                <p className="text-sm">
-                  {reminderForm.type === "appointment" && reminderForm.date
-                    ? `📅 Lembrete de consulta para ${new Date(reminderForm.date + "T12:00:00").toLocaleDateString("pt-BR")}${reminderForm.time ? ` às ${reminderForm.time}` : ""}`
-                    : reminderForm.type === "followup"
-                    ? "📞 Mensagem de retorno/acompanhamento"
-                    : reminderForm.type === "custom" && reminderForm.customMessage
-                    ? `✏️ ${reminderForm.customMessage.substring(0, 50)}...`
-                    : "Selecione as opções acima"}
-                </p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setReminderDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSendReminder}
-                disabled={
-                  (reminderForm.type === "appointment" && !reminderForm.date) ||
-                  (reminderForm.type === "custom" && !reminderForm.customMessage)
-                }
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 gap-2"
-              >
-                <Send className="w-4 h-4" />
-                Enviar WhatsApp
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-red-500 flex items-center gap-2">
-                <Trash2 className="w-5 h-5" />
-                Excluir Paciente
-              </DialogTitle>
-              <DialogDescription>
-                Tem certeza que deseja excluir <strong>{patient?.name}</strong>? Esta ação não pode ser desfeita e todos os dados do paciente (avaliações, evoluções, etc.) serão perdidos.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
-                Cancelar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeletePatient}
-                disabled={deleting}
-                className="gap-2"
-              >
-                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                {deleting ? "Excluindo..." : "Excluir Paciente"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <PatientDeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          patientId={id!}
+          patientName={patient?.name || ""}
+        />
 
       </motion.div>
       </>
