@@ -41,11 +41,13 @@ import {
   Percent
 } from "lucide-react";
 import { motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
 import { apiFetch } from "@/react-app/lib/api";
 import ReactMarkdown from "react-markdown";
+import type { ComiteAgentRaw, ComiteLibraryCase } from "@/shared/api";
 
 // Icon mapper helper
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   LibraryBig, ClipboardCheck, Activity, Zap, HandMetal, Stethoscope, HeartPulse, Wind, Baby, Users, Syringe, Dumbbell, ShieldCheck, Sparkles, GraduationCap, FileText, BarChart, Star, Scale, ShoppingBag, Lock, Briefcase, Building, PiggyBank, Calculator, TrendingUp, FileX, Percent, Brain, BookOpen, Trophy, Gavel
 };
 
@@ -120,7 +122,7 @@ export default function ComiteAgent() {
           // ComitePanel assumed agentsData.agents, but the endpoint in comiteRouter just returns \`results\` as JSON array.
           // Let's handle both.
           const agentsList = Array.isArray(agentsData) ? agentsData : agentsData.agents || [];
-          const foundAgent = agentsList.find((a: any) => a.id === agentId);
+          const foundAgent = agentsList.find((a: ComiteAgentRaw) => a.id === agentId);
           if (foundAgent) {
             setAgent({
               id: foundAgent.id,
@@ -147,7 +149,7 @@ export default function ComiteAgent() {
           const libRes = await apiFetch("/api/comite/library");
           if (libRes.ok) {
             const library = await libRes.json();
-            const existingCase = library.find((c: any) => c.id === caseId);
+            const existingCase = library.find((c: ComiteLibraryCase) => c.id === caseId);
             if (existingCase && existingCase.history_json) {
               setMessages(JSON.parse(existingCase.history_json));
               setSavedCaseId(caseId);

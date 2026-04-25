@@ -446,7 +446,7 @@ patientsRouter.get("/patients/:patientId/caminho", authMiddleware, async (c) => 
     `SELECT * FROM caminho WHERE patient_id = ?`
   ).bind(patientId).first();
 
-  return c.json(normalizeCaminhoRecord(caminho as Record<string, any> | null));
+  return c.json(normalizeCaminhoRecord(caminho as Record<string, unknown> | null));
 });
 
 patientsRouter.post("/patients/:patientId/caminho", authMiddleware, async (c) => {
@@ -504,7 +504,7 @@ patientsRouter.post("/patients/:patientId/caminho", authMiddleware, async (c) =>
     ).first();
   }
 
-  return c.json(normalizeCaminhoRecord(result as Record<string, any> | null), existing ? 200 : 201);
+  return c.json(normalizeCaminhoRecord(result as Record<string, unknown> | null), existing ? 200 : 201);
 });
 
 // ============================================

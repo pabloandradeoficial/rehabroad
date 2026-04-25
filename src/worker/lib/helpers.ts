@@ -431,7 +431,7 @@ export function splitDelimitedText(value: unknown): string[] {
     .filter(Boolean);
 }
 
-export function normalizeCaminhoRecord<T extends Record<string, any> | null>(record: T) {
+export function normalizeCaminhoRecord<T extends Record<string, unknown> | null>(record: T) {
   if (!record) {
     return null;
   }

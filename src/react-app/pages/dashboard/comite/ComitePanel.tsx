@@ -39,11 +39,19 @@ import {
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
 import { apiFetch } from "@/react-app/lib/api";
+import type { ComiteAgentRaw } from "@/shared/api";
 
 // Icon mapper helper
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   LibraryBig, ClipboardCheck, Activity, Zap, HandMetal, Stethoscope, HeartPulse, Wind, Baby, Users, Syringe, Dumbbell, ShieldCheck, Sparkles, GraduationCap, FileText, BarChart, Star, Scale, ShoppingBag, Lock, Briefcase, Building, PiggyBank, Calculator, TrendingUp, FileX, Percent
+};
+
+type WeeklyCase = {
+  title: string;
+  description: string;
+  agent_id?: string;
 };
 
 type Agent = {
@@ -74,7 +82,7 @@ export default function ComitePanel() {
   const [activeTab, setActiveTab] = useState("all");
   const [agents, setAgents] = useState<Agent[]>([]);
   const [xpInfo, setXpInfo] = useState<XpInfo | null>(null);
-  const [weeklyCase, setWeeklyCase] = useState<any>(null);
+  const [weeklyCase, setWeeklyCase] = useState<WeeklyCase | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,18 +101,18 @@ export default function ComitePanel() {
         const agentsData = await agentsRes.json();
         const rawAgents = Array.isArray(agentsData) ? agentsData : (agentsData.agents || []);
         
-        const mappedAgents: Agent[] = rawAgents.map((a: any) => {
+        const mappedAgents: Agent[] = rawAgents.map((a: ComiteAgentRaw) => {
           let cat = (a.categoria || "").toLowerCase();
           if (cat === "prática clínica") cat = "clínico";
           else if (cat === "jurídico" || cat === "contábil") cat = "jurídico_contábil";
 
           return {
             id: a.id,
-            name: a.nome || a.name || "Agente",
-            category: cat || a.category || "geral",
-            short_description: a.descricao_curta || a.short_description || "",
-            icon: a.icone || a.icon,
-            color_theme: "teal" 
+            name: a.nome || "Agente",
+            category: cat || "geral",
+            short_description: a.descricao_curta || "",
+            icon: a.icone,
+            color_theme: "teal"
           };
         });
         
@@ -112,7 +120,7 @@ export default function ComitePanel() {
         
 
         if (xpRes.ok) {
-          const xpData = await xpRes.json();
+          const xpData = (await xpRes.json()) as XpInfo;
           setXpInfo(xpData);
         }
 
@@ -120,11 +128,11 @@ export default function ComitePanel() {
         setWeeklyCase({
           title: "Caso Desafio da Semana: Síndrome Patelofemoral Complexa",
           description: "Paciente de 25 anos, corredor, com dor anterior no joelho há 6 meses que não melhora com fisioterapia convencional. Participe da discussão com nosso Comitê Clínico.",
-          agent_id: agentsData.agents?.find((a: any) => a.category === "clínico")?.id
+          agent_id: (agentsData.agents as ComiteAgentRaw[] | undefined)?.find((a) => a.categoria === "clínico")?.id
         });
 
-      } catch (err: any) {
-        setError(err.message || "Erro desconhecido");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Erro desconhecido");
       } finally {
         setLoading(false);
       }

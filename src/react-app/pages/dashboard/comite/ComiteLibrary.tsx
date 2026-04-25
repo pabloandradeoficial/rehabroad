@@ -13,9 +13,11 @@ import {
   LibraryBig, ClipboardCheck, Activity, Zap, HandMetal, Stethoscope, HeartPulse, Wind, Baby, Users, Syringe, Dumbbell, ShieldCheck, Sparkles, GraduationCap, FileText, BarChart, Star, Scale, ShoppingBag, Lock, Briefcase, Building, PiggyBank, Calculator, TrendingUp, FileX, Percent, Brain, BookOpen, Trophy, Gavel
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
 import { apiFetch } from "@/react-app/lib/api";
+import type { ComiteMessage } from "@/shared/api";
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   LibraryBig, ClipboardCheck, Activity, Zap, HandMetal, Stethoscope, HeartPulse, Wind, Baby, Users, Syringe, Dumbbell, ShieldCheck, Sparkles, GraduationCap, FileText, BarChart, Star, Scale, ShoppingBag, Lock, Briefcase, Building, PiggyBank, Calculator, TrendingUp, FileX, Percent, Brain, BookOpen, Trophy, Gavel
 };
 
@@ -44,8 +46,8 @@ export default function ComiteLibrary() {
         if (!res.ok) throw new Error("Falha ao carregar a biblioteca de casos.");
         const data = await res.json();
         setCases(data || []);
-      } catch (err: any) {
-        setError(err.message || "Erro ao consultar casos.");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Erro ao consultar casos.");
       } finally {
         setLoading(false);
       }
@@ -120,7 +122,7 @@ export default function ComiteLibrary() {
                 let messageCount = 0;
                 try {
                   const history = JSON.parse(item.history_json || "[]");
-                  messageCount = history.filter((m: any) => m.role === "assistant").length;
+                  messageCount = history.filter((m: ComiteMessage) => m.role === "assistant").length;
                 } catch { }
 
                 return (

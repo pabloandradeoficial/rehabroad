@@ -53,10 +53,12 @@ async function parseErrorMessage(response: Response, fallback: string) {
   }
 }
 
-export const APPOINTMENTS_QUERY_KEY = (start?: string, end?: string) => 
-  ["appointments", { start, end }].filter(Boolean);
+export const APPOINTMENTS_QUERY_KEY = (start?: string, end?: string) =>
+  ["appointments", { start, end }] as const;
 
-export async function fetchAppointmentsQueryFn({ queryKey }: any) {
+type AppointmentsQueryKey = ReturnType<typeof APPOINTMENTS_QUERY_KEY>;
+
+export async function fetchAppointmentsQueryFn({ queryKey }: { queryKey: AppointmentsQueryKey }) {
   const [_key, paramsObj] = queryKey;
   const params = new URLSearchParams();
   if (paramsObj?.start) params.set("start", paramsObj.start);
