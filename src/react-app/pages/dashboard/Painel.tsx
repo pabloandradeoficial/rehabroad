@@ -5,19 +5,16 @@ import {
   Plus,
   Search,
   MoreVertical,
-  User,
   Calendar,
   FileText,
   Pencil,
   Trash2,
-  Loader2,
   Sparkles,
   Activity,
   ClipboardList,
   ArrowRight,
   CheckCircle,
   BarChart3,
-  Clock,
   TrendingUp,
   Crown,
   Stethoscope,
@@ -30,18 +27,7 @@ import { Button } from "@/react-app/components/ui/button";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Input } from "@/react-app/components/ui/input";
-import { DateInput } from "@/react-app/components/ui/DateInput";
 import { Badge } from "@/react-app/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/react-app/components/ui/dialog";
-import { Label } from "@/react-app/components/ui/label";
-import { Textarea } from "@/react-app/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,6 +47,9 @@ import { WelcomeWizard } from "@/react-app/components/WelcomeWizard";
 import { PainelSkeleton } from "@/react-app/components/DashboardSkeletons";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 import { useFocusFirstInput } from "@/react-app/hooks/useFocusFirstInput";
+import { PatientFormDialog } from "@/react-app/components/painel/PatientFormDialog";
+import { DeleteConfirmDialog } from "@/react-app/components/painel/DeleteConfirmDialog";
+import { RecentActivitiesCard } from "@/react-app/components/painel/RecentActivitiesCard";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -374,91 +363,16 @@ export default function PainelPage() {
           </div>
         </motion.div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-md max-h-[90dvh] flex flex-col p-0 overflow-hidden border-primary/20">
-            <DialogHeader className="px-6 pt-6 pb-2">
-              <DialogTitle className="flex items-center gap-2 text-xl">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                Seu Primeiro Paciente
-              </DialogTitle>
-              <DialogDescription>
-                Preencha os campos principais para iniciar.
-              </DialogDescription>
-            </DialogHeader>
-            <div ref={focusRef} className="space-y-4 py-4 px-6 overflow-y-auto flex-1">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome Completo *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Nome do paciente"
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="birth_date">Data de Nascimento</Label>
-                <DateInput
-                  id="birth_date"
-                  value={formData.birth_date || ""}
-                  onChange={(val) =>
-                    setFormData({ ...formData, birth_date: val })
-                  }
-                  className="h-11"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone || ""}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                    inputMode="tel"
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email || ""}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="email@exemplo.com"
-                    className="h-11"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Queixa Principal</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes || ""}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Observações iniciais..."
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter className="px-6 py-4 bg-card border-t sticky bottom-0 z-10 w-full mt-auto">
-              <Button variant="outline" onClick={() => setDialogOpen(false)} className="h-11">
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={saving || !formData.name.trim()}
-                className="h-11 bg-gradient-to-r from-primary to-emerald-600"
-              >
-                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Cadastrar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <PatientFormDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          form={formData}
+          setForm={setFormData}
+          saving={saving}
+          focusRef={focusRef}
+          mode="first"
+          onSave={handleSave}
+        />
       </div>
     );
   }
@@ -796,57 +710,7 @@ export default function PainelPage() {
 
         <motion.div variants={itemVariants}>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <Card className="lg:col-span-3 border border-border shadow-sm bg-card overflow-hidden">
-              <CardHeader className="pb-4 border-b border-border">
-                <CardTitle className="text-base font-semibold flex items-center gap-3 text-foreground">
-                  <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-violet-600" />
-                  </div>
-                  Atividades Recentes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-5">
-                {recentActivities.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Clock className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">Nenhuma atividade recente</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {recentActivities.slice(0, 5).map((activity, index) => (
-                      <motion.div
-                        key={`${activity.type}-${activity.id}`}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.05 * index }}
-                        className="flex items-center gap-4 p-3 rounded-xl bg-muted/50 hover:bg-muted border border-border transition-colors"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                          <CheckCircle className="w-5 h-5 text-emerald-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm">
-                            <span className="text-muted-foreground">
-                              {activity.description}
-                            </span>
-                            <span className="font-semibold text-foreground">
-                              {" "}
-                              — {activity.patientName}
-                            </span>
-                          </p>
-                        </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(activity.date).toLocaleDateString("pt-BR", {
-                            day: "2-digit",
-                            month: "short",
-                          })}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <RecentActivitiesCard activities={recentActivities} />
 
             <Card className="lg:col-span-2 border border-border shadow-sm bg-card overflow-hidden">
               <CardHeader className="pb-4 border-b border-border">
@@ -1062,123 +926,23 @@ export default function PainelPage() {
           </Card>
         </motion.div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto border-primary/20">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-xl">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
-                  {editingPatient ? (
-                    <Pencil className="w-5 h-5 text-white" />
-                  ) : (
-                    <User className="w-5 h-5 text-white" />
-                  )}
-                </div>
-                {editingPatient ? "Editar Paciente" : "Novo Paciente"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingPatient
-                  ? "Atualize as informações do prontuário."
-                  : "Preencha os dados principais do paciente."}
-              </DialogDescription>
-            </DialogHeader>
-            <div ref={focusRef} className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome Completo *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Nome do paciente"
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="birth_date">Data de Nascimento</Label>
-                <DateInput
-                  id="birth_date"
-                  value={formData.birth_date || ""}
-                  onChange={(val) =>
-                    setFormData({ ...formData, birth_date: val })
-                  }
-                  className="h-11"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone || ""}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                    inputMode="tel"
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email || ""}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="email@exemplo.com"
-                    className="h-11"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Queixa Principal / Observações</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes || ""}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Informações relevantes sobre o caso..."
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={saving || !formData.name.trim()}
-                className="bg-gradient-to-r from-primary to-emerald-600"
-              >
-                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editingPatient ? "Salvar Alterações" : "Cadastrar Paciente"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <PatientFormDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          form={formData}
+          setForm={setFormData}
+          saving={saving}
+          focusRef={focusRef}
+          mode={editingPatient ? "edit" : "create"}
+          onSave={handleSave}
+        />
 
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto border-destructive/20">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-xl text-destructive">
-                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-                  <Trash2 className="w-5 h-5 text-destructive" />
-                </div>
-                Confirmar Exclusão
-              </DialogTitle>
-            </DialogHeader>
-            <p className="text-muted-foreground py-4">
-              Tem certeza que deseja excluir este prontuário? Esta ação é permanente
-              e não pode ser desfeita.
-            </p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Excluir Prontuário
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DeleteConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          saving={saving}
+          onConfirm={handleDelete}
+        />
       </motion.div>
     </>
     </>
