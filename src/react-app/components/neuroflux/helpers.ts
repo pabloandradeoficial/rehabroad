@@ -1,4 +1,4 @@
-import type { ClinicalData } from "@/react-app/data/neurofluxData";
+import type { ClinicalData } from "@/data/neurofluxData";
 
 export type Patient = {
   id: number;

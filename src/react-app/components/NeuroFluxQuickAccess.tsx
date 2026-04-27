@@ -19,7 +19,7 @@ import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
 import { cn } from "@/react-app/lib/utils";
-import { getRecommendations, type ClinicalData } from "@/react-app/data/neurofluxData";
+import { getRecommendations, type ClinicalData } from "@/data/neurofluxData";
 import type { Evaluation } from "@/react-app/hooks/useEvaluations";
 
 interface NeuroFluxQuickAccessProps {

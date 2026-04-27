@@ -15,7 +15,7 @@ import { Badge } from "@/react-app/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/react-app/components/ui/dialog";
 import { Button } from "@/react-app/components/ui/button";
 import { cn } from "@/react-app/lib/utils";
-import { getRecommendations, type ClinicalData, type Recommendation } from "@/react-app/data/neurofluxData";
+import { getRecommendations, type ClinicalData, type Recommendation } from "@/data/neurofluxData";
 import { useNeuroflux } from "@/react-app/hooks/useNeuroflux";
 import { apiFetch } from "@/react-app/lib/api";
 import type { ClinicalContext } from "@/react-app/hooks/useClinicalContext";

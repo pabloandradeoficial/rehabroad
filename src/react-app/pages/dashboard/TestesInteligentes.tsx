@@ -29,7 +29,7 @@ import {
   testesOrtopedicos,
   regioes, 
   type TesteOrtopedico 
-} from "@/react-app/data/testesOrtopedicos";
+} from "@/data/testesOrtopedicos";
 
 // Mapeamento de locais de dor para regiões de teste
 const localParaRegiao: Record<string, string> = {

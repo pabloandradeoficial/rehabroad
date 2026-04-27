@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/react-app/lib/api";
-import type { ClinicalData } from "@/react-app/data/neurofluxData";
+import type { ClinicalData } from "@/data/neurofluxData";
 
 export interface ConsultationRecord {
   id: number;

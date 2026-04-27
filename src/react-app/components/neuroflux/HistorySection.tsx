@@ -3,7 +3,7 @@ import { ChevronDown, History, Zap } from "lucide-react";
 import { Badge } from "@/react-app/components/ui/badge";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { cn } from "@/react-app/lib/utils";
-import { getRecommendations } from "@/react-app/data/neurofluxData";
+import { getRecommendations } from "@/data/neurofluxData";
 
 type HistoryRecord = {
   id: number;

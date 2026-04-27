@@ -9,7 +9,7 @@ import { Textarea } from "@/react-app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
 import { Slider } from "@/react-app/components/ui/slider";
 import type { EvaluationFormData, Evaluation } from "@/react-app/hooks/useEvaluations";
-import { regioes } from "@/react-app/data/testesOrtopedicos";
+import { regioes } from "@/data/testesOrtopedicos";
 
 interface PatientEvaluationDialogProps {
   open: boolean;

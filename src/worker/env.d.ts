@@ -1,3 +1,6 @@
+// Augments the auto-generated `Env` interface from worker-configuration.d.ts
+// with secrets and bindings that aren't picked up by `wrangler types`
+// (Stripe / Resend / Mocha live in Cloudflare's secret store, not wrangler.toml).
 import type { D1Database, R2Bucket } from "@cloudflare/workers-types";
 
 export {};

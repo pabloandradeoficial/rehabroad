@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/react-app/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { cn } from "@/react-app/lib/utils";
-import type { Recommendation } from "@/react-app/data/neurofluxData";
+import type { Recommendation } from "@/data/neurofluxData";
 
 export function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: number }) {
   const [expanded, setExpanded] = useState(rank === 1);

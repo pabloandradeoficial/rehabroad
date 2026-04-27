@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, RotateCcw, Check, X, Minus, Trophy, Brain } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
-import { testesOrtopedicos } from "@/react-app/data/testesOrtopedicos";
+import { testesOrtopedicos } from "@/data/testesOrtopedicos";
 import { apiFetch } from "@/react-app/lib/api";
 import { useAppAuth } from "@/react-app/contexts/AuthContext";
 
