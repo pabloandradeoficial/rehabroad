@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from "hono";
 import Stripe from "stripe";
 import { Resend } from "resend";
-import { authMiddleware, isOwnerAdminEmail, getOwnerAdminEmail } from "../lib/helpers";
+import { authMiddleware, getOwnerAdminEmail, envAsRecord } from "../lib/helpers";
 
 export const subscriptionRouter = new Hono<{ Bindings: Env }>();
 
@@ -35,7 +34,7 @@ subscriptionRouter.post("/beta-waitlist", async (c) => {
       const resend = new Resend(c.env.RESEND_API_KEY);
       await resend.emails.send({
         from: "REHABROAD <onboarding@resend.dev>",
-        to: getOwnerAdminEmail(c.env as Record<string, unknown>),
+        to: getOwnerAdminEmail(envAsRecord(c.env)),
         subject: "🆕 Novo cadastro na lista de espera - REHABROAD",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -118,7 +117,7 @@ subscriptionRouter.get("/subscription", authMiddleware, async (c) => {
   const now = new Date().toISOString();
 
   const normalizedUserEmail = String(user?.email || "").trim().toLowerCase();
-  const normalizedAdminEmail = getOwnerAdminEmail(c.env as Record<string, unknown>).trim().toLowerCase();
+  const normalizedAdminEmail = getOwnerAdminEmail(envAsRecord(c.env)).trim().toLowerCase();
   const isOwnerEmail = normalizedUserEmail === normalizedAdminEmail;
 
   if (!subscription) {
@@ -328,77 +327,84 @@ subscriptionRouter.post("/webhooks/stripe", async (c) => {
   try {
     event = stripe.webhooks.constructEvent(body, sig, c.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error("Webhook signature verification failed:", err);
+    console.error("[STRIPE_WEBHOOK_SIG_FAIL]", err);
     return c.json({ error: "Invalid signature" }, 400);
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.metadata?.user_id;
-    const planType = session.metadata?.plan_type || "monthly";
-    const stripeSubscriptionId = session.subscription as string;
+  // Per-event try/catch so a DB failure surfaces a 5xx (Stripe retries) instead of
+  // returning 200 + silent log. Keeps log lines greppable for alerting.
+  try {
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const userId = session.metadata?.user_id;
+      const planType = session.metadata?.plan_type || "monthly";
+      const stripeSubscriptionId = session.subscription as string;
 
-    if (userId && stripeSubscriptionId) {
-      const now = new Date().toISOString();
-      const expiresAt = new Date();
+      if (userId && stripeSubscriptionId) {
+        const now = new Date().toISOString();
+        const expiresAt = new Date();
 
-      if (planType === "annual") {
-        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-      } else if (planType === "semestral") {
-        expiresAt.setMonth(expiresAt.getMonth() + 6);
-      } else {
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        if (planType === "annual") {
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        } else if (planType === "semestral") {
+          expiresAt.setMonth(expiresAt.getMonth() + 6);
+        } else {
+          expiresAt.setMonth(expiresAt.getMonth() + 1);
+        }
+
+        await c.env.DB.prepare(
+          `UPDATE subscriptions SET
+           plan_type = ?, is_active = 1, status = 'active_paid',
+           stripe_subscription_id = ?, started_at = ?, expires_at = ?,
+           updated_at = CURRENT_TIMESTAMP
+           WHERE user_id = ?`
+        ).bind(planType, stripeSubscriptionId, now, expiresAt.toISOString(), userId).run();
       }
-
-      await c.env.DB.prepare(
-        `UPDATE subscriptions SET
-         plan_type = ?, is_active = 1, status = 'active_paid',
-         stripe_subscription_id = ?, started_at = ?, expires_at = ?,
-         updated_at = CURRENT_TIMESTAMP
-         WHERE user_id = ?`
-      ).bind(planType, stripeSubscriptionId, now, expiresAt.toISOString(), userId).run();
     }
-  }
 
-  if (event.type === "customer.subscription.deleted" || event.type === "customer.subscription.updated") {
-    const subscription = event.data.object as Stripe.Subscription;
-    const customerId = subscription.customer as string;
+    if (event.type === "customer.subscription.deleted" || event.type === "customer.subscription.updated") {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId = subscription.customer as string;
 
-    const sub = await c.env.DB.prepare(
-      `SELECT user_id FROM subscriptions WHERE stripe_customer_id = ?`
-    ).bind(customerId).first() as any;
+      const sub = await c.env.DB.prepare(
+        `SELECT user_id FROM subscriptions WHERE stripe_customer_id = ?`
+      ).bind(customerId).first() as any;
 
-    if (sub) {
-      const isActive = subscription.status === "active";
-      const status = subscription.status === "canceled" ? "canceled" :
-                     subscription.status === "active" ? "active_paid" : "inactive";
+      if (sub) {
+        const isActive = subscription.status === "active";
+        const status = subscription.status === "canceled" ? "canceled" :
+                       subscription.status === "active" ? "active_paid" : "inactive";
 
-      await c.env.DB.prepare(
-        `UPDATE subscriptions SET
-         is_active = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-         WHERE user_id = ?`
-      ).bind(isActive ? 1 : 0, status, sub.user_id).run();
+        await c.env.DB.prepare(
+          `UPDATE subscriptions SET
+           is_active = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE user_id = ?`
+        ).bind(isActive ? 1 : 0, status, sub.user_id).run();
+      }
     }
-  }
 
-  if (event.type === "invoice.payment_failed") {
-    const invoice = event.data.object as Stripe.Invoice;
-    const customerId = invoice.customer as string;
+    if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
 
-    const sub = await c.env.DB.prepare(
-      `SELECT user_id FROM subscriptions WHERE stripe_customer_id = ?`
-    ).bind(customerId).first() as any;
+      const sub = await c.env.DB.prepare(
+        `SELECT user_id FROM subscriptions WHERE stripe_customer_id = ?`
+      ).bind(customerId).first() as any;
 
-    if (sub) {
-      await c.env.DB.prepare(
-        `UPDATE subscriptions SET
-         status = 'payment_failed', updated_at = CURRENT_TIMESTAMP
-         WHERE user_id = ?`
-      ).bind(sub.user_id).run();
+      if (sub) {
+        await c.env.DB.prepare(
+          `UPDATE subscriptions SET
+           status = 'payment_failed', updated_at = CURRENT_TIMESTAMP
+           WHERE user_id = ?`
+        ).bind(sub.user_id).run();
+      }
     }
-  }
 
-  return c.json({ received: true });
+    return c.json({ received: true });
+  } catch (err) {
+    console.error(`[STRIPE_WEBHOOK_FAIL] event=${event.id} type=${event.type}`, err);
+    return c.json({ error: "Webhook handler failed", eventId: event.id }, 500);
+  }
 });
 
 // Cancel subscription

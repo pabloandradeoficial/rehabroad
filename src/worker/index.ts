@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { getSEOForRoute, injectSEOTags } from "./seo";
 import { sendEmail, emailTemplates } from "./lib/email";
+import type { HonoApp } from "./lib/helpers";
 
 import { authRouter } from "./routes/auth";
 import { subscriptionRouter } from "./routes/subscription";
@@ -23,11 +24,20 @@ import { studentCasesRouter, generateWeeklyCases } from "./routes/student-cases"
 import { studentAnamneseRouter } from "./routes/student-anamnese";
 import { comiteRouter } from "./routes/comite";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<HonoApp>();
 
 // ============================================
 // GLOBAL MIDDLEWARE
 // ============================================
+
+// Request-ID Middleware: tag every request for log correlation.
+// Prefers Cloudflare's cf-ray (already unique per request); falls back to UUID.
+app.use("*", async (c, next) => {
+  const requestId = c.req.header("cf-ray") ?? crypto.randomUUID();
+  c.set("requestId", requestId);
+  c.header("x-request-id", requestId);
+  await next();
+});
 
 // HTTPS Redirect Middleware: Force HTTPS on custom domains
 app.use("*", async (c, next) => {
@@ -286,11 +296,12 @@ async function sendStreakRiskEmails(env: Env) {
 }
 
 app.onError((err, c) => {
-  console.error("Global Error Handler caught:", err);
+  const requestId = c.get("requestId") ?? "unknown";
+  console.error(`[${requestId}] ${c.req.method} ${c.req.path} —`, err);
   if (err instanceof SyntaxError && err.message.includes("JSON")) {
-    return c.json({ error: "Invalid JSON format" }, 400);
+    return c.json({ error: "Invalid JSON format", requestId }, 400);
   }
-  return c.json({ error: "Internal Server Error" }, 500);
+  return c.json({ error: "Internal Server Error", requestId }, 500);
 });
 
 export default {

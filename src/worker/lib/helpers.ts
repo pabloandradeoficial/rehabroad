@@ -4,6 +4,7 @@ import { getCookie } from "hono/cookie";
 export type HonoVariables = {
   user: AppUser;
   accessToken: string;
+  requestId: string;
 };
 
 export type HonoApp = { Bindings: Env; Variables: HonoVariables };
@@ -33,6 +34,17 @@ export const LEGACY_AUTH_COOKIE_NAMES = [
   "sb-access-token",
   "supabase-access-token",
 ];
+
+// Cloudflare's generated `Env` is a closed interface (no index signature), so it
+// won't structurally cast to `Record<string, ...>`. These helpers do the necessary
+// `as unknown as Record<...>` once instead of scattering it across files.
+export function envAsRecord(env: Env | undefined): Record<string, unknown> | undefined {
+  return env as unknown as Record<string, unknown> | undefined;
+}
+
+export function envAsStringRecord(env: Env): Record<string, string | undefined> {
+  return env as unknown as Record<string, string | undefined>;
+}
 
 export const OWNER_ADMIN_EMAIL = "pabloandradeoficial@gmail.com";
 
@@ -166,7 +178,7 @@ export function sanitizeBaseUrl(value: string | null): string | null {
 }
 
 export function getAppBaseUrl(c: AppContext): string {
-  const env = c.env as Record<string, unknown> | undefined;
+  const env = envAsRecord(c.env);
 
   const configuredBaseUrl = sanitizeBaseUrl(
     getEnvString(env, "PUBLIC_APP_URL") ??
@@ -196,7 +208,7 @@ function isSafeRedirectUrl(url: URL): boolean {
 }
 
 export function getAuthCallbackUrl(c: AppContext): string {
-  const env = c.env as Record<string, unknown> | undefined;
+  const env = envAsRecord(c.env);
   const queryRedirect = c.req.query("redirectTo") || c.req.query("redirect_to");
 
   if (typeof queryRedirect === "string" && queryRedirect.trim()) {
@@ -309,13 +321,13 @@ export async function getSupabaseUserFromAccessToken(
 
 export const authMiddleware: MiddlewareHandler<HonoApp> = async (c, next) => {
   // E2E test bypass — requires ENVIRONMENT !== 'production' AND TEST_SECRET set
-  const _env = c.env as Record<string, string | undefined>;
+  const _env = envAsStringRecord(c.env);
   const envTestSecret = _env.TEST_SECRET;
   const isProduction = _env.ENVIRONMENT === "production";
   if (!isProduction && envTestSecret) {
     const bypassCookie = getCookie(c, "rehabroad-test-bypass");
     if (bypassCookie === envTestSecret) {
-      const testEmail = (c.env as Record<string, string | undefined>).TEST_USER_EMAIL ?? "e2e@rehabroad.local";
+      const testEmail = _env.TEST_USER_EMAIL ?? "e2e@rehabroad.local";
       c.set("user", {
         id: "e2e-test-user",
         email: testEmail,
@@ -340,7 +352,7 @@ export const authMiddleware: MiddlewareHandler<HonoApp> = async (c, next) => {
 
     const user = await getSupabaseUserFromAccessToken(
       accessToken,
-      c.env as Record<string, unknown> | undefined
+      envAsRecord(c.env)
     );
 
     if (!user) {
@@ -374,7 +386,7 @@ export const optionalAuthMiddleware: MiddlewareHandler<HonoApp> = async (c, next
     if (accessToken) {
       const user = await getSupabaseUserFromAccessToken(
         accessToken,
-        c.env as Record<string, unknown> | undefined
+        envAsRecord(c.env)
       );
 
       if (user) {
