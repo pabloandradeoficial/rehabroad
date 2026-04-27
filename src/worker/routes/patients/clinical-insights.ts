@@ -45,8 +45,9 @@ export function registerClinicalInsightsRoutes(router: Hono<{ Bindings: Env }>) 
     `;
     const diagnosisResults = await c.env.DB.prepare(diagnosisQuery).bind(...likeValues).all<{ chief_complaint: string; count: number }>();
 
-    const totalDiagnoses = diagnosisResults.results?.reduce((sum, d) => sum + d.count, 0) || 1;
-    const topDiagnoses = (diagnosisResults.results || []).slice(0, 3).map(d => ({
+    type DiagnosisRow = { chief_complaint: string; count: number };
+    const totalDiagnoses = diagnosisResults.results?.reduce((sum: number, d: DiagnosisRow) => sum + d.count, 0) || 1;
+    const topDiagnoses = (diagnosisResults.results || []).slice(0, 3).map((d: DiagnosisRow) => ({
       name: d.chief_complaint,
       count: d.count,
       percentage: Math.round((d.count / totalDiagnoses) * 100)

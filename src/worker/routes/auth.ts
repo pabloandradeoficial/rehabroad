@@ -6,14 +6,17 @@ import {
   LEGACY_AUTH_COOKIE_NAMES,
   getSupabaseConfig,
   getAuthCallbackUrl,
+  envAsRecord,
+  envAsStringRecord,
+  type HonoApp,
 } from "../lib/helpers";
 
-export const authRouter = new Hono<{ Bindings: Env }>();
+export const authRouter = new Hono<HonoApp>();
 
 // Build Google OAuth redirect URL via Supabase Auth
 authRouter.get("/oauth/google/redirect_url", async (c) => {
   try {
-    const { apiUrl } = getSupabaseConfig(c.env as Record<string, unknown> | undefined);
+    const { apiUrl } = getSupabaseConfig(envAsRecord(c.env));
 
     if (!apiUrl) {
       return c.json({ error: "Supabase auth is not configured on the worker" }, 500);
@@ -57,7 +60,7 @@ authRouter.get("/users/me", authMiddleware, async (c) => {
 // E2E test helper — issues a bypass cookie value so Playwright tests can authenticate.
 // Double-gated: returns 403 if ENVIRONMENT === 'production' OR if TEST_SECRET is not set.
 authRouter.post("/auth/test-session", async (c) => {
-  const env = c.env as Record<string, string | undefined>;
+  const env = envAsStringRecord(c.env);
 
   // Explicit production block — must be first, regardless of other vars
   if (env.ENVIRONMENT === "production") {

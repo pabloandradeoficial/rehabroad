@@ -204,16 +204,18 @@ export function registerClinicalSummaryRoutes(router: Hono<{ Bindings: Env }>) {
 
     if (!patient) return c.json({ error: "Patient not found" }, 404);
 
-    const { results: evolutions } = await c.env.DB.prepare(
-      `SELECT pain_level, patient_response, session_date, functional_status, procedures
-       FROM evolutions WHERE patient_id = ? ORDER BY session_date ASC`
-    ).bind(patientId).all<{
+    type EvolutionRow = {
       pain_level: number | null;
       patient_response: string | null;
       session_date: string;
       functional_status: string | null;
       procedures: string | null;
-    }>();
+    };
+
+    const { results: evolutions } = await c.env.DB.prepare(
+      `SELECT pain_level, patient_response, session_date, functional_status, procedures
+       FROM evolutions WHERE patient_id = ? ORDER BY session_date ASC`
+    ).bind(patientId).all<EvolutionRow>();
 
     const responseToScore = (r: string | null): number | null => {
       if (!r) return null;
@@ -226,31 +228,31 @@ export function registerClinicalSummaryRoutes(router: Hono<{ Bindings: Env }>) {
     };
 
     const painTimeline = evolutions
-      .filter((e) => e.pain_level !== null)
-      .map((e, i) => ({
+      .filter((e: EvolutionRow) => e.pain_level !== null)
+      .map((e: EvolutionRow, i: number) => ({
         session: i + 1,
         date: e.session_date,
         pain: e.pain_level as number,
       }));
 
     const functionalTimeline = evolutions
-      .map((e, i) => {
+      .map((e: EvolutionRow, i: number) => {
         const score = responseToScore(e.patient_response);
         if (score === null) return null;
         return { session: i + 1, date: e.session_date, score };
       })
       .filter(Boolean) as { session: number; date: string; score: number }[];
 
-    const painLevels = evolutions.filter((e) => e.pain_level !== null).map((e) => e.pain_level as number);
+    const painLevels = evolutions.filter((e: EvolutionRow) => e.pain_level !== null).map((e: EvolutionRow) => e.pain_level as number);
     const initialPain = painLevels[0] ?? null;
     const currentPain = painLevels[painLevels.length - 1] ?? null;
     const painChange = initialPain !== null && currentPain !== null ? initialPain - currentPain : null;
 
     const avgPain = painLevels.length > 0
-      ? Math.round((painLevels.reduce((a, b) => a + b, 0) / painLevels.length) * 10) / 10
+      ? Math.round((painLevels.reduce((a: number, b: number) => a + b, 0) / painLevels.length) * 10) / 10
       : null;
 
-    const positiveCount = evolutions.filter((e) => e.patient_response === "positive" || e.patient_response === "improving").length;
+    const positiveCount = evolutions.filter((e: EvolutionRow) => e.patient_response === "positive" || e.patient_response === "improving").length;
     const positiveRate = evolutions.length > 0 ? Math.round((positiveCount / evolutions.length) * 100) : null;
 
     const milestones: { label: string; date: string; type: "start" | "improvement" | "goal" | "warning" }[] = [];
@@ -260,7 +262,7 @@ export function registerClinicalSummaryRoutes(router: Hono<{ Bindings: Env }>) {
     }
 
     if (painChange !== null && painChange >= 3 && evolutions.length >= 3) {
-      const idx = painLevels.findIndex((p, i) => i > 0 && (painLevels[0] - p) >= 3);
+      const idx = painLevels.findIndex((p: number, i: number) => i > 0 && (painLevels[0] - p) >= 3);
       if (idx >= 0) {
         milestones.push({ label: `Redução significativa da dor (-${painChange} pts)`, date: evolutions[idx].session_date, type: "improvement" });
       }
@@ -274,7 +276,7 @@ export function registerClinicalSummaryRoutes(router: Hono<{ Bindings: Env }>) {
     }
 
     const last3 = evolutions.slice(-3);
-    const allNegative = last3.length >= 3 && last3.every((e) => e.patient_response === "negative" || e.patient_response === "worsening");
+    const allNegative = last3.length >= 3 && last3.every((e: EvolutionRow) => e.patient_response === "negative" || e.patient_response === "worsening");
     if (allNegative) {
       milestones.push({ label: "3 sessões consecutivas negativas", date: last3[last3.length - 1].session_date, type: "warning" });
     }

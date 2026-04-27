@@ -80,14 +80,14 @@ function generateStructuredSuporte(evaluation: EvaluationRow | null, caminho: Ca
     else if (painLevel >= 1) severity = "low";
     else severity = "none";
 
-    if (initialPain !== null && currentPain !== null) {
+    if (initialPain != null && currentPain != null) {
       const diff = initialPain - currentPain;
       if (diff > 0) {
         trend = "improving";
-        changePercent = Math.round((diff / initialPain) * 100);
+        changePercent = initialPain > 0 ? Math.round((diff / initialPain) * 100) : 0;
       } else if (diff < 0) {
         trend = "worsening";
-        changePercent = Math.round((Math.abs(diff) / initialPain) * 100);
+        changePercent = initialPain > 0 ? Math.round((Math.abs(diff) / initialPain) * 100) : 0;
       } else {
         trend = "stable";
         changePercent = 0;
@@ -241,7 +241,7 @@ function generateDiagnosticHypotheses(evaluation: EvaluationRow | null, caminho:
   const painLocation = (evaluation.pain_location || "").toLowerCase();
   const chiefComplaint = (evaluation.chief_complaint || "").toLowerCase();
 
-  const painPatterns = splitDelimitedText(caminho?.pain_pattern ?? caminho?.pain_patterns);
+  const painPatterns = splitDelimitedText(caminho?.pain_pattern);
   const aggravatingFactors = splitDelimitedText(caminho?.aggravating_factors);
   const relievingFactors = splitDelimitedText(caminho?.relieving_factors);
   const functionalLimitations = splitDelimitedText(caminho?.functional_limitations);

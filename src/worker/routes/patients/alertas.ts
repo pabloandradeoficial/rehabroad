@@ -135,7 +135,8 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
       initial_pain_level: number | null;
     }>();
 
-    const overview = patients.map((patient) => {
+    type OverviewPatient = { id: number; name: string; evolution_count: number; last_pain_level: number | null; initial_pain_level: number | null };
+    const overview = patients.map((patient: OverviewPatient) => {
       let status: "green" | "yellow" | "red" = "yellow";
       let message = "Aguardando avaliação";
 

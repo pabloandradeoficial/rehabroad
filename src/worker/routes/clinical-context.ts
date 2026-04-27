@@ -333,8 +333,8 @@ clinicalContextRouter.get("/clinical-context/:patient_id", authMiddleware, async
   const firstEvolution = totalSessions > 0 ? evolutions[0] : null;
 
   const painLevels = evolutions
-    .filter((e) => e.pain_level !== null)
-    .map((e) => e.pain_level as number);
+    .filter((e: EvolutionRow) => e.pain_level !== null)
+    .map((e: EvolutionRow) => e.pain_level as number);
 
   const initialPainLevel = firstEvolution?.pain_level ?? latestEval?.pain_level ?? null;
   const currentPainLevel = lastEvolution?.pain_level ?? latestEval?.pain_level ?? null;
@@ -350,7 +350,7 @@ clinicalContextRouter.get("/clinical-context/:patient_id", authMiddleware, async
   }
 
   // Deduplicated procedures list
-  const allProcedures = evolutions.flatMap((e) => parseProcedures(e.procedures));
+  const allProcedures = evolutions.flatMap((e: EvolutionRow) => parseProcedures(e.procedures));
   const proceduresUsed = [...new Set(allProcedures)].slice(0, 20);
 
   // Not improving: last-3 avg >= (previous-3 avg - 0.5)

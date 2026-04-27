@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { authMiddleware, isOwnerAdminEmail, getInsertedId, type AppUser } from "../lib/helpers";
+import { authMiddleware, isOwnerAdminEmail, getInsertedId, envAsRecord, type AppUser } from "../lib/helpers";
 
 export const forumRouter = new Hono<{ Bindings: Env }>();
 
@@ -143,7 +143,7 @@ forumRouter.delete("/posts/:id", authMiddleware, async (c) => {
   }
 
   const isOwner = post.user_id === user.id;
-  const isAdmin = isOwnerAdminEmail(user.email, c.env as Record<string, unknown>);
+  const isAdmin = isOwnerAdminEmail(user.email, envAsRecord(c.env));
 
   if (!isOwner && !isAdmin) {
     console.error(`[forum delete] unauthorized: post.user_id=${post.user_id} user.id=${user.id}`);

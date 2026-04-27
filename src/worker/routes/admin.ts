@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from "hono";
-import { authMiddleware, isOwnerAdminEmail, optionalAuthMiddleware, getInsertedId } from "../lib/helpers";
+import { authMiddleware, isOwnerAdminEmail, envAsRecord } from "../lib/helpers";
 
 export const adminRouter = new Hono<{ Bindings: Env }>();
 
@@ -12,7 +11,7 @@ const adminMiddleware = async (c: any, next: any) => {
     return c.json({ error: "Não autenticado" }, 401);
   }
 
-  if (!isOwnerAdminEmail(user.email, c.env as Record<string, unknown>)) {
+  if (!isOwnerAdminEmail(user.email, envAsRecord(c.env))) {
     return c.json({ error: "Acesso não autorizado" }, 403);
   }
 

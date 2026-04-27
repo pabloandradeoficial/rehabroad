@@ -413,30 +413,33 @@ hepRouter.get("/plans/:id/adherence", authMiddleware, async (c) => {
     .bind(planId)
     .all<Record<string, unknown>>();
 
+  type CheckinRow = Record<string, unknown>;
+  type ExerciseRow = Record<string, unknown>;
+
   const totalCheckins = checkins?.length ?? 0;
-  const completedCheckins = checkins?.filter((c) => c.completed === 1).length ?? 0;
+  const completedCheckins = checkins?.filter((c: CheckinRow) => c.completed === 1).length ?? 0;
   const adherenceRate = totalCheckins > 0 ? Math.round((completedCheckins / totalCheckins) * 100) : 0;
 
   const painValues = checkins
-    ?.filter((c) => c.pain_level !== null && c.pain_level !== undefined)
-    .map((c) => Number(c.pain_level)) ?? [];
+    ?.filter((c: CheckinRow) => c.pain_level !== null && c.pain_level !== undefined)
+    .map((c: CheckinRow) => Number(c.pain_level)) ?? [];
   const averagePain =
     painValues.length > 0
-      ? Math.round((painValues.reduce((a, b) => a + b, 0) / painValues.length) * 10) / 10
+      ? Math.round((painValues.reduce((a: number, b: number) => a + b, 0) / painValues.length) * 10) / 10
       : 0;
 
   const lastCheckin = checkins?.[0]?.checked_at as string | null ?? null;
   const status = computeAdherenceStatus(adherenceRate, lastCheckin);
 
-  const exerciseBreakdown = (exercises ?? []).map((ex) => {
-    const exCheckins = checkins?.filter((c) => c.exercise_id === ex.id) ?? [];
-    const exCompleted = exCheckins.filter((c) => c.completed === 1).length;
+  const exerciseBreakdown = (exercises ?? []).map((ex: ExerciseRow) => {
+    const exCheckins = checkins?.filter((c: CheckinRow) => c.exercise_id === ex.id) ?? [];
+    const exCompleted = exCheckins.filter((c: CheckinRow) => c.completed === 1).length;
     const exPainValues = exCheckins
-      .filter((c) => c.pain_level !== null)
-      .map((c) => Number(c.pain_level));
+      .filter((c: CheckinRow) => c.pain_level !== null)
+      .map((c: CheckinRow) => Number(c.pain_level));
     const exAvgPain =
       exPainValues.length > 0
-        ? Math.round((exPainValues.reduce((a, b) => a + b, 0) / exPainValues.length) * 10) / 10
+        ? Math.round((exPainValues.reduce((a: number, b: number) => a + b, 0) / exPainValues.length) * 10) / 10
         : 0;
 
     return {
@@ -455,7 +458,7 @@ hepRouter.get("/plans/:id/adherence", authMiddleware, async (c) => {
     lastCheckin,
     status,
     exerciseBreakdown,
-    recentCheckins: (checkins ?? []).slice(0, 5).map((c) => ({
+    recentCheckins: (checkins ?? []).slice(0, 5).map((c: CheckinRow) => ({
       completed: c.completed as number,
       pain_level: c.pain_level as number | null,
       difficulty: c.difficulty as string | null,
@@ -484,19 +487,22 @@ hepRouter.get("/overview", authMiddleware, async (c) => {
     return c.json({ overview: [] });
   }
 
-  const planIds = plans.map((p) => p.id);
+  type PlanRow = { id: number; patient_id: number; title: string; status: string };
+  type CheckinSummaryRow = { plan_id: number; completed: number; pain_level: number | null; checked_at: string };
+
+  const planIds = plans.map((p: PlanRow) => p.id);
   const placeholders = planIds.map(() => "?").join(",");
 
   const { results: allCheckins } = await c.env.DB.prepare(
     `SELECT plan_id, completed, pain_level, checked_at FROM hep_checkins WHERE plan_id IN (${placeholders}) ORDER BY checked_at DESC`
   )
     .bind(...planIds)
-    .all<{ plan_id: number; completed: number; pain_level: number | null; checked_at: string }>();
+    .all<CheckinSummaryRow>();
 
-  const overview = plans.map((plan) => {
-    const checkins = (allCheckins ?? []).filter((c) => c.plan_id === plan.id);
+  const overview = plans.map((plan: PlanRow) => {
+    const checkins = (allCheckins ?? []).filter((c: CheckinSummaryRow) => c.plan_id === plan.id);
     const total = checkins.length;
-    const completed = checkins.filter((c) => c.completed === 1).length;
+    const completed = checkins.filter((c: CheckinSummaryRow) => c.completed === 1).length;
     const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
     const lastCheckin = checkins[0]?.checked_at ?? null;
     const status = computeAdherenceStatus(rate, lastCheckin);
@@ -651,7 +657,7 @@ hepRouter.post("/patient/:token/checkin", async (c) => {
         ]);
 
         const totalExercises = exercisesRes.results.length;
-        const completedToday = todayCheckinsRes.results.filter((r) => r.completed === 1).length;
+        const completedToday = todayCheckinsRes.results.filter((r: { completed: number }) => r.completed === 1).length;
         const adherenceRate = totalExercises > 0
           ? Math.round((completedToday / totalExercises) * 100)
           : 0;

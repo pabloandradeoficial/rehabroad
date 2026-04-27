@@ -156,7 +156,7 @@ patientPortalRouter.get("/patient-portal/plan", authMiddleware, async (c) => {
   }
 
   // Enrich each exercise with daily history and today's status
-  const exercises = exercisesResult.results.map((ex) => {
+  const exercises = exercisesResult.results.map((ex: HepExerciseRow) => {
     const checkins7dias = historyMap.get(ex.id) ?? [];
     return {
       ...ex,
