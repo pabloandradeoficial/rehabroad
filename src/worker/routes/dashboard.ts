@@ -11,80 +11,78 @@ export const dashboardRouter = new Hono<{ Bindings: Env }>();
 dashboardRouter.get("/dashboard/stats", authMiddleware, async (c) => {
   const user = c.get("user");
 
-  const patientsResult = await c.env.DB.prepare(
-    `SELECT COUNT(*) as count FROM patients WHERE user_id = ?`
-  ).bind(user!.id).first() as any;
+  // Single roundtrip: 3 counts via correlated subqueries instead of 3 separate prepares.
+  const counts = await c.env.DB.prepare(
+    `SELECT
+       (SELECT COUNT(*) FROM patients WHERE user_id = ?1) AS patients_count,
+       (SELECT COUNT(*) FROM evaluations WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?1)) AS evals_count,
+       (SELECT COUNT(*) FROM evolutions WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?1)) AS evols_count`
+  ).bind(user!.id).first<{ patients_count: number; evals_count: number; evols_count: number }>();
 
-  let totalEvaluations = 0;
-  let totalEvolutions = 0;
-  let recentActivities: any[] = [];
+  const totalPatients = counts?.patients_count ?? 0;
+  const totalEvaluations = counts?.evals_count ?? 0;
+  const totalEvolutions = counts?.evols_count ?? 0;
 
-  if ((patientsResult?.count || 0) > 0) {
-    const evalResult = await c.env.DB.prepare(
-      `SELECT COUNT(*) as count FROM evaluations WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?)`
-    ).bind(user!.id).first() as any;
-    totalEvaluations = evalResult?.count || 0;
+  let recentActivities: Array<{
+    id: number;
+    type: "evaluation" | "evolution";
+    patientName: string;
+    patientId: number;
+    date: string;
+    description: string;
+  }> = [];
 
-    const evolResult = await c.env.DB.prepare(
-      `SELECT COUNT(*) as count FROM evolutions WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?)`
-    ).bind(user!.id).first() as any;
-    totalEvolutions = evolResult?.count || 0;
-
-    const { results: recentEvals } = await c.env.DB.prepare(
-      `SELECT e.id, e.created_at, e.type, p.id as patient_id, p.name as patient_name, 'evaluation' as activity_type
+  if (totalPatients > 0) {
+    // Single UNION ALL — DB does the merge instead of two roundtrips + JS sort/concat.
+    type ActivityRow = {
+      id: number;
+      created_at: string;
+      patient_id: number;
+      patient_name: string;
+      activity_type: "evaluation" | "evolution";
+      eval_type: string | null;
+    };
+    const { results: activities } = await c.env.DB.prepare(
+      `SELECT e.id, e.created_at, p.id AS patient_id, p.name AS patient_name,
+              'evaluation' AS activity_type, e.type AS eval_type
        FROM evaluations e
        JOIN patients p ON e.patient_id = p.id
-       WHERE p.user_id = ?
-       ORDER BY e.created_at DESC
+       WHERE p.user_id = ?1
+       UNION ALL
+       SELECT ev.id, ev.created_at, p.id AS patient_id, p.name AS patient_name,
+              'evolution' AS activity_type, NULL AS eval_type
+       FROM evolutions ev
+       JOIN patients p ON ev.patient_id = p.id
+       WHERE p.user_id = ?1
+       ORDER BY created_at DESC
        LIMIT 5`
-    ).bind(user!.id).all();
+    ).bind(user!.id).all<ActivityRow>();
 
-    const { results: recentEvols } = await c.env.DB.prepare(
-      `SELECT e.id, e.created_at, e.session_date, p.id as patient_id, p.name as patient_name, 'evolution' as activity_type
-       FROM evolutions e
-       JOIN patients p ON e.patient_id = p.id
-       WHERE p.user_id = ?
-       ORDER BY e.created_at DESC
-       LIMIT 5`
-    ).bind(user!.id).all();
-
-    const allActivities = [
-      ...recentEvals.map((a: any) => ({
-        id: a.id,
-        type: "evaluation" as const,
-        patientName: a.patient_name,
-        patientId: a.patient_id,
-        date: a.created_at,
-        description: a.type === "initial" ? "Avaliação inicial criada" : "Reavaliação registrada"
-      })),
-      ...recentEvols.map((a: any) => ({
-        id: a.id,
-        type: "evolution" as const,
-        patientName: a.patient_name,
-        patientId: a.patient_id,
-        date: a.created_at,
-        description: "Evolução registrada"
-      }))
-    ];
-
-    recentActivities = allActivities
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
+    recentActivities = activities.map((a: ActivityRow) => ({
+      id: a.id,
+      type: a.activity_type,
+      patientName: a.patient_name,
+      patientId: a.patient_id,
+      date: a.created_at,
+      description:
+        a.activity_type === "evaluation"
+          ? a.eval_type === "initial"
+            ? "Avaliação inicial criada"
+            : "Reavaliação registrada"
+          : "Evolução registrada",
+    }));
   }
 
-  let lastActivityDate: string | null = null;
-  if (recentActivities.length > 0) {
-    lastActivityDate = recentActivities[0].date;
-  }
+  const lastActivityDate = recentActivities[0]?.date ?? null;
 
   return c.json({
     stats: {
-      totalPatients: patientsResult?.count || 0,
+      totalPatients,
       totalEvaluations,
       totalEvolutions,
-      lastActivityDate
+      lastActivityDate,
     },
-    recentActivities
+    recentActivities,
   });
 });
 
@@ -299,61 +297,37 @@ dashboardRouter.get("/dashboard/charts", authMiddleware, async (c) => {
 dashboardRouter.get("/onboarding/progress", authMiddleware, async (c) => {
   const user = c.get("user");
 
-  const { results: patients } = await c.env.DB.prepare(
-    `SELECT id FROM patients WHERE user_id = ?`
-  ).bind(user!.id).all();
-
-  const hasPatient = patients.length > 0;
-  const patientIdList = patients.map((p: any) => p.id);
-
-  let hasEvaluation = false;
-  let hasObjectives = false;
-  let hasEvolution = false;
-  let hasReport = false;
-  let firstEvaluationPatientId: number | null = null;
-
-  if (patientIdList.length > 0) {
-    const evalResult = await c.env.DB.prepare(
-      `SELECT e.id, e.patient_id FROM evaluations e
-       JOIN patients p ON e.patient_id = p.id
-       WHERE p.user_id = ?
-       ORDER BY e.created_at ASC LIMIT 1`
-    ).bind(user!.id).first() as any;
-
-    hasEvaluation = !!evalResult;
-    if (evalResult) {
-      firstEvaluationPatientId = evalResult.patient_id;
-    }
-
-    const objectivesResult = await c.env.DB.prepare(
-      `SELECT c.id FROM caminho c
-       JOIN patients p ON c.patient_id = p.id
-       WHERE p.user_id = ? AND c.treatment_goals IS NOT NULL AND c.treatment_goals != ''
-       LIMIT 1`
-    ).bind(user!.id).first();
-    hasObjectives = !!objectivesResult;
-
-    const evolResult = await c.env.DB.prepare(
-      `SELECT e.id FROM evolutions e
-       JOIN patients p ON e.patient_id = p.id
-       WHERE p.user_id = ?
-       LIMIT 1`
-    ).bind(user!.id).first();
-    hasEvolution = !!evolResult;
-
-    const reportResult = await c.env.DB.prepare(
-      `SELECT id FROM report_exports WHERE user_id = ? LIMIT 1`
-    ).bind(user!.id).first();
-    hasReport = !!reportResult;
-  }
+  // Single roundtrip: collapse 5 boolean checks into one query with EXISTS + the
+  // first-evaluation patient_id via a scalar subquery.
+  const progress = await c.env.DB.prepare(
+    `SELECT
+       EXISTS(SELECT 1 FROM patients WHERE user_id = ?1) AS has_patient,
+       (SELECT patient_id FROM evaluations e JOIN patients p ON e.patient_id = p.id
+        WHERE p.user_id = ?1 ORDER BY e.created_at ASC LIMIT 1) AS first_eval_patient_id,
+       EXISTS(
+         SELECT 1 FROM caminho c JOIN patients p ON c.patient_id = p.id
+         WHERE p.user_id = ?1 AND c.treatment_goals IS NOT NULL AND c.treatment_goals != ''
+       ) AS has_objectives,
+       EXISTS(
+         SELECT 1 FROM evolutions e JOIN patients p ON e.patient_id = p.id
+         WHERE p.user_id = ?1
+       ) AS has_evolution,
+       EXISTS(SELECT 1 FROM report_exports WHERE user_id = ?1) AS has_report`
+  ).bind(user!.id).first<{
+    has_patient: number;
+    first_eval_patient_id: number | null;
+    has_objectives: number;
+    has_evolution: number;
+    has_report: number;
+  }>();
 
   return c.json({
-    hasPatient,
-    hasEvaluation,
-    hasObjectives,
-    hasEvolution,
-    hasReport,
-    firstEvaluationPatientId,
+    hasPatient: !!progress?.has_patient,
+    hasEvaluation: progress?.first_eval_patient_id != null,
+    hasObjectives: !!progress?.has_objectives,
+    hasEvolution: !!progress?.has_evolution,
+    hasReport: !!progress?.has_report,
+    firstEvaluationPatientId: progress?.first_eval_patient_id ?? null,
   });
 });
 
