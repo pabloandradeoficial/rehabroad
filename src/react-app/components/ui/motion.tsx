@@ -152,39 +152,3 @@ export function StaggerItem(props: StaggerItemProps) {
   return <DesktopStaggerItem {...props} />;
 }
 
-function DesktopAnimatedCounter({ value, className = "" }: { value: string; className?: string }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.5 });
-  
-  return (
-    <motion.span
-      ref={ref}
-      initial={{ opacity: 0 }}
-      animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className={className}
-    >
-      {value}
-    </motion.span>
-  );
-}
-
-// Animated counter - simple, no IntersectionObserver
-export function AnimatedCounter(props: { value: string; className?: string }) {
-  if (IS_MOBILE) return <span className={props.className}>{props.value}</span>;
-  return <DesktopAnimatedCounter {...props} />;
-}
-
-// Hover card effect - desktop only
-export function HoverCard({ children, className = "" }: { children: ReactNode; className?: string }) {
-  if (IS_MOBILE) return <div className={className}>{children}</div>;
-  
-  return (
-    <motion.div
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}

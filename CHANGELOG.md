@@ -28,6 +28,12 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ### Removido
 - 14 UI primitives shadcn não usadas: `accordion`, `alert-dialog`, `avatar`, `collapsible`, `field`, `input-group`, `popover`, `radio-group`, `scroll-area`, `separator`, `skeleton`, `switch`, `table`, `tooltip`. Pacote `radix-ui` mantido (tree-shaking cuida do peso).
 - 23 exports não usados (flagados pelo knip) — alguns deletados por completo, outros convertidos para `internal` (sem `export`). Inclui `getCasesByCategory`/`getCasesByDifficulty`/`getCasesBySpecialty`/`getCaseById` em `clinicalCases.ts`, helpers regionais em `educationalModules.ts`, `getExerciseById`, `buscarTestes`/`buscarTestesPorCategoria`/`getIndicacoesPorRegiao`/`getSintomasPorRegiao` em `testesOrtopedicos.ts`, `getBlogPostsByCategory`, `usePatientColor`, `ADMQuickReference`, e 3 helpers de auth no worker (`getPossibleAuthCookieNames`, `extractAccessToken`, `getSupabaseUserFromAccessToken`).
+- 7 helpers de animação não usados em `ModuleTransitions.tsx` — extraído `ModulePage` (único usado) para arquivo dedicado, `ModuleTransitions.tsx` deletado.
+- 23 exports não usados em component libraries:
+  - `microinteractions.tsx`: AnimatedButton, AnimatedCard, FeedbackToast (mantido como interno do ToastProvider), PageTransition, PulseDot, ConfettiEffect, Counter, AnimatedCounter, AnimatedCheckbox, AnimatedProgress (-518 linhas)
+  - `StudentProgressWidgets.tsx`: AnimatedStat, CircularStatCard, CircularProgress, XPGainAnimation, StreakAnimation, LevelUpAnimation (-330 linhas)
+  - `DashboardSkeletons.tsx`: TableSkeleton, CardListSkeleton, EmptyState, StatCardSkeleton, PatientCardSkeleton (-100 linhas)
+  - `motion.tsx`: AnimatedCounter, HoverCard, DesktopAnimatedCounter (helper interno) (-37 linhas)
 
 ## [2026-04-27]
 
