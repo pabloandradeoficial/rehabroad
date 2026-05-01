@@ -1798,10 +1798,6 @@ export function getExercisesByCategory(categoryId: string): Exercise[] {
   return exercises.filter(ex => ex.category === categoryId);
 }
 
-export function getExerciseById(id: string): Exercise | undefined {
-  return exercises.find(ex => ex.id === id);
-}
-
 export function searchExercises(query: string): Exercise[] {
   const lowerQuery = query.toLowerCase();
   return exercises.filter(ex => 

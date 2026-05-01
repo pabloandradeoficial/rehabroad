@@ -116,15 +116,3 @@ export function PatientAvatar({
   );
 }
 
-// Hook for getting consistent color for a patient
-export function usePatientColor(name: string) {
-  const hash = hashString(name);
-  const colorIndex = hash % AVATAR_COLORS.length;
-  const gradientIndex = hash % AVATAR_GRADIENTS.length;
-  
-  return {
-    solid: AVATAR_COLORS[colorIndex],
-    gradient: AVATAR_GRADIENTS[gradientIndex],
-    initials: getInitials(name),
-  };
-}

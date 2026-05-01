@@ -102,7 +102,7 @@ export function extractTokenFromCookieValue(cookieValue: string): string | null 
   return null;
 }
 
-export function getPossibleAuthCookieNames(c: AppContext): string[] {
+function getPossibleAuthCookieNames(c: AppContext): string[] {
   const cookieNames = new Set<string>(LEGACY_AUTH_COOKIE_NAMES);
 
   const rawCookieHeader =
@@ -236,7 +236,7 @@ export function getAuthCallbackUrl(c: AppContext): string {
   return `${getAppBaseUrl(c)}/auth/callback`;
 }
 
-export function extractAccessToken(c: AppContext): string | null {
+function extractAccessToken(c: AppContext): string | null {
   const authorizationHeader =
     c.req.header("authorization") || c.req.header("Authorization");
 
@@ -259,7 +259,7 @@ export function extractAccessToken(c: AppContext): string | null {
   return null;
 }
 
-export async function getSupabaseUserFromAccessToken(
+async function getSupabaseUserFromAccessToken(
   accessToken: string,
   env: Record<string, unknown> | undefined
 ): Promise<AppUser | null> {

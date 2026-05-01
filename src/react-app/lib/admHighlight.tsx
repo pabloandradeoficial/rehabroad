@@ -219,39 +219,3 @@ export function HighlightedADM({ text, className = '' }: HighlightedADMProps) {
   return <span className={className}>{parts}</span>;
 }
 
-// Quick reference component for ADM values
-export function ADMQuickReference() {
-  const joints = [
-    { name: 'Ombro', movements: [
-      { name: 'Flexão', normal: '180°' },
-      { name: 'Abdução', normal: '180°' },
-      { name: 'RE', normal: '90°' },
-      { name: 'RI', normal: '70°' },
-    ]},
-    { name: 'Joelho', movements: [
-      { name: 'Flexão', normal: '140°' },
-      { name: 'Extensão', normal: '0°' },
-    ]},
-    { name: 'Quadril', movements: [
-      { name: 'Flexão', normal: '120°' },
-      { name: 'Extensão', normal: '30°' },
-      { name: 'Abdução', normal: '45°' },
-    ]},
-  ];
-  
-  return (
-    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-      <h4 className="text-xs font-semibold text-slate-600 mb-2">Referência ADM</h4>
-      <div className="space-y-2">
-        {joints.map(joint => (
-          <div key={joint.name}>
-            <span className="text-xs font-medium text-slate-700">{joint.name}: </span>
-            <span className="text-xs text-slate-500">
-              {joint.movements.map(m => `${m.name} ${m.normal}`).join(' • ')}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

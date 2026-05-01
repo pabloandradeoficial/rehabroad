@@ -100,7 +100,7 @@ export function useDashboardStats() {
 }
 
 // Motivational messages for rotating display
-export const motivationalMessages = [
+const motivationalMessages = [
   "Organização clínica fortalece sua prática.",
   "Documentação estruturada transmite segurança.",
   "Acompanhar evolução é parte do cuidado.",

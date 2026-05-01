@@ -20,7 +20,7 @@ export function getWeekNumber(date: Date = new Date()): { week: number; year: nu
 }
 
 // Função para obter o caso da semana atual
-export function getWeeklyCase(): ClinicalCase {
+function getWeeklyCase(): ClinicalCase {
   const { week, year } = getWeekNumber();
   // Usa uma combinação de semana e ano para selecionar o caso
   // Isso garante rotação consistente e previsível
@@ -55,13 +55,13 @@ export function formatDateBR(date: Date): string {
 
 // Casos destacados para semanas específicas (opcional)
 // Permite curadoria manual de casos especiais
-export const featuredWeeklyCases: WeeklyCase[] = [
+const featuredWeeklyCases: WeeklyCase[] = [
   // Exemplo: caso específico para a primeira semana de 2025
   // { weekNumber: 1, year: 2025, caseId: 'caso-001', publishDate: '2025-01-06' }
 ];
 
 // Verifica se há um caso curado para a semana atual
-export function getCuratedWeeklyCase(): ClinicalCase | null {
+function getCuratedWeeklyCase(): ClinicalCase | null {
   const { week, year } = getWeekNumber();
   const featured = featuredWeeklyCases.find(
     c => c.weekNumber === week && c.year === year

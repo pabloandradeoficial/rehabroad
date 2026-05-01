@@ -1356,9 +1356,6 @@ export const electrotherapyModalities: ElectrotherapyModality[] = [
   }
 ];
 
-export const getElectrotherapyByCategory = (category: string) => 
-  electrotherapyModalities.filter(m => category === 'all' || m.category === category);
-
 // ===== BIOMECÂNICA ARTICULAR =====
 export interface JointBiomechanics {
   id: string;
@@ -1629,9 +1626,6 @@ export const jointBiomechanics: JointBiomechanics[] = [
   }
 ];
 
-export const getBiomechanicsByCategory = (category: string) => 
-  jointBiomechanics.filter(j => category === 'all' || j.category === category);
-
 // ========== ANAMNESE E AVALIAÇÃO ==========
 export interface AnamneseTopic {
   id: string;
@@ -1646,7 +1640,7 @@ export interface AnamneseTopic {
   references: string[];
 }
 
-export const anamneseTopics: AnamneseTopic[] = [
+const anamneseTopics: AnamneseTopic[] = [
   // ENTREVISTA CLÍNICA
   {
     id: 'queixa-principal',
@@ -2070,14 +2064,3 @@ export const anamneseTopics: AnamneseTopic[] = [
 
 export const getAnamneseByCategory = (category: string) =>
   anamneseTopics.filter(t => category === 'all' || t.category === category);
-
-// Funções utilitárias
-export const getRegions = () => painMapRegions.map(r => ({ id: r.id, name: r.name, icon: r.icon }));
-
-export const getMusclesByRegion = (region: string) => keyMuscles.filter(m => m.region === region);
-
-export const getTestsByRegion = (region: string) => orthopedicTests.filter(t => t.region === region);
-
-export const getTreatmentsByRegion = (region: string) => initialTreatments.filter(t => t.region === region);
-
-export const getPainMapByRegion = (regionId: string) => painMapRegions.find(r => r.id === regionId);

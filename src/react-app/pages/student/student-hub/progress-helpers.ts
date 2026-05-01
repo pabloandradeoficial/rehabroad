@@ -36,7 +36,7 @@ export function readStoredStreak(key: string): number {
   return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
-export function mergeStoredCaseProgress(
+function mergeStoredCaseProgress(
   existingItems: StoredCaseProgress[],
   incomingItems: StoredCaseProgress[]
 ): StoredCaseProgress[] {

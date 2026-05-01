@@ -6760,8 +6760,3 @@ export const blogCategories = [
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
   return blogPosts.find(post => post.slug === slug);
 }
-
-export function getBlogPostsByCategory(category: string): BlogPost[] {
-  if (category === "Todos") return blogPosts;
-  return blogPosts.filter(post => post.category === category);
-}

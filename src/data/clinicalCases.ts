@@ -1142,27 +1142,5 @@ export const caseCategories = [
   'Punho e Mão'
 ];
 
-export const specialties = [
-  'Ortopédica',
-  'Neurológica',
-  'Esportiva',
-  'Geriátrica',
-  'Respiratória',
-  'Reumatológica',
-  'Pediátrica'
-];
-
-export const getCasesByCategory = (category: string) => 
-  clinicalCases.filter(c => c.category === category);
-
-export const getCasesByDifficulty = (difficulty: ClinicalCase['difficulty']) =>
-  clinicalCases.filter(c => c.difficulty === difficulty);
-
-export const getCasesBySpecialty = (specialty: string) =>
-  clinicalCases.filter(c => c.specialty === specialty);
-
-export const getCaseById = (id: string) =>
-  clinicalCases.find(c => c.id === id);
-
 export const getRandomCase = () =>
   clinicalCases[Math.floor(Math.random() * clinicalCases.length)];

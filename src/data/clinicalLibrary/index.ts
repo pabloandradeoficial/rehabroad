@@ -9,7 +9,7 @@ export { categories };
 export type { ClinicalPage, CategoryInfo };
 
 // All clinical pages
-export const allClinicalPages: ClinicalPage[] = [
+const allClinicalPages: ClinicalPage[] = [
   ...testesOrtopedicos,
   ...patologias,
   ...patologiasAdicionais,

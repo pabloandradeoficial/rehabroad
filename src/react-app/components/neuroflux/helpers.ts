@@ -44,7 +44,7 @@ export const scientificReferences = [
   { category: "Termoterapia", refs: ["Nadler SF et al. Pain Physician. 2004;7(3):395-9.", "Petrofsky J et al. J Med Eng Technol. 2009;33(5):361-9.", "Malanga GA et al. Postgrad Med. 2015;127(1):57-65."] },
 ];
 
-export function inferTissue(text: string): string | null {
+function inferTissue(text: string): string | null {
   const t = text.toLowerCase();
   if (/tend[aã]o|tendino|tendinite|tendinopatia|tendinop/.test(t)) return "Tendão";
   if (/ligamento|entorse|lca|lcp|lcl|lcm|lcfl/.test(t)) return "Ligamento";
@@ -53,7 +53,7 @@ export function inferTissue(text: string): string | null {
   return null;
 }
 
-export function inferPathophysiology(diagnosis: string, history?: string | null): string | null {
+function inferPathophysiology(diagnosis: string, history?: string | null): string | null {
   const text = `${diagnosis} ${history ?? ""}`.toLowerCase();
   if (/cirurg|p[oó]s.?op|operatório|p[oó]s.?cirúrg/.test(text)) return "Pós-operatório";
   if (/crôni|desgaste|artrose|degener|osteoartrite|artrit/.test(text)) return "Desgaste / Crônico";
@@ -62,7 +62,7 @@ export function inferPathophysiology(diagnosis: string, history?: string | null)
   return null;
 }
 
-export function inferIrritability(painLevel: number | null): string | null {
+function inferIrritability(painLevel: number | null): string | null {
   if (painLevel === null || painLevel === undefined) return null;
   if (painLevel > 7) return "Alta";
   if (painLevel > 4) return "Média";
