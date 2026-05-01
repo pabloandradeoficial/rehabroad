@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, FileText, Search, Target, Zap, AlertTriangle, TrendingUp, ChevronRight } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { initialTreatments, type InitialTreatment } from "@/data/educationalModules";
-import { ModulePage } from "@/react-app/components/student/ModuleTransitions";
+import { ModulePage } from "@/react-app/components/student/ModulePage";
 
 interface Props {
   onBack: () => void;

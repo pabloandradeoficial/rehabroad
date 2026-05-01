@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, MapPin, Activity, Dumbbell, Stethoscope, Zap, ChevronRight } from "lucide-react";
 import { painMapRegions, type PainMapRegion } from "@/data/educationalModules";
-import { ModulePage } from "@/react-app/components/student/ModuleTransitions";
+import { ModulePage } from "@/react-app/components/student/ModulePage";
 
 interface Props {
   onBack: () => void;

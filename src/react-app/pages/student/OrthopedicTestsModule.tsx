@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Stethoscope, Search, Target, Play, CheckCircle, Brain, ChevronRight, ImageIcon } from "lucide-react";
 import { orthopedicTests, type OrthopedicTest } from "@/data/educationalModules";
-import { ModulePage } from "@/react-app/components/student/ModuleTransitions";
+import { ModulePage } from "@/react-app/components/student/ModulePage";
 
 interface Props {
   onBack: () => void;

@@ -16,7 +16,7 @@ import {
   Star
 } from "lucide-react";
 import { electrotherapyModalities, type ElectrotherapyModality } from "@/data/educationalModules";
-import { ModulePage } from "@/react-app/components/student/ModuleTransitions";
+import { ModulePage } from "@/react-app/components/student/ModulePage";
 
 interface Props {
   onBack: () => void;

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Dumbbell, Search, MapPin, AlertCircle, Activity, ChevronRight } from "lucide-react";
 import { keyMuscles, type KeyMuscle } from "@/data/educationalModules";
-import { ModulePage } from "@/react-app/components/student/ModuleTransitions";
+import { ModulePage } from "@/react-app/components/student/ModulePage";
 
 interface Props {
   onBack: () => void;
