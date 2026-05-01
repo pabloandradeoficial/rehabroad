@@ -9,6 +9,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ### Adicionado
 - Middleware global de Request-ID no worker. Reaproveita `cf-ray` (ou gera UUID) e expõe via header `x-request-id`. Logs de erro agora incluem o ID para correlação em produção.
 - `CHANGELOG.md`.
+- E2E (Playwright) para fluxos clínicos críticos em `e2e/fluxos-criticos.spec.ts`: cadastrar paciente → abrir prontuário, abrir Scribe via Nova Evolução, abrir FAB do Rehab Friend, carregar overview do HEP. Total de 4 novos testes (× desktop+mobile = 8).
 - `npm run typecheck:worker` (TS check do worker via `tsconfig.worker.json`) e `npm run typecheck` (web + worker). Ambos agora rodam dentro de `npm run build`.
 - Helpers `envAsRecord(env)` / `envAsStringRecord(env)` em `worker/lib/helpers.ts` para evitar repetir `as unknown as Record<...>` ao tratar o `Env` do Cloudflare.
 
@@ -23,6 +24,10 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ### Corrigido
 - 73 erros TS pré-existentes no worker que não eram pegos no CI. Quebra: 11× cast `Env as Record<...>`, 39× `implicit any` em callbacks de `.map()`/`.filter()`, 4× possibly-undefined em cálculos de dor (`suporte.ts`), 3× imports não usados, 1× typo (`pain_patterns` → `pain_pattern`), 1× tipo do contexto Hono em `auth.ts`.
 - ESLint agora ignora `coverage/` (saída do Vitest gerava 3 warnings espúrios).
+
+### Removido
+- 14 UI primitives shadcn não usadas: `accordion`, `alert-dialog`, `avatar`, `collapsible`, `field`, `input-group`, `popover`, `radio-group`, `scroll-area`, `separator`, `skeleton`, `switch`, `table`, `tooltip`. Pacote `radix-ui` mantido (tree-shaking cuida do peso).
+- 23 exports não usados (flagados pelo knip) — alguns deletados por completo, outros convertidos para `internal` (sem `export`). Inclui `getCasesByCategory`/`getCasesByDifficulty`/`getCasesBySpecialty`/`getCaseById` em `clinicalCases.ts`, helpers regionais em `educationalModules.ts`, `getExerciseById`, `buscarTestes`/`buscarTestesPorCategoria`/`getIndicacoesPorRegiao`/`getSintomasPorRegiao` em `testesOrtopedicos.ts`, `getBlogPostsByCategory`, `usePatientColor`, `ADMQuickReference`, e 3 helpers de auth no worker (`getPossibleAuthCookieNames`, `extractAccessToken`, `getSupabaseUserFromAccessToken`).
 
 ## [2026-04-27]
 

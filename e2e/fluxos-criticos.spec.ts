@@ -133,3 +133,88 @@ test.describe("NeuroFlux", () => {
     await expect(page.getByRole("heading", { name: "NeuroFlux" })).toBeVisible();
   });
 });
+
+// ─────────────────────────────────────────────
+// Pacientes (cria + navega para detalhe)
+// ─────────────────────────────────────────────
+test.describe("Pacientes", () => {
+  test("cadastrar paciente e abrir prontuário", async ({ page }) => {
+    await page.goto("/dashboard");
+
+    const nome = `Paciente E2E ${Date.now()}`;
+
+    // Open new patient dialog (button text "Novo Paciente")
+    await page.getByRole("button", { name: /novo paciente/i }).first().click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    // Fill required field
+    await page.getByLabel(/nome completo/i).fill(nome);
+
+    // Submit
+    await page.getByRole("button", { name: /cadastrar paciente|^cadastrar$/i }).click();
+
+    // App navigates to /dashboard/paciente/:id and the name appears as the heading
+    await expect(page).toHaveURL(/\/dashboard\/paciente\/\d+/, { timeout: 10000 });
+    await expect(page.getByText(nome).first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("text=500")).not.toBeVisible();
+  });
+});
+
+// ─────────────────────────────────────────────
+// Scribe (UI-only — não dispara gravação real)
+// ─────────────────────────────────────────────
+test.describe("Scribe", () => {
+  test("botão de gravação aparece ao abrir Nova Evolução", async ({ page }) => {
+    // Cria paciente para chegar até o diálogo de evolução
+    await page.goto("/dashboard");
+    const nome = `Paciente Scribe ${Date.now()}`;
+    await page.getByRole("button", { name: /novo paciente/i }).first().click();
+    await page.getByLabel(/nome completo/i).fill(nome);
+    await page.getByRole("button", { name: /cadastrar paciente|^cadastrar$/i }).click();
+    await expect(page).toHaveURL(/\/dashboard\/paciente\/\d+/, { timeout: 10000 });
+
+    // Abre o diálogo de Nova Evolução (botão muda de label dependendo da página, busca defensiva)
+    const newEvolutionBtn = page
+      .getByRole("button", { name: /nova evolução|registrar evolução|\+ evolução/i })
+      .first();
+    await newEvolutionBtn.click({ timeout: 8000 });
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    // O ScribeButton expõe data-onboarding="scribe-btn" no wrapper
+    await expect(page.locator('[data-onboarding="scribe-btn"]')).toBeVisible();
+  });
+});
+
+// ─────────────────────────────────────────────
+// Rehab Friend (FAB premium — abre chat)
+// ─────────────────────────────────────────────
+test.describe("Rehab Friend", () => {
+  test("FAB abre o painel de chat", async ({ page }) => {
+    await page.goto("/dashboard");
+    // FAB é premium-only; o test-user tem is_premium=true via /api/subscription bypass
+    const fab = page.locator('[data-onboarding="rehab-friend-btn"]');
+    await expect(fab).toBeVisible({ timeout: 8000 });
+
+    await fab.click();
+
+    // O painel injeta um aviso fixo (linha 523 do RehabFriendChat)
+    await expect(
+      page.getByText(/sugestões de apoio clínico/i)
+    ).toBeVisible({ timeout: 5000 });
+  });
+});
+
+// ─────────────────────────────────────────────
+// HEP (overview)
+// ─────────────────────────────────────────────
+test.describe("HEP", () => {
+  test("página de visão geral carrega sem erro", async ({ page }) => {
+    await page.goto("/dashboard/hep");
+    await expect(page.locator("text=500")).not.toBeVisible();
+    await expect(page.locator("text=Error")).not.toBeVisible();
+    // Heading do módulo (HEP / Plano Domiciliar / similar)
+    await expect(
+      page.getByRole("heading", { name: /hep|plano domiciliar|exercícios domiciliares/i })
+    ).toBeVisible({ timeout: 8000 });
+  });
+});
