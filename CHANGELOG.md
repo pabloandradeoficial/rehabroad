@@ -10,7 +10,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - Middleware global de Request-ID no worker. Reaproveita `cf-ray` (ou gera UUID) e expõe via header `x-request-id`. Logs de erro agora incluem o ID para correlação em produção.
 - `CHANGELOG.md`.
 - E2E (Playwright) para fluxos clínicos críticos em `e2e/fluxos-criticos.spec.ts`: cadastrar paciente → abrir prontuário, abrir Scribe via Nova Evolução, abrir FAB do Rehab Friend, carregar overview do HEP. Total de 4 novos testes (× desktop+mobile = 8).
-- `npm run typecheck:worker` (TS check do worker via `tsconfig.worker.json`) e `npm run typecheck` (web + worker). Ambos agora rodam dentro de `npm run build`.
+- `npm run typecheck:worker` (TS check do worker via `tsconfig.worker.json`) e `npm run typecheck` (web + worker) como scripts standalone para uso local. **Não rodam dentro de `npm run build`** — o build do Netlify só publica o frontend, e `worker-configuration.d.ts` é gitignored (gerado por `wrangler types`). Worker já tem validação no `wrangler deploy`.
 - Helpers `envAsRecord(env)` / `envAsStringRecord(env)` em `worker/lib/helpers.ts` para evitar repetir `as unknown as Record<...>` ao tratar o `Env` do Cloudflare.
 
 ### Mudado

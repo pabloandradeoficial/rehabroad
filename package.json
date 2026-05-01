@@ -56,7 +56,7 @@
     "uuid": "^14.0.0"
   },
   "scripts": {
-    "build": "npm run typecheck:web && npm run typecheck:worker && vite build",
+    "build": "npm run typecheck:web && vite build",
     "cf-typegen": "wrangler types",
     "check": "tsc && vite build && wrangler deploy --dry-run",
     "dev": "vite",
