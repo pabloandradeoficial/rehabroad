@@ -40,7 +40,6 @@ import LoginPage from "@/react-app/pages/Login";
 import AuthCallbackPage from "@/react-app/pages/AuthCallback";
 import ProtectedDashboard from "@/react-app/components/ProtectedDashboard";
 
-const HomePage = lazy(() => import("@/react-app/pages/Home"));
 const PainelPage = lazy(() => import("@/react-app/pages/dashboard/Painel"));
 const PatientDetailPage = lazy(
   () => import("@/react-app/pages/dashboard/PatientDetail")
@@ -142,14 +141,6 @@ function PageLoader() {
 
 // Removed AuthGate in favor of per-route AuthGuard
 
-// Redirects authenticated users to /dashboard; shows landing page otherwise.
-function RootRedirect() {
-  const { user, isPending } = useAppAuth();
-  if (isPending) return null;
-  if (user) return <Navigate to="/dashboard" replace />;
-  return <HomePage />;
-}
-
 function OwnerOnlyRoute({ children }: { children: ReactNode }) {
   const { user, isPending } = useAppAuth();
 
@@ -179,7 +170,7 @@ export default function App() {
                   <ErrorBoundary>
                     <Toaster position="top-right" theme="dark" richColors />
                     <Routes>
-                      <Route path="/" element={<RootRedirect />} />
+                      <Route path="/" element={<LoginPage />} />
                       <Route path="/comparacao" element={<ComparacaoPage />} />
                       <Route
                         path="/fisioterapia-ortopedica"

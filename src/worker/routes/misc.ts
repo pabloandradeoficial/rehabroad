@@ -8,7 +8,6 @@ export const miscRouter = new Hono<{ Bindings: Env }>();
 // ============================================
 
 const STATIC_PAGES = [
-  { url: "/", priority: "1.0", changefreq: "weekly" },
   { url: "/blog", priority: "0.9", changefreq: "daily" },
   { url: "/biblioteca", priority: "0.9", changefreq: "weekly" },
   { url: "/comparacao", priority: "0.8", changefreq: "monthly" },

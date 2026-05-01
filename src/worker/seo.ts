@@ -13,17 +13,10 @@ export interface SEOData {
 
 const BASE_URL = "https://rehabroad.com.br";
 
-// SEO data for static routes
+// SEO data for static routes.
+// Note: "/" no longer has SEO meta — it serves the login page directly.
+// Other public landings (/comparacao, /fisioterapia-*) are kept for SEO surface.
 const ROUTE_SEO: Record<string, SEOData> = {
-  "/": {
-    title: "Rehabroad — IA Diagnóstica para Fisioterapeutas | Prontuário + Laudo PDF",
-    description:
-      "Software de fisioterapia com IA que sugere hipóteses diagnósticas em tempo real. Prontuário eletrônico, alertas de piora e laudo PDF profissional. Teste grátis por 30 dias.",
-    ogTitle: "Rehabroad — Copiloto Clínico para Fisioterapeutas",
-    ogDescription:
-      "IA que analisa achados clínicos e sugere hipóteses diagnósticas. Usado por +500 fisioterapeutas no Brasil.",
-    canonical: BASE_URL,
-  },
   "/comparacao": {
     title: "Planilhas vs REHABROAD — Comparação de Software para Fisioterapia",
     description:
