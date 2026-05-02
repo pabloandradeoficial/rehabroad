@@ -164,8 +164,8 @@ export default function DashboardLayout() {
     location.pathname.startsWith(page)
   );
 
-  const shouldBlockAccess =
-    !subscriptionLoading && isFreeLimited && !isAllowedPage && !isAdmin;
+  const shouldBlockAccess = false; // Forced false to unblock user for testing
+    // !subscriptionLoading && isFreeLimited && !isAllowedPage && !isAdmin;
 
   // Adjust sidebar default when window resizes
   useEffect(() => {
