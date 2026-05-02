@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface ClinicalInsightsData {
   similarCases: number;
-  topDiagnoses: { name: string; count: number; percentage: number }[];
+  topLocations: { name: string; count: number; percentage: number }[];
   topTests: { name: string; count: number }[];
+  scope?: "own_patients";
 }
 
 interface ClinicalInsightsProps {
@@ -72,7 +73,11 @@ export default function ClinicalInsights({ painLocation, chiefComplaint }: Clini
               </Badge>
             </h3>
             <p className="text-sm text-slate-500">
-              {loading ? "Carregando..." : data ? `${data.similarCases} casos semelhantes` : "Dados coletivos anonimizados"}
+              {loading
+                ? "Carregando..."
+                : data
+                  ? `${data.similarCases} ${data.similarCases === 1 ? "caso seu" : "casos seus"} parecidos`
+                  : "Padrões nos seus pacientes"}
             </p>
           </div>
         </div>
@@ -108,33 +113,41 @@ export default function ClinicalInsights({ painLocation, chiefComplaint }: Clini
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-violet-700">{data.similarCases}</p>
-                      <p className="text-sm text-slate-500">Casos semelhantes registrados</p>
+                      <p className="text-sm text-slate-500">
+                        {data.similarCases === 1 ? "caso seu" : "casos seus"} com queixa parecida
+                      </p>
                     </div>
                   </div>
 
-                  {/* Top Diagnoses */}
-                  {data.topDiagnoses.length > 0 && (
+                  {/* Sub-threshold message: don't show ratios with N<3 */}
+                  {data.similarCases > 0 && data.topLocations.length === 0 && (
+                    <div className="text-xs text-slate-500 px-1">
+                      Poucos casos para gerar estatística confiável. Continue documentando seus
+                      atendimentos — padrões emergem com volume.
+                    </div>
+                  )}
+
+                  {/* Top Pain Locations */}
+                  {data.topLocations.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
                         <Stethoscope className="w-4 h-4 text-violet-500" />
-                        Diagnósticos mais frequentes
+                        Localizações mais frequentes
                       </div>
                       <div className="space-y-2">
-                        {data.topDiagnoses.map((diagnosis, index) => (
+                        {data.topLocations.map((loc, index) => (
                           <div
-                            key={diagnosis.name}
+                            key={loc.name}
                             className="flex items-center gap-3 p-2 bg-white rounded-lg border border-violet-100"
                           >
                             <div className="w-6 h-6 rounded-full bg-violet-500 text-white text-sm font-bold flex items-center justify-center">
                               {index + 1}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-700 truncate">
-                                {diagnosis.name}
-                              </p>
+                              <p className="text-sm font-medium text-slate-700 truncate">{loc.name}</p>
                             </div>
                             <Badge variant="secondary" className="bg-violet-100 text-violet-700">
-                              {diagnosis.percentage}%
+                              {loc.percentage}%
                             </Badge>
                           </div>
                         ))}
@@ -164,15 +177,17 @@ export default function ClinicalInsights({ painLocation, chiefComplaint }: Clini
                     </div>
                   )}
 
-                  {/* Disclaimer */}
+                  {/* Disclaimer — accurate scoping */}
                   <div className="flex gap-2 p-3 bg-violet-100/50 rounded-xl text-xs text-slate-600">
                     <Info className="w-4 h-4 text-violet-500 flex-shrink-0 mt-0.5" />
                     <div className="space-y-1">
                       <p>
-                        Esses dados são baseados em avaliações clínicas registradas no sistema por outros fisioterapeutas.
+                        Padrões agregados <strong>dos seus próprios pacientes</strong> com queixa
+                        parecida. Nenhum dado de outros profissionais é exposto.
                       </p>
                       <p>
-                        As informações são <strong>anonimizadas</strong> e servem apenas como apoio ao raciocínio clínico.
+                        Útil para identificar tendências no seu consultório — não substitui
+                        avaliação clínica individualizada.
                       </p>
                     </div>
                   </div>
