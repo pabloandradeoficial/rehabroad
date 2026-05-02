@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/react-app/lib/api";
 
 export interface SmartAlert {
   id: number;
@@ -43,7 +44,7 @@ export function useSmartAlerts() {
   const fetchSmartAlerts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/smart-alerts");
+      const res = await apiFetch("/api/smart-alerts");
       if (!res.ok) throw new Error("Failed to fetch smart alerts");
       const result = await res.json();
       setData(result);

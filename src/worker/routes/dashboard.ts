@@ -11,17 +11,15 @@ export const dashboardRouter = new Hono<{ Bindings: Env }>();
 dashboardRouter.get("/dashboard/stats", authMiddleware, async (c) => {
   const user = c.get("user");
 
-  // Single roundtrip: 3 counts via correlated subqueries instead of 3 separate prepares.
-  const counts = await c.env.DB.prepare(
-    `SELECT
-       (SELECT COUNT(*) FROM patients WHERE user_id = ?1) AS patients_count,
-       (SELECT COUNT(*) FROM evaluations WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?1)) AS evals_count,
-       (SELECT COUNT(*) FROM evolutions WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?1)) AS evols_count`
-  ).bind(user!.id).first<{ patients_count: number; evals_count: number; evols_count: number }>();
+  const results = await c.env.DB.batch([
+    c.env.DB.prepare(`SELECT COUNT(*) as count FROM patients WHERE user_id = ?`).bind(user!.id),
+    c.env.DB.prepare(`SELECT COUNT(*) as count FROM evaluations WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?)`).bind(user!.id),
+    c.env.DB.prepare(`SELECT COUNT(*) as count FROM evolutions WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?)`).bind(user!.id)
+  ]);
 
-  const totalPatients = counts?.patients_count ?? 0;
-  const totalEvaluations = counts?.evals_count ?? 0;
-  const totalEvolutions = counts?.evols_count ?? 0;
+  const totalPatients = (results[0].results?.[0] as any)?.count ?? 0;
+  const totalEvaluations = (results[1].results?.[0] as any)?.count ?? 0;
+  const totalEvolutions = (results[2].results?.[0] as any)?.count ?? 0;
 
   let recentActivities: Array<{
     id: number;
@@ -297,37 +295,27 @@ dashboardRouter.get("/dashboard/charts", authMiddleware, async (c) => {
 dashboardRouter.get("/onboarding/progress", authMiddleware, async (c) => {
   const user = c.get("user");
 
-  // Single roundtrip: collapse 5 boolean checks into one query with EXISTS + the
-  // first-evaluation patient_id via a scalar subquery.
-  const progress = await c.env.DB.prepare(
-    `SELECT
-       EXISTS(SELECT 1 FROM patients WHERE user_id = ?1) AS has_patient,
-       (SELECT patient_id FROM evaluations e JOIN patients p ON e.patient_id = p.id
-        WHERE p.user_id = ?1 ORDER BY e.created_at ASC LIMIT 1) AS first_eval_patient_id,
-       EXISTS(
-         SELECT 1 FROM caminho c JOIN patients p ON c.patient_id = p.id
-         WHERE p.user_id = ?1 AND c.treatment_goals IS NOT NULL AND c.treatment_goals != ''
-       ) AS has_objectives,
-       EXISTS(
-         SELECT 1 FROM evolutions e JOIN patients p ON e.patient_id = p.id
-         WHERE p.user_id = ?1
-       ) AS has_evolution,
-       EXISTS(SELECT 1 FROM report_exports WHERE user_id = ?1) AS has_report`
-  ).bind(user!.id).first<{
-    has_patient: number;
-    first_eval_patient_id: number | null;
-    has_objectives: number;
-    has_evolution: number;
-    has_report: number;
-  }>();
+  const progressResults = await c.env.DB.batch([
+    c.env.DB.prepare(`SELECT 1 FROM patients WHERE user_id = ? LIMIT 1`).bind(user!.id),
+    c.env.DB.prepare(`SELECT patient_id FROM evaluations e JOIN patients p ON e.patient_id = p.id WHERE p.user_id = ? ORDER BY e.created_at ASC LIMIT 1`).bind(user!.id),
+    c.env.DB.prepare(`SELECT 1 FROM caminho c JOIN patients p ON c.patient_id = p.id WHERE p.user_id = ? AND c.treatment_goals IS NOT NULL AND c.treatment_goals != '' LIMIT 1`).bind(user!.id),
+    c.env.DB.prepare(`SELECT 1 FROM evolutions e JOIN patients p ON e.patient_id = p.id WHERE p.user_id = ? LIMIT 1`).bind(user!.id),
+    c.env.DB.prepare(`SELECT 1 FROM report_exports WHERE user_id = ? LIMIT 1`).bind(user!.id)
+  ]);
+
+  const has_patient = progressResults[0].results.length > 0;
+  const first_eval_patient_id = progressResults[1].results.length > 0 ? (progressResults[1].results[0] as any).patient_id : null;
+  const has_objectives = progressResults[2].results.length > 0;
+  const has_evolution = progressResults[3].results.length > 0;
+  const has_report = progressResults[4].results.length > 0;
 
   return c.json({
-    hasPatient: !!progress?.has_patient,
-    hasEvaluation: progress?.first_eval_patient_id != null,
-    hasObjectives: !!progress?.has_objectives,
-    hasEvolution: !!progress?.has_evolution,
-    hasReport: !!progress?.has_report,
-    firstEvaluationPatientId: progress?.first_eval_patient_id ?? null,
+    hasPatient: has_patient,
+    hasEvaluation: first_eval_patient_id != null,
+    hasObjectives: has_objectives,
+    hasEvolution: has_evolution,
+    hasReport: has_report,
+    firstEvaluationPatientId: first_eval_patient_id,
   });
 });
 
