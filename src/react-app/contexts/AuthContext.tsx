@@ -14,13 +14,10 @@ import { isSupabaseConfigured, supabase } from "@/react-app/lib/supabase";
 // E2E test bypass — only active in Vite dev mode
 function getE2eBypassUser(): { session: Session; user: User } | null {
   if (!import.meta.env.DEV) return null;
-  const match = document.cookie
-    .split("; ")
-    .find((c) => c.startsWith("rehabroad-test-bypass="));
-  if (!match) return null;
+  
   const fakeUser = {
     id: "e2e-test-user",
-    email: "e2e@rehabroad.local",
+    email: "pabloandradeoficial@gmail.com",
     role: "authenticated",
     aud: "authenticated",
     app_metadata: {},
