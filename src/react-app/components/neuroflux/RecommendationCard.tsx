@@ -41,25 +41,28 @@ export function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: n
     { label: "QUINTA OPÇÃO", gradient: "from-teal-400 via-cyan-400 to-teal-500", glow: "shadow-teal-500/20", ring: "ring-teal-500/30" },
   ];
 
-  const config = rankConfig[rank - 1];
+  const contraindicatedConfig = { label: "CONTRAINDICADO", gradient: "from-red-500 via-rose-600 to-red-700", glow: "shadow-red-500/40", ring: "ring-red-500/50" };
+  const config = rec.isContraindicated ? contraindicatedConfig : rankConfig[Math.min(rank - 1, rankConfig.length - 1)];
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: rank * 0.08 }}>
       <Card className={cn(
         "relative overflow-hidden border-0 shadow-xl backdrop-blur-xl transition-all duration-300",
+        rec.isContraindicated ? `ring-2 ${config.ring} ${config.glow} shadow-2xl opacity-90` :
         rank === 1 ? `ring-2 ${config.ring} ${config.glow} shadow-2xl` : "bg-card/80"
       )}>
-        {rank === 1 && <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-yellow-500/5" />}
+        {rank === 1 && !rec.isContraindicated && <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-yellow-500/5" />}
+        {rec.isContraindicated && <div className="absolute inset-0 bg-red-500/5" />}
 
         <CardHeader className="relative pb-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4">
               <div className={cn("relative w-14 h-14 rounded-2xl flex items-center justify-center text-white bg-gradient-to-br shadow-xl", config.gradient, config.glow)}>
-                {rank === 1 && <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/30 to-transparent" />}
-                <span className="relative font-black text-2xl">{rank}</span>
+                {(rank === 1 || rec.isContraindicated) && <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/30 to-transparent" />}
+                <span className="relative font-black text-2xl">{rec.isContraindicated ? "!" : rank}</span>
               </div>
               <div>
-                <p className={cn("text-xs font-bold tracking-wider uppercase", rank === 1 ? "text-amber-500" : "text-muted-foreground")}>{config.label}</p>
+                <p className={cn("text-xs font-bold tracking-wider uppercase", rec.isContraindicated ? "text-red-500" : rank === 1 ? "text-amber-500" : "text-muted-foreground")}>{config.label}</p>
                 <div className="flex items-center gap-3 mt-1">
                   <div className="text-violet-500">{icons[rec.name]}</div>
                   <CardTitle className="text-2xl font-black">{rec.name}</CardTitle>
@@ -86,6 +89,22 @@ export function RecommendationCard({ rec, rank }: { rec: Recommendation; rank: n
             <Target className="w-5 h-5 text-violet-500 shrink-0" />
             <span className="text-sm"><strong className="text-foreground">Indicação:</strong> <span className="text-muted-foreground">{rec.mainIndication}</span></span>
           </div>
+
+          {rec.patientSpecificAlerts && rec.patientSpecificAlerts.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {rec.patientSpecificAlerts.map((alert, idx) => (
+                <div key={idx} className={cn(
+                  "flex items-start gap-2 p-3 rounded-xl border",
+                  rec.isContraindicated 
+                    ? "bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400" 
+                    : "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400"
+                )}>
+                  <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", rec.isContraindicated ? "text-red-500" : "text-amber-500")} />
+                  <span className="text-sm font-medium">{alert}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="relative space-y-5 pb-6">

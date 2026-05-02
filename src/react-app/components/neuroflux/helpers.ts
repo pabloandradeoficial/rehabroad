@@ -69,10 +69,26 @@ function inferIrritability(painLevel: number | null): string | null {
   return "Baixa";
 }
 
+export function extractContraindications(text: string): string[] {
+  const flags: Set<string> = new Set();
+  const t = text.toLowerCase();
+  
+  if (/marcapasso|marca.passo/.test(t)) flags.add("Marcapasso");
+  if (/gestan|gr[aá]vid|prenhez/.test(t)) flags.add("Gestante");
+  if (/c[aâ]ncer|tumor|oncolog|neoplas|malign/.test(t)) flags.add("Tumor maligno");
+  if (/trombose|tvp/.test(t)) flags.add("Trombose Venosa Profunda (TVP)");
+  if (/diabet/.test(t)) flags.add("Diabetes");
+  if (/infec[cç][aã]o|febr/.test(t)) flags.add("Infecção Ativa");
+  if (/cirurg|p[oó]s.op/.test(t) && /recente/.test(t)) flags.add("Hemorragia ativa / Cirurgia recente");
+  if (/raynaud/.test(t)) flags.add("Síndrome de Raynaud");
+  
+  return Array.from(flags);
+}
+
 export function mapPatientToNeuroflux(
   patient: Patient,
   latestEval?: Evaluation | null
-): { data: Partial<ClinicalData>; autoFilled: Set<keyof ClinicalData> } {
+): { data: Partial<ClinicalData>; autoFilled: Set<keyof ClinicalData>; contraindications: string[] } {
   const filled: Partial<ClinicalData> = {};
   const autoFilled = new Set<keyof ClinicalData>();
 
@@ -102,5 +118,8 @@ export function mapPatientToNeuroflux(
     autoFilled.add("irritability");
   }
 
-  return { data: filled, autoFilled };
+  const combinedText = `${patient.notes ?? ""} ${latestEval?.history ?? ""} ${latestEval?.observations ?? ""} ${latestEval?.chief_complaint ?? ""}`;
+  const contraindications = extractContraindications(combinedText);
+
+  return { data: filled, autoFilled, contraindications };
 }

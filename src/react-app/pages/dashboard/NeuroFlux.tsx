@@ -57,6 +57,7 @@ function NeuroFluxContent() {
   const [autoFilledFields, setAutoFilledFields] = useState<Set<keyof ClinicalData>>(new Set());
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [patientContraindications, setPatientContraindications] = useState<string[]>([]);
 
   // History — patient-specific or general
   const patientIdStr = selectedPatient ? String(selectedPatient.id) : undefined;
@@ -127,7 +128,8 @@ function NeuroFluxContent() {
       setPatientClinicalContext(ctx);
 
       // Base auto-fill from evaluation
-      const { data: mapped, autoFilled } = mapPatientToNeuroflux(patient, latestEvalData);
+      const { data: mapped, autoFilled, contraindications } = mapPatientToNeuroflux(patient, latestEvalData);
+      setPatientContraindications(contraindications);
 
       // Smart overrides from clinical context
       const overrides: Partial<ClinicalData> = {};
@@ -199,6 +201,7 @@ function NeuroFluxContent() {
     setSearch("");
     setFormData(EMPTY_FORM);
     setAutoFilledFields(new Set());
+    setPatientContraindications([]);
     setRecommendations(null);
   }, []);
 
@@ -210,6 +213,7 @@ function NeuroFluxContent() {
     setPatientClinicalContext(null);
     setContextAlerts([]);
     setSearch("");
+    setPatientContraindications([]);
     setRecommendations(null);
   }, []);
 
@@ -261,13 +265,25 @@ function NeuroFluxContent() {
   const handleGenerateRecommendation = useCallback(() => {
     if (!isFormComplete) return;
     setGenerating(true);
+    
+    // Inject patient context before generation
+    const payload: ClinicalData = {
+      ...formData,
+      patientContext: (mode === "patient" && selectedPatient) ? {
+        painTrend: patientClinicalContext?.evolutionSummary.painTrend,
+        totalSessions: patientClinicalContext?.evolutionSummary.totalSessions,
+        proceduresUsed: patientClinicalContext?.evolutionSummary.proceduresUsed,
+        identifiedContraindications: patientContraindications
+      } : undefined
+    };
+
     // slight visual delay for feedback
     setTimeout(() => {
-      setRecommendations(getRecommendations(formData));
-      void saveProgress(formData, selectedPatient ? String(selectedPatient.id) : null);
+      setRecommendations(getRecommendations(payload));
+      void saveProgress(payload, selectedPatient ? String(selectedPatient.id) : null);
       setGenerating(false);
     }, 600);
-  }, [isFormComplete, formData, saveProgress, selectedPatient]);
+  }, [isFormComplete, formData, saveProgress, selectedPatient, mode, patientClinicalContext, patientContraindications]);
 
   const handleReset = useCallback(() => {
     setFormData(selectedPatient ? formData : EMPTY_FORM);

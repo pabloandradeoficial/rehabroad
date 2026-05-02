@@ -6,6 +6,12 @@ export type ClinicalData = {
   phase: string | null;
   objective: string | null;
   irritability: string | null;
+  patientContext?: {
+    painTrend?: "improving" | "worsening" | "stable";
+    totalSessions?: number;
+    proceduresUsed?: string[];
+    identifiedContraindications?: string[];
+  };
 };
 
 export type Parameter = {
@@ -33,6 +39,8 @@ export type Recommendation = {
   evidenceDescription: string;
   references?: string[];
   clinicalObservation?: string;
+  patientSpecificAlerts?: string[];
+  isContraindicated?: boolean;
 };
 
 // Base data for each modality
@@ -293,12 +301,39 @@ const modalityData: Record<string, Omit<Recommendation, "mainIndication" | "mode
 function calculateScore(
   modality: string,
   data: ClinicalData
-): { score: number; indication: string; mode?: string } {
+): { score: number; indication: string; mode?: string; alerts: string[]; isContraindicated: boolean } {
   let score = 0;
   let indication = "";
   let mode: string | undefined;
+  const alerts: string[] = [];
+  let isContraindicated = false;
 
-  const { phase, objective, irritability, pathophysiology, tissue } = data;
+  const { phase, objective, irritability, pathophysiology, tissue, patientContext } = data;
+
+  // 1. Safety Check (Contraindications)
+  if (patientContext?.identifiedContraindications?.length) {
+    const { contraindications } = modalityData[modality];
+    for (const flag of patientContext.identifiedContraindications) {
+      const match = contraindications.some(c => c.toLowerCase().includes(flag.toLowerCase()) || 
+        (flag === "Marcapasso" && modality === "TENS") ||
+        (flag === "Tumor maligno" && (modality === "TENS" || modality === "Ultrassom" || modality === "Laser" || modality === "Termoterapia")) ||
+        (flag === "Gestante" && (modality === "TENS" || modality === "Ultrassom" || modality === "Laser")) ||
+        (flag === "Trombose Venosa Profunda (TVP)" && (modality === "Ultrassom" || modality === "TENS")) ||
+        (flag === "Diabetes" && (modality === "Crioterapia" || modality === "Termoterapia")) || // risco sensibilidade
+        (flag === "Síndrome de Raynaud" && modality === "Crioterapia")
+      );
+      if (match) {
+        isContraindicated = true;
+        alerts.push(`⚠️ ALERTA CLÍNICO: Possível contraindicação detectada no prontuário (${flag}).`);
+      }
+    }
+  }
+
+  // 2. Prior Outcome Check (Worsening with modality)
+  if (patientContext?.painTrend === "worsening" && patientContext?.proceduresUsed?.some(p => p.toLowerCase().includes(modality.toLowerCase()))) {
+    score -= 40;
+    alerts.push(`💡 Paciente apresentou piora de dor (Tendência: Piorando) e já utilizou ${modality} recentemente. Considere reduzir dose ou trocar modalidade.`);
+  }
 
   switch (modality) {
     case "TENS":
@@ -445,28 +480,34 @@ function calculateScore(
       break;
   }
 
-  return { score: Math.max(0, score), indication, mode };
+  if (isContraindicated) {
+    score = -100; // Force to bottom
+  }
+
+  return { score: Math.max(-100, score), indication, mode, alerts, isContraindicated };
 }
 
 export function getRecommendations(data: ClinicalData): Recommendation[] {
   const modalities = ["TENS", "Ultrassom", "Laser", "Crioterapia", "Termoterapia"];
   
   const scored = modalities.map((mod) => {
-    const { score, indication, mode } = calculateScore(mod, data);
+    const { score, indication, mode, alerts, isContraindicated } = calculateScore(mod, data);
     return {
       ...modalityData[mod],
       mainIndication: indication,
       mode,
       score,
+      patientSpecificAlerts: alerts.length > 0 ? alerts : undefined,
+      isContraindicated
     };
   });
 
   // Sort by score descending
   scored.sort((a, b) => b.score - a.score);
 
-  // Filter out very low scores and adjust parameters based on clinical data
+  // Filter out very low scores (unless contraindicated, we keep it to show the red warning)
   const filtered = scored
-    .filter((s) => s.score > 0)
+    .filter((s) => s.score > 0 || s.isContraindicated)
     .map((rec) => {
       const adjusted = { ...rec };
       
@@ -522,6 +563,18 @@ export function getRecommendations(data: ClinicalData): Recommendation[] {
             { name: "Potência", value: "50 a 100 mW" },
             { name: "Técnica", value: "Pontual ou varredura" },
           ];
+        }
+      }
+      
+      // Adjust parameters based on total sessions (if chronic/many sessions)
+      if (data.patientContext?.totalSessions && data.patientContext.totalSessions > 10) {
+        if (rec.name === "Laser" && data.phase === "Crônica") {
+          adjusted.parameters.find(p => p.name === "Dose")!.value = "6 a 10 J/ponto (estágio crônico avançado)";
+          adjusted.patientSpecificAlerts = [...(adjusted.patientSpecificAlerts || []), "💡 Dose de laser aumentada considerando número elevado de sessões sem resolução total."];
+        }
+        if (rec.name === "Ultrassom" && data.phase === "Crônica") {
+          adjusted.parameters.find(p => p.name === "Intensidade")!.value = "1.5 a 2.0 W/cm²";
+          adjusted.patientSpecificAlerts = [...(adjusted.patientSpecificAlerts || []), "💡 Intensidade de US ajustada para estágio crônico avançado."];
         }
       }
 
