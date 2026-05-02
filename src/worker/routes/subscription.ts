@@ -2,7 +2,7 @@
 import { Hono } from "hono";
 import Stripe from "stripe";
 import { Resend } from "resend";
-import { authMiddleware, getOwnerAdminEmail, envAsRecord } from "../lib/helpers";
+import { authMiddleware, getOwnerAdminEmail, isOwnerAdminEmail, envAsRecord } from "../lib/helpers";
 
 export const subscriptionRouter = new Hono<{ Bindings: Env }>();
 
@@ -117,8 +117,7 @@ subscriptionRouter.get("/subscription", authMiddleware, async (c) => {
   const now = new Date().toISOString();
 
   const normalizedUserEmail = String(user?.email || "").trim().toLowerCase();
-  const normalizedAdminEmail = getOwnerAdminEmail(envAsRecord(c.env)).trim().toLowerCase();
-  const isOwnerEmail = normalizedUserEmail === normalizedAdminEmail;
+  const isOwnerEmail = isOwnerAdminEmail(normalizedUserEmail, envAsRecord(c.env));
 
   if (!subscription) {
     if (isOwnerEmail) {

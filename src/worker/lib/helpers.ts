@@ -46,16 +46,28 @@ export function envAsStringRecord(env: Env): Record<string, string | undefined> 
   return env as unknown as Record<string, string | undefined>;
 }
 
-export const OWNER_ADMIN_EMAIL = "pabloandradeoficial@gmail.com";
+export const OWNER_ADMIN_EMAILS = [
+  "pabloandradeoficial@gmail.com",
+  "rehabroadoficial@gmail.com",
+  "pablo.andrade@professor.unis.edu.br",
+  "centrofisioconsultorio@gmail.com"
+];
 
 export function getOwnerAdminEmail(env?: Record<string, unknown>): string {
   const fromEnv = getEnvString(env, "ADMIN_EMAIL");
-  return fromEnv ?? OWNER_ADMIN_EMAIL;
+  return fromEnv ?? OWNER_ADMIN_EMAILS[0];
 }
 
 export function isOwnerAdminEmail(email: string | null | undefined, env?: Record<string, unknown>): boolean {
-  const adminEmail = getOwnerAdminEmail(env).trim().toLowerCase();
-  return typeof email === "string" && email.trim().toLowerCase() === adminEmail;
+  if (typeof email !== "string") return false;
+  const normalizedUserEmail = email.trim().toLowerCase();
+  
+  const fromEnv = getEnvString(env, "ADMIN_EMAIL");
+  if (fromEnv && normalizedUserEmail === fromEnv.trim().toLowerCase()) {
+    return true;
+  }
+  
+  return OWNER_ADMIN_EMAILS.includes(normalizedUserEmail);
 }
 
 export function extractTokenFromCookieValue(cookieValue: string): string | null {
