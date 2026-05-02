@@ -1,8 +1,20 @@
 import type { Hono } from "hono";
 import { authMiddleware, splitDelimitedText } from "../../lib/helpers";
+import {
+  computeTrend,
+  computeSeverity,
+  computePhase,
+  type ClinicalPhase,
+  type PainTrend,
+  type SeverityAssessment,
+} from "../../lib/clinical-engine";
 
 // ============================================
 // SUPORTE (SUPPORT) API - Read Only
+//
+// Generates clinical insights, next steps, and diagnostic hypotheses.
+// Trend, severity, and phase calculations are delegated to clinical-engine.ts
+// (single source of truth across the app).
 // ============================================
 
 // Types for structured clinical support
@@ -20,14 +32,17 @@ interface DiagnosticHypothesis {
   reasoning: string[];
   differentials: string[];
   suggestedTests: string[];
+  evidenceNote?: string; // short citation/standard, e.g. "Neer 1972; Hawkins 1980"
 }
 
 interface StructuredSuporte {
   painStatus: {
     level: number | null;
-    severity: "none" | "low" | "moderate" | "high";
-    trend: "improving" | "stable" | "worsening" | null;
+    severity: SeverityAssessment["level"];
+    urgency: SeverityAssessment["urgency"];
+    trend: PainTrend["direction"];
     changePercent: number | null;
+    phase: ClinicalPhase["label"];
   };
   insights: ClinicalInsight[];
   nextSteps: string[];
@@ -60,40 +75,24 @@ interface CaminhoRow {
   functional_limitations?: string | null;
 }
 
-function generateStructuredSuporte(evaluation: EvaluationRow | null, caminho: CaminhoRow | null, evolution: EvolutionRow | null): StructuredSuporte {
+function generateStructuredSuporte(
+  evaluation: EvaluationRow | null,
+  caminho: CaminhoRow | null,
+  evolution: EvolutionRow | null,
+  allEvolutions: EvolutionRow[],
+): StructuredSuporte {
   const insights: ClinicalInsight[] = [];
   const nextSteps: string[] = [];
 
-  const painLevel = evolution?.pain_level ?? evaluation?.pain_level;
-  const initialPain = evaluation?.pain_level;
-  const currentPain = evolution?.pain_level;
   const painLocation = evaluation?.pain_location || "";
   const chiefComplaint = evaluation?.chief_complaint || "";
 
-  let severity: "none" | "low" | "moderate" | "high" = "none";
-  let trend: "improving" | "stable" | "worsening" | null = null;
-  let changePercent: number | null = null;
-
-  if (painLevel !== null && painLevel !== undefined) {
-    if (painLevel >= 7) severity = "high";
-    else if (painLevel >= 4) severity = "moderate";
-    else if (painLevel >= 1) severity = "low";
-    else severity = "none";
-
-    if (initialPain != null && currentPain != null) {
-      const diff = initialPain - currentPain;
-      if (diff > 0) {
-        trend = "improving";
-        changePercent = initialPain > 0 ? Math.round((diff / initialPain) * 100) : 0;
-      } else if (diff < 0) {
-        trend = "worsening";
-        changePercent = initialPain > 0 ? Math.round((Math.abs(diff) / initialPain) * 100) : 0;
-      } else {
-        trend = "stable";
-        changePercent = 0;
-      }
-    }
-  }
+  // Engine-computed (single source of truth — same numbers used by alertas
+  // and clinical-context endpoints).
+  const phase = computePhase(evaluation, allEvolutions);
+  const trend = computeTrend(evaluation, allEvolutions);
+  const currentPain = evolution?.pain_level ?? trend.current ?? evaluation?.pain_level ?? null;
+  const severity = computeSeverity(currentPain, trend, phase, evaluation?.functional_status);
 
   if (!evaluation) {
     insights.push({
@@ -104,47 +103,60 @@ function generateStructuredSuporte(evaluation: EvaluationRow | null, caminho: Ca
       actions: ["Registrar queixa principal", "Documentar EVA inicial", "Exame físico"]
     });
   } else {
-    if (severity === "high") {
+    // Phase-aware analgesia. Acute = gate-control TENS (100Hz). Chronic =
+    // endorphinic TENS (2-10Hz). Sluka KA, Walsh D. J Pain 2003;4(3):109-21.
+    if (severity.level === "high") {
+      const tensFreq = phase.isAcute ? "TENS 80-150Hz (convencional)" : "TENS 2-10Hz (acupuntura-like)";
+      const thermal = phase.isAcute ? "Crioterapia 15-20min" : "Termoterapia superficial 15-20min";
       insights.push({
         category: "pain",
         priority: "high",
-        title: "Dor Intensa",
-        description: "Priorizar analgesia antes de exercícios intensos.",
-        actions: ["TENS 100-150Hz", "Crioterapia 15-20min", "Mobilização neural suave"]
+        title: `Dor Intensa (fase ${phase.label})`,
+        description: phase.isAcute
+          ? "Fase aguda com dor elevada — priorizar analgesia passiva e minimizar carga."
+          : "Dor intensa em fase prolongada — combinar analgesia com componente educacional e progressão gradual.",
+        actions: [tensFreq, thermal, "Repouso relativo guiado", "Reavaliar em 48-72h"],
       });
-    } else if (severity === "moderate") {
+    } else if (severity.level === "moderate") {
       insights.push({
         category: "pain",
         priority: "medium",
-        title: "Dor Moderada",
-        description: "Fase adequada para combinar analgesia com cinesioterapia.",
-        actions: ["Terapia manual graus I-II", "Alongamentos suaves", "Isometria progressiva"]
+        title: `Dor Moderada (fase ${phase.label})`,
+        description: phase.isAcute
+          ? "Fase de irritabilidade — graus baixos de mobilização + analgesia."
+          : "Janela ideal para cinesioterapia ativa com analgesia complementar.",
+        actions: phase.isAcute
+          ? ["Mobilização Maitland I-II", "TENS convencional", "Isometria submáxima"]
+          : ["Mobilização Maitland III-IV", "Isotônico progressivo", "Educação em dor"],
       });
-    } else if (severity === "low") {
+    } else if (severity.level === "low") {
       insights.push({
         category: "pain",
         priority: "low",
         title: "Dor Leve",
-        description: "Momento ideal para progressão funcional.",
-        actions: ["Fortalecimento isotônico", "Propriocepção", "Retorno às atividades"]
+        description: "Momento ideal para progressão funcional e retomada de atividades.",
+        actions: ["Fortalecimento isotônico", "Propriocepção/equilíbrio", "Retorno gradual ao esporte/AVDs"],
       });
     }
 
-    if (trend === "improving" && changePercent) {
+    // Trend insights — derived from the same engine, no contradictions.
+    if (trend.direction === "improving" && trend.changePercent != null) {
       insights.push({
         category: "progression",
         priority: "low",
         title: "Evolução Positiva",
-        description: `Redução de ${changePercent}% na dor. Manter abordagem atual.`,
-        actions: ["Progressão gradual de cargas", "Documentar técnicas eficazes"]
+        description: `Redução de ${trend.changePercent}% na dor (${trend.initial}/10 → ${trend.current}/10). Manter abordagem.`,
+        actions: ["Progressão gradual de cargas", "Documentar técnicas eficazes"],
       });
-    } else if (trend === "worsening") {
+    } else if (trend.direction === "worsening") {
       insights.push({
         category: "progression",
         priority: "high",
         title: "Atenção: Piora",
-        description: "Paciente com aumento da dor. Reavaliar conduta.",
-        actions: ["Verificar sobrecarga", "Considerar nova avaliação", "Ajustar plano"]
+        description: trend.changePercent != null
+          ? `Aumento de ${Math.abs(trend.changePercent)}% na dor (${trend.initial}/10 → ${trend.current}/10). Reavaliar conduta.`
+          : "Paciente com tendência de piora. Reavaliar conduta.",
+        actions: ["Verificar sobrecarga", "Considerar nova avaliação", "Ajustar plano"],
       });
     }
 
@@ -226,324 +238,362 @@ function generateStructuredSuporte(evaluation: EvaluationRow | null, caminho: Ca
   const diagnosticHypotheses = generateDiagnosticHypotheses(evaluation, caminho);
 
   return {
-    painStatus: { level: painLevel ?? null, severity, trend, changePercent },
+    painStatus: {
+      level: currentPain,
+      severity: severity.level,
+      urgency: severity.urgency,
+      trend: trend.direction,
+      changePercent: trend.changePercent,
+      phase: phase.label,
+    },
     insights,
     nextSteps,
-    diagnosticHypotheses
+    diagnosticHypotheses,
   };
 }
 
-function generateDiagnosticHypotheses(evaluation: EvaluationRow | null, caminho: CaminhoRow | null): DiagnosticHypothesis[] {
+// ============================================
+// DIAGNOSTIC HYPOTHESES — declarative rule engine
+//
+// Replaces the previous substring-matching system. Improvements:
+//   1. Negation handling — "não tem irradiação" no longer triggers the
+//      irradiation-positive feature.
+//   2. Confidence is grounded — ratio of features matched out of features
+//      defined for the rule, not "1 match = média / 2 = alta".
+//   3. Each rule carries a short evidenceNote with the seminal reference,
+//      so users can verify the reasoning standard.
+//   4. New rules added: Síndrome Femoropatelar, Tendinopatia Patelar,
+//      Bursite Trocantérica, Cervicalgia Tensional. Previous version
+//      returned ZERO hypotheses for "dor no joelho ao subir escadas",
+//      which is the most common knee complaint in PT clinics.
+// ============================================
+
+interface FeatureMatch {
+  pattern: RegExp;
+  label: string;
+}
+
+interface DxRule {
+  condition: string;
+  region: RegExp;
+  features: FeatureMatch[];
+  excludeIf?: RegExp[];
+  differentials: string[];
+  suggestedTests: string[];
+  evidenceNote?: string;
+  minFeatures?: number;
+}
+
+const NEGATION_TOKENS = /\b(n[aã]o|sem|nunca|nego|negou|nega|nenhuma?|no|without|never)\b/iu;
+
+function isNegated(text: string, matchIndex: number): boolean {
+  const windowStart = Math.max(0, matchIndex - 60);
+  const windowText = text.slice(windowStart, matchIndex);
+  return NEGATION_TOKENS.test(windowText);
+}
+
+function hasFeatureMatch(text: string, pattern: RegExp): boolean {
+  if (!text) return false;
+  const flags = pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g";
+  const re = new RegExp(pattern.source, flags);
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (!isNegated(text, m.index)) return true;
+  }
+  return false;
+}
+
+function confidenceFromRatio(ratio: number): "alta" | "média" | "baixa" {
+  if (ratio >= 0.6) return "alta";
+  if (ratio >= 0.3) return "média";
+  return "baixa";
+}
+
+const DX_RULES: DxRule[] = [
+  // ─── SHOULDER ──────────────────────────────────────────────────────────────
+  {
+    condition: "Síndrome do Impacto do Ombro",
+    region: /ombro|shoulder|delt[oó]ide/i,
+    features: [
+      { pattern: /eleva[cç][aã]o|acima|levantar|erguer|alto|pentear|vestir|alcan[cç]ar/i, label: "Dor ao elevar o braço acima de 90°" },
+      { pattern: /movimento|mexer|mover/i, label: "Dor relacionada ao movimento" },
+      { pattern: /arco doloroso|abdu[cç][aã]o|abrir o bra[cç]o|lateral/i, label: "Arco doloroso na abdução" },
+    ],
+    differentials: ["Tendinopatia do Manguito Rotador", "Bursite Subacromial", "Capsulite Adesiva"],
+    suggestedTests: ["Teste de Neer", "Teste de Hawkins-Kennedy", "Teste de Jobe"],
+    evidenceNote: "Neer 1972; Hawkins & Kennedy 1980",
+  },
+  {
+    condition: "Capsulite Adesiva (Ombro Congelado)",
+    region: /ombro|shoulder|delt[oó]ide/i,
+    features: [
+      { pattern: /rota[cç][aã]o|rigidez|duro|preso|limitado|n[aã]o consegue/i, label: "Limitação ativa+passiva (rotação externa)" },
+      { pattern: /congelado|r[ií]gido|travado|preso|n[aã]o mexe|trancado/i, label: "Relato de ombro congelado/travado" },
+      { pattern: /noturna|repouso|dormir|noite|deitar/i, label: "Dor noturna significativa" },
+    ],
+    differentials: ["Artrose Glenoumeral", "Lesão SLAP", "Síndrome do Impacto"],
+    suggestedTests: ["ADM passiva (perda de RE >50%)", "Rotação Externa Passiva", "Teste de Apley"],
+    evidenceNote: "Codman 1934; Hand et al. JSES 2008",
+  },
+
+  // ─── LUMBAR ────────────────────────────────────────────────────────────────
+  {
+    condition: "Hérnia Discal Lombar / Síndrome Radicular",
+    region: /lombar|lumbar|coluna|costas|dorso/i,
+    features: [
+      { pattern: /sentar|flex[aã]o|dobrar|inclinar|frente/i, label: "Piora com flexão/sentado" },
+      { pattern: /irradia[cç][aã]o|irradia|descendo|perna|ci[aá]tic|formigamento/i, label: "Dor com irradiação para MMII" },
+    ],
+    differentials: ["Estenose de Canal", "Lombalgia Mecânica", "Síndrome Piriforme"],
+    suggestedTests: ["Teste de Lasègue", "Teste SLUMP", "Sinal de Bragard"],
+    evidenceNote: "Lasègue 1864; Devillé et al. Spine 2000",
+  },
+  {
+    condition: "Lombalgia Mecânica Inespecífica",
+    region: /lombar|lumbar|coluna|costas|dorso/i,
+    excludeIf: [/irradia[cç][aã]o|formigamento|ci[aá]tic|descendo|perna/i],
+    features: [
+      { pattern: /movimento|carregar|levantar|trabalho|atividade/i, label: "Piora com atividades funcionais" },
+      { pattern: /repouso|deitar|descanso/i, label: "Alívio com repouso" },
+    ],
+    differentials: ["Hérnia Discal", "Estenose", "Síndrome Facetária"],
+    suggestedTests: ["Avaliação Postural", "Teste de Flexão Lombar", "Palpação Paravertebral"],
+    evidenceNote: "Maher et al. Lancet 2017 (~85% lombalgia é inespecífica)",
+  },
+
+  // ─── KNEE ──────────────────────────────────────────────────────────────────
+  {
+    condition: "Lesão do Ligamento Cruzado Anterior",
+    region: /joelho|knee/i,
+    features: [
+      { pattern: /instabilidade|falha|cede|travamento|tor[cç][aã]o|torceu/i, label: "Episódio de torção / instabilidade" },
+      { pattern: /pivotar|mudar dire[cç][aã]o|correr|saltar|descer escada/i, label: "Instabilidade em pivô/saltos" },
+      { pattern: /estalo|crack|pop/i, label: "Estalo audível no momento da lesão" },
+    ],
+    differentials: ["Lesão Meniscal", "Lesão LCM", "Luxação Patelar"],
+    suggestedTests: ["Teste de Lachman (mais sensível)", "Gaveta Anterior", "Pivot Shift"],
+    evidenceNote: "Benjaminse et al. JOSPT 2006 (Lachman SE 0.85)",
+  },
+  {
+    condition: "Lesão Meniscal",
+    region: /joelho|knee/i,
+    features: [
+      { pattern: /estalo|estalos|travamento|derrame|incha[cç]o|linha do joelho/i, label: "Sintomas mecânicos típicos" },
+      { pattern: /agachar|torcer|rota[cç][aã]o/i, label: "Piora com agachamento/rotação" },
+    ],
+    differentials: ["LCA", "Síndrome Femoropatelar", "Síndrome de Plica"],
+    suggestedTests: ["Teste de McMurray", "Teste de Apley", "Thessaly Test"],
+    evidenceNote: "Hegedus et al. JOSPT 2007",
+  },
+  {
+    // NEW — was missing entirely. Most common knee complaint in PT clinics.
+    condition: "Síndrome da Dor Femoropatelar",
+    region: /joelho|knee|patela|patel[aá]|anterior do joelho/i,
+    excludeIf: [/instabilidade aguda|estalo de torção|tor[cç][aã]o recente/i],
+    features: [
+      { pattern: /escad|degrau|subir|descer/i, label: "Dor ao subir/descer escadas" },
+      { pattern: /agachar|sentar prolongado|cinema|carro/i, label: "Dor ao agachar ou após sentar prolongado" },
+      { pattern: /anterior|frente|atr[aá]s da patela|atr[aá]s da r[oó]tula/i, label: "Dor anterior do joelho" },
+      { pattern: /correr|corrida/i, label: "Dor durante/após corrida" },
+    ],
+    minFeatures: 2,
+    differentials: ["Tendinopatia Patelar", "Lesão Meniscal", "Condromalácia"],
+    suggestedTests: ["Sinal de Clarke (compressão patelar)", "Single-leg squat", "Step-down test"],
+    evidenceNote: "Crossley et al. BJSM 2016 (Patellofemoral Pain Consensus)",
+  },
+  {
+    // NEW — common in jumping athletes
+    condition: "Tendinopatia Patelar (Jumper's Knee)",
+    region: /joelho|knee|patela|tend[aã]o patelar/i,
+    features: [
+      { pattern: /salt|aterrissagem|p[ií]os|jump/i, label: "Dor associada a saltos/aterrissagem" },
+      { pattern: /polo inferior|abaixo da patela/i, label: "Dor no polo inferior da patela" },
+      { pattern: /matinal|in[ií]cio.*atividade|aquece/i, label: "Dor matinal que melhora com aquecimento" },
+    ],
+    differentials: ["Síndrome Femoropatelar", "Bursite Pré-patelar", "Doença de Osgood-Schlatter"],
+    suggestedTests: ["Palpação polo inferior", "Single-leg decline squat", "VISA-P score"],
+    evidenceNote: "Cook & Purdam BJSM 2009 (continuum model)",
+  },
+
+  // ─── CERVICAL ──────────────────────────────────────────────────────────────
+  {
+    condition: "Síndrome Radicular Cervical",
+    region: /cervical|pesco[cç]o|neck|nuca|occipital/i,
+    features: [
+      { pattern: /irradia[cç][aã]o|bra[cç]o|formigamento|m[aã]o|dorm[eê]ncia/i, label: "Irradiação para membros superiores" },
+      { pattern: /piora.*rota[cç][aã]o|olhar para tr[aá]s/i, label: "Piora à rotação cervical" },
+    ],
+    differentials: ["Hérnia Cervical", "Estenose Cervical", "Síndrome do Desfiladeiro"],
+    suggestedTests: ["Teste de Spurling", "Distração Cervical", "Teste de Adson"],
+    evidenceNote: "Wainner et al. Spine 2003 (CPR for cervical radiculopathy)",
+  },
+  {
+    // NEW — most common cervical complaint, was missing
+    condition: "Cervicalgia Tensional / Mecânica",
+    region: /cervical|pesco[cç]o|neck|nuca|occipital|trap[eé]zio/i,
+    excludeIf: [/irradia[cç][aã]o|formigamento|dorm[eê]ncia.*bra[cç]o|m[aã]o/i],
+    features: [
+      { pattern: /tens[aã]o|n[oó]|endurecid|contrai|estresse/i, label: "Tensão/contratura muscular" },
+      { pattern: /trabalho|computador|postur|cabe[cç]a baixa|celular/i, label: "Padrão postural sustentado" },
+      { pattern: /cefaleia|dor de cabe[cç]a/i, label: "Cefaleia tensional associada" },
+    ],
+    differentials: ["Síndrome Radicular Cervical", "Cefaleia Cervicogênica", "Disfunção ATM"],
+    suggestedTests: ["Palpação suboccipital + trapézio superior", "ADM Cervical", "Teste de Jackson"],
+    evidenceNote: "Blanpied et al. JOSPT 2017 (Neck Pain CPG)",
+  },
+
+  // ─── HIP ───────────────────────────────────────────────────────────────────
+  {
+    // NEW — was a single fallback rule for "any hip pain". Now specific.
+    condition: "Bursite Trocantérica / Síndrome da Dor Glútea Lateral",
+    region: /quadril|hip|trocant|lateral.*quadril|virilha|gl[uú]teo/i,
+    features: [
+      { pattern: /lateral|de lado|deitar.*lado/i, label: "Dor lateral, piora ao deitar do lado afetado" },
+      { pattern: /caminhar|andar|escada/i, label: "Piora ao caminhar/escadas" },
+      { pattern: /trocant[eé]r|protuber[aâ]ncia/i, label: "Sensibilidade sobre o trocânter maior" },
+    ],
+    differentials: ["Impacto Femoroacetabular", "Lesão de Glúteo Médio", "Radiculopatia L4-L5"],
+    suggestedTests: ["Palpação trocânter maior", "Single-leg stance (Trendelenburg)", "FABER"],
+    evidenceNote: "Grimaldi et al. BJSM 2017 (GTPS)",
+  },
+  {
+    condition: "Síndrome de Impacto Femoroacetabular",
+    region: /quadril|hip|virilha|inguinal/i,
+    features: [
+      { pattern: /virilha|inguinal/i, label: "Dor inguinal/anterior" },
+      { pattern: /agachar|sentar prolongado|cruzar perna/i, label: "Piora com flexão profunda" },
+      { pattern: /jovem|atleta|esport/i, label: "Atleta jovem" },
+    ],
+    differentials: ["Bursite Trocantérica", "Artrose de Quadril", "Síndrome do Piriforme"],
+    suggestedTests: ["FABER", "FADIR (anterior impingement)", "Thomas"],
+    evidenceNote: "Reiman et al. BJSM 2015 (FADIR SE 0.94)",
+  },
+
+  // ─── ELBOW / WRIST ─────────────────────────────────────────────────────────
+  {
+    condition: "Epicondilite Lateral (Cotovelo do Tenista)",
+    region: /cotovelo|elbow|epic[oô]ndilo/i,
+    features: [
+      { pattern: /lateral|extens[aã]o|extensor|t[eê]nis|raquete/i, label: "Dor lateral, padrão de tendinopatia extensora" },
+      { pattern: /pegar peso|apertar|preensão/i, label: "Piora à preensão" },
+    ],
+    differentials: ["Epicondilite Medial", "Síndrome do Túnel Radial", "Artrose"],
+    suggestedTests: ["Teste de Cozen", "Teste de Mill", "Palpação Epicôndilo Lateral"],
+    evidenceNote: "Vicenzino BJSM 2003",
+  },
+  {
+    condition: "Síndrome do Túnel do Carpo",
+    region: /punho|wrist|m[aã]o|dedos|carpo/i,
+    features: [
+      { pattern: /formigamento|dorm[eê]ncia/i, label: "Parestesias em distribuição do nervo mediano" },
+      { pattern: /noturn|noite|acorda/i, label: "Sintomas noturnos típicos" },
+      { pattern: /dedos.*polegar|indicador|m[eé]dio/i, label: "Distribuição em primeiros 3 dedos" },
+    ],
+    differentials: ["Síndrome de De Quervain", "Radiculopatia Cervical C6-C7", "Neuropatia Periférica"],
+    suggestedTests: ["Teste de Phalen", "Sinal de Tinel", "Teste de Durkan (mais sensível)"],
+    evidenceNote: "Wainner et al. Arch Phys Med Rehabil 2005",
+  },
+
+  // ─── ANKLE / FOOT ──────────────────────────────────────────────────────────
+  {
+    condition: "Entorse / Instabilidade Crônica de Tornozelo",
+    region: /tornozelo|ankle|p[eé]/i,
+    features: [
+      { pattern: /entorse|tor[cç][aã]o|instabilidade|lateral/i, label: "Histórico de entorse / sensação de instabilidade" },
+      { pattern: /falha|cede|d[oó]i ao caminhar em irregular/i, label: "Falseio em terreno irregular" },
+    ],
+    differentials: ["Lesão Peroneal", "Síndrome do Seio do Tarso", "Fratura por Estresse"],
+    suggestedTests: ["Gaveta Anterior", "Tilt Talar", "Compressão Peroneal"],
+    evidenceNote: "Hertel JAT 2002 (chronic ankle instability)",
+  },
+  {
+    condition: "Fascite Plantar",
+    region: /tornozelo|p[eé]|calc[aâ]neo|plantar/i,
+    features: [
+      { pattern: /calcanhar|plant/i, label: "Dor no calcanhar/planta" },
+      { pattern: /matinal|primeiro passo|ao acordar|in[ií]cio do dia/i, label: "Padrão típico matinal (primeiros passos)" },
+    ],
+    differentials: ["Esporão Calcâneo", "Neuroma de Morton", "Tendinopatia Aquiliana"],
+    suggestedTests: ["Palpação Tuberosidade Calcâneo", "Teste de Windlass", "Avaliação de Pisada"],
+    evidenceNote: "Riddle et al. JBJS 2003",
+  },
+
+  // ─── WIDESPREAD / CHRONIC ──────────────────────────────────────────────────
+  {
+    condition: "Dor Crônica / Sensibilização Central",
+    region: /.*/,
+    features: [
+      { pattern: /cr[oô]nic|anos|meses|constante/i, label: "Duração prolongada (>3 meses)" },
+      { pattern: /todo lugar|v[aá]rias partes|generalizada|corpo todo/i, label: "Dor difusa/generalizada" },
+      { pattern: /cansa[cç]o|fadiga|sono|dormir|insônia/i, label: "Fadiga/alteração do sono associada" },
+      { pattern: /catastr|piorar nunca|sempre vai doer/i, label: "Catastrofização presente" },
+    ],
+    minFeatures: 2,
+    differentials: ["Fibromialgia", "Síndrome Miofascial", "Condição reumática"],
+    suggestedTests: ["Avaliação Pontos-Gatilho", "PCS (Pain Catastrophizing Scale)", "TSK (Tampa Scale)"],
+    evidenceNote: "Nijs et al. Phys Ther 2014 (central sensitization in PT)",
+  },
+];
+
+function generateDiagnosticHypotheses(
+  evaluation: EvaluationRow | null,
+  caminho: CaminhoRow | null,
+): DiagnosticHypothesis[] {
   const hypotheses: DiagnosticHypothesis[] = [];
 
   if (!evaluation) return hypotheses;
 
   const painLocation = (evaluation.pain_location || "").toLowerCase();
   const chiefComplaint = (evaluation.chief_complaint || "").toLowerCase();
+  const history = (evaluation.history || "").toLowerCase();
 
-  const painPatterns = splitDelimitedText(caminho?.pain_pattern);
-  const aggravatingFactors = splitDelimitedText(caminho?.aggravating_factors);
-  const relievingFactors = splitDelimitedText(caminho?.relieving_factors);
-  const functionalLimitations = splitDelimitedText(caminho?.functional_limitations);
+  const caminhoBlob = [
+    caminho?.pain_pattern,
+    caminho?.aggravating_factors,
+    caminho?.relieving_factors,
+    caminho?.functional_limitations,
+  ].filter(Boolean).join(" | ").toLowerCase();
+  const blob = `${chiefComplaint} | ${history} | ${caminhoBlob}`;
+
+  for (const rule of DX_RULES) {
+    if (!rule.region.test(painLocation)) continue;
+    if (rule.excludeIf?.some((re) => hasFeatureMatch(blob, re))) continue;
+
+    const matched: string[] = [];
+    for (const feat of rule.features) {
+      if (hasFeatureMatch(blob, feat.pattern)) matched.push(feat.label);
+    }
+
+    const min = rule.minFeatures ?? 1;
+    if (matched.length < min) continue;
+
+    const ratio = matched.length / rule.features.length;
+    hypotheses.push({
+      condition: rule.condition,
+      confidence: confidenceFromRatio(ratio),
+      reasoning: matched,
+      differentials: rule.differentials,
+      suggestedTests: rule.suggestedTests,
+      evidenceNote: rule.evidenceNote,
+    });
+  }
+
+  // Red flags float to the top regardless of where they were detected.
   const redFlags = splitDelimitedText(caminho?.red_flags);
-
-  // ========== SHOULDER CONDITIONS ==========
-  if (painLocation.includes("ombro") || painLocation.includes("shoulder") || painLocation.includes("deltóide") || painLocation.includes("deltoide")) {
-    const impactReasons: string[] = [];
-    if (aggravatingFactors.some((f: string) =>
-      f.includes("elevação") || f.includes("acima") || f.includes("levantar") ||
-      f.includes("erguer") || f.includes("braço") || f.includes("alto") ||
-      f.includes("pentear") || f.includes("vestir") || f.includes("alcançar"))) {
-      impactReasons.push("Dor ao elevar o braço acima de 90°");
-    }
-    if (painPatterns.some((p: string) => p.includes("movimento") || p.includes("mexer") || p.includes("mover"))) {
-      impactReasons.push("Dor relacionada ao movimento");
-    }
-    if (chiefComplaint.includes("arco doloroso") || chiefComplaint.includes("abdução") ||
-        chiefComplaint.includes("abrir o braço") || chiefComplaint.includes("lateral")) {
-      impactReasons.push("Arco doloroso na abdução");
-    }
-    if (impactReasons.length >= 1) {
-      hypotheses.push({
-        condition: "Síndrome do Impacto do Ombro",
-        confidence: impactReasons.length >= 2 ? "alta" : "média",
-        reasoning: impactReasons.length > 0 ? impactReasons : ["Localização de dor compatível"],
-        differentials: ["Tendinopatia do Manguito Rotador", "Bursite Subacromial", "Capsulite Adesiva"],
-        suggestedTests: ["Teste de Neer", "Teste de Hawkins-Kennedy", "Teste de Jobe"]
-      });
-    }
-
-    const capsuliteReasons: string[] = [];
-    if (functionalLimitations.some((l: string) =>
-      l.includes("rotação") || l.includes("rigidez") || l.includes("duro") ||
-      l.includes("preso") || l.includes("limitado") || l.includes("não consegue"))) {
-      capsuliteReasons.push("Limitação de rotação externa");
-    }
-    if (chiefComplaint.includes("congelado") || chiefComplaint.includes("rígido") ||
-        chiefComplaint.includes("travado") || chiefComplaint.includes("preso") ||
-        chiefComplaint.includes("não mexe") || chiefComplaint.includes("duro") ||
-        chiefComplaint.includes("trancado")) {
-      capsuliteReasons.push("Relato de ombro congelado/travado");
-    }
-    if (painPatterns.some((p: string) =>
-      p.includes("noturna") || p.includes("repouso") || p.includes("dormir") ||
-      p.includes("noite") || p.includes("deitar"))) {
-      capsuliteReasons.push("Dor noturna significativa");
-    }
-    if (capsuliteReasons.length >= 1) {
-      hypotheses.push({
-        condition: "Capsulite Adesiva (Ombro Congelado)",
-        confidence: capsuliteReasons.length >= 2 ? "alta" : "média",
-        reasoning: capsuliteReasons,
-        differentials: ["Artrose Glenoumeral", "Lesão SLAP", "Síndrome do Impacto"],
-        suggestedTests: ["Amplitude de Movimento Passiva", "Rotação Externa Passiva", "Teste de Apley"]
-      });
-    }
-  }
-
-  // ========== LUMBAR CONDITIONS ==========
-  if (painLocation.includes("lombar") || painLocation.includes("lumbar") || painLocation.includes("coluna") ||
-      painLocation.includes("costas") || painLocation.includes("dorso")) {
-    const herniaReasons: string[] = [];
-    if (aggravatingFactors.some((f: string) =>
-      f.includes("sentar") || f.includes("flexão") || f.includes("dobrar") ||
-      f.includes("inclinar") || f.includes("frente"))) {
-      herniaReasons.push("Piora com flexão/sentado");
-    }
-    if (chiefComplaint.includes("irradiação") || chiefComplaint.includes("irradia") ||
-        chiefComplaint.includes("descendo") || chiefComplaint.includes("perna") ||
-        chiefComplaint.includes("ciático") || chiefComplaint.includes("formigamento")) {
-      herniaReasons.push("Dor com irradiação para membros inferiores");
-    }
-    if (herniaReasons.length >= 1) {
-      hypotheses.push({
-        condition: "Hérnia Discal Lombar / Síndrome Radicular",
-        confidence: herniaReasons.length >= 2 ? "alta" : "média",
-        reasoning: herniaReasons,
-        differentials: ["Estenose de Canal", "Lombalgia Mecânica", "Síndrome Piriforme"],
-        suggestedTests: ["Teste de Lasègue", "Teste SLUMP", "Sinal de Bragard"]
-      });
-    }
-
-    const lombarReasons: string[] = ["Localização lombar compatível"];
-    if (aggravatingFactors.some((f: string) =>
-      f.includes("movimento") || f.includes("carregar") || f.includes("levantar") ||
-      f.includes("trabalho") || f.includes("atividade"))) {
-      lombarReasons.push("Piora com atividades funcionais");
-    }
-    if (relievingFactors.some((f: string) =>
-      f.includes("repouso") || f.includes("deitar") || f.includes("descanso"))) {
-      lombarReasons.push("Alívio com repouso");
-    }
-    if (lombarReasons.length >= 1 && herniaReasons.length === 0) {
-      hypotheses.push({
-        condition: "Lombalgia Mecânica Inespecífica",
-        confidence: "média",
-        reasoning: lombarReasons,
-        differentials: ["Hérnia Discal", "Estenose", "Síndrome Facetária"],
-        suggestedTests: ["Avaliação Postural", "Teste de Flexão Lombar", "Palpação Paravertebral"]
-      });
-    }
-  }
-
-  // ========== KNEE CONDITIONS ==========
-  if (painLocation.includes("joelho") || painLocation.includes("knee") || painLocation.includes("patelá") ||
-      painLocation.includes("patela") || painLocation.includes("perna")) {
-    const lca_reasons: string[] = [];
-    if (chiefComplaint.includes("instabilidade") || chiefComplaint.includes("falha") ||
-        chiefComplaint.includes("cede") || chiefComplaint.includes("travamento") ||
-        chiefComplaint.includes("torção") || chiefComplaint.includes("torceu")) {
-      lca_reasons.push("Relato de instabilidade/episódio de torção");
-    }
-    if (aggravatingFactors.some((f: string) =>
-      f.includes("pivotar") || f.includes("mudar direção") || f.includes("correr") ||
-      f.includes("saltar") || f.includes("descer escada"))) {
-      lca_reasons.push("Instabilidade em atividades de pivô");
-    }
-    if (lca_reasons.length >= 1) {
-      hypotheses.push({
-        condition: "Lesão do Ligamento Cruzado Anterior",
-        confidence: lca_reasons.length >= 2 ? "alta" : "média",
-        reasoning: lca_reasons,
-        differentials: ["Lesão Meniscal", "Lesão LCM", "Luxação Patelar"],
-        suggestedTests: ["Teste de Lachman", "Teste da Gaveta Anterior", "Teste Pivot Shift"]
-      });
-    }
-
-    const meniscalReasons: string[] = [];
-    if (chiefComplaint.includes("estalos") || chiefComplaint.includes("travamento") ||
-        chiefComplaint.includes("derrame") || chiefComplaint.includes("inchaço") ||
-        chiefComplaint.includes("linha do joelho")) {
-      meniscalReasons.push("Sintomas mecânicos típicos de menisco");
-    }
-    if (aggravatingFactors.some((f: string) =>
-      f.includes("agachar") || f.includes("torcer") || f.includes("rotação"))) {
-      meniscalReasons.push("Piora com agachamento/rotação");
-    }
-    if (meniscalReasons.length >= 1) {
-      hypotheses.push({
-        condition: "Lesão Meniscal",
-        confidence: meniscalReasons.length >= 2 ? "alta" : "média",
-        reasoning: meniscalReasons,
-        differentials: ["LCA", "Artrose", "Síndrome de Plica"],
-        suggestedTests: ["Teste de McMurray", "Teste de Apley", "Thessaly Test"]
-      });
-    }
-  }
-
-  // ========== CERVICAL CONDITIONS ==========
-  if (painLocation.includes("cervical") || painLocation.includes("pescoço") || painLocation.includes("neck") ||
-      painLocation.includes("nuca") || painLocation.includes("occipital")) {
-    const cervicalReasons: string[] = ["Localização cervical"];
-    if (chiefComplaint.includes("irradiação") || chiefComplaint.includes("braço") ||
-        chiefComplaint.includes("formigamento") || chiefComplaint.includes("mão")) {
-      cervicalReasons.push("Irradiação para membros superiores");
-      hypotheses.push({
-        condition: "Síndrome Radicular Cervical",
-        confidence: "média",
-        reasoning: cervicalReasons,
-        differentials: ["Hérnia Cervical", "Estenose Cervical", "Síndrome do Desfiladeiro"],
-        suggestedTests: ["Teste de Spurling", "Distração Cervical", "Teste de Adson"]
-      });
-    } else {
-      hypotheses.push({
-        condition: "Cervicalgia Mecânica",
-        confidence: "média",
-        reasoning: cervicalReasons,
-        differentials: ["Tensão Muscular", "Artrose Cervical", "Cefaleia Cervicogênica"],
-        suggestedTests: ["ADM Cervical", "Palpação Muscular", "Teste de Jackson"]
-      });
-    }
-  }
-
-  // ========== ANKLE/FOOT CONDITIONS ==========
-  if (painLocation.includes("tornozelo") || painLocation.includes("ankle") || painLocation.includes("pé") ||
-      painLocation.includes("calcâneo") || painLocation.includes("plantar")) {
-    if (chiefComplaint.includes("entorse") || chiefComplaint.includes("torção") ||
-        chiefComplaint.includes("instabilidade") || chiefComplaint.includes("lateral")) {
-      hypotheses.push({
-        condition: "Entorse / Instabilidade Crônica de Tornozelo",
-        confidence: "média",
-        reasoning: ["Histórico de entorse", "Possível instabilidade ligamentar"],
-        differentials: ["Lesão Peroneal", "Síndrome do Seio do Tarso", "Fratura por Estresse"],
-        suggestedTests: ["Teste da Gaveta Anterior", "Tilt Talar", "Compressão Peroneal"]
-      });
-    }
-    if (chiefComplaint.includes("calcanhar") || chiefComplaint.includes("plantar") ||
-        chiefComplaint.includes("manhã") || chiefComplaint.includes("primeiro passo")) {
-      hypotheses.push({
-        condition: "Fascite Plantar",
-        confidence: "média",
-        reasoning: ["Dor no calcanhar/planta", "Padrão típico matinal"],
-        differentials: ["Esporão Calcâneo", "Neuroma de Morton", "Tendinopatia Aquiliana"],
-        suggestedTests: ["Palpação Tuberosidade Calcâneo", "Teste de Windlass", "Avaliação Pisada"]
-      });
-    }
-  }
-
-  // ========== HIP CONDITIONS ==========
-  if (painLocation.includes("quadril") || painLocation.includes("hip") || painLocation.includes("virilha") ||
-      painLocation.includes("glúteo") || painLocation.includes("gluteo")) {
-    hypotheses.push({
-      condition: "Síndrome de Impacto Femoroacetabular",
-      confidence: "média",
-      reasoning: ["Localização quadril/virilha", "Avaliar padrão de dor"],
-      differentials: ["Artrose de Quadril", "Bursite Trocantérica", "Síndrome do Piriforme"],
-      suggestedTests: ["Teste FABER", "Teste FADIR", "Teste de Thomas"]
-    });
-  }
-
-  // ========== ELBOW/WRIST CONDITIONS ==========
-  if (painLocation.includes("cotovelo") || painLocation.includes("elbow") || painLocation.includes("epicôndilo") ||
-      painLocation.includes("epicondilo")) {
-    if (chiefComplaint.includes("lateral") || chiefComplaint.includes("extensão") ||
-        chiefComplaint.includes("extensor") || chiefComplaint.includes("tênis")) {
-      hypotheses.push({
-        condition: "Epicondilite Lateral (Cotovelo do Tenista)",
-        confidence: "média",
-        reasoning: ["Dor lateral no cotovelo", "Padrão compatível com tendinopatia extensora"],
-        differentials: ["Epicondilite Medial", "Síndrome do Túnel Radial", "Artrose"],
-        suggestedTests: ["Teste de Cozen", "Teste de Mill", "Palpação Epicôndilo"]
-      });
-    }
-  }
-
-  if (painLocation.includes("punho") || painLocation.includes("wrist") || painLocation.includes("mão") ||
-      painLocation.includes("dedos") || painLocation.includes("carpo")) {
-    if (chiefComplaint.includes("formigamento") || chiefComplaint.includes("dormência") ||
-        chiefComplaint.includes("noturno") || chiefComplaint.includes("noite")) {
-      hypotheses.push({
-        condition: "Síndrome do Túnel do Carpo",
-        confidence: "média",
-        reasoning: ["Parestesias em distribuição do nervo mediano", "Sintomas noturnos típicos"],
-        differentials: ["Síndrome de De Quervain", "Radiculopatia Cervical", "Neuropatia Periférica"],
-        suggestedTests: ["Teste de Phalen", "Sinal de Tinel", "Teste de Durkan"]
-      });
-    }
-  }
-
-  // ========== CHRONIC / WIDESPREAD PAIN ==========
-  if (chiefComplaint.includes("crônic") || chiefComplaint.includes("anos") ||
-      chiefComplaint.includes("meses") || chiefComplaint.includes("constante")) {
-    const chronicReasons: string[] = ["Duração prolongada dos sintomas"];
-    if (chiefComplaint.includes("todo lugar") || chiefComplaint.includes("várias partes") ||
-        chiefComplaint.includes("generalizada") || chiefComplaint.includes("corpo todo")) {
-      chronicReasons.push("Dor difusa/generalizada");
-    }
-    if (chiefComplaint.includes("cansaço") || chiefComplaint.includes("fadiga") ||
-        chiefComplaint.includes("sono") || chiefComplaint.includes("dormir")) {
-      chronicReasons.push("Fadiga/alteração do sono associada");
-    }
-    hypotheses.push({
-      condition: "Dor Crônica / Sensibilização Central",
-      confidence: chronicReasons.length >= 2 ? "alta" : "média",
-      reasoning: chronicReasons,
-      differentials: ["Fibromialgia", "Síndrome Miofascial", "Condição reumática"],
-      suggestedTests: ["Avaliação de Pontos-Gatilho", "Questionário de Catastrofização", "Avaliação Biopsicossocial"]
-    });
-  }
-
-  // ========== MUSCLE/GENERAL PAIN ==========
-  if (chiefComplaint.includes("musculo") || chiefComplaint.includes("músculo") ||
-      chiefComplaint.includes("muscular") || chiefComplaint.includes("contratura") ||
-      chiefComplaint.includes("tensão") || chiefComplaint.includes("nó") ||
-      chiefComplaint.includes("endurecido") || chiefComplaint.includes("espasmo")) {
-    hypotheses.push({
-      condition: "Dor Muscular / Síndrome Miofascial",
-      confidence: "média",
-      reasoning: ["Sintomas compatíveis com dor muscular", "Possíveis pontos-gatilho"],
-      differentials: ["Tensão Muscular", "Pontos-Gatilho", "Contratura"],
-      suggestedTests: ["Palpação de Pontos-Gatilho", "Avaliação de Encurtamentos", "Teste de Força"]
-    });
-  }
-
-  // ========== POSTURAL CONDITIONS ==========
-  if (chiefComplaint.includes("postura") || chiefComplaint.includes("torto") ||
-      chiefComplaint.includes("curvado") || chiefComplaint.includes("escoliose") ||
-      chiefComplaint.includes("cifose") || chiefComplaint.includes("lordose") ||
-      chiefComplaint.includes("desalinhado") || chiefComplaint.includes("desnivelado")) {
-    hypotheses.push({
-      condition: "Disfunção Postural",
-      confidence: "média",
-      reasoning: ["Alteração postural relatada", "Possível desequilíbrio muscular"],
-      differentials: ["Escoliose", "Hipercifose", "Hiperlordose", "Desequilíbrio Muscular"],
-      suggestedTests: ["Avaliação Postural", "Teste de Flexibilidade", "Avaliação de Força"]
-    });
-  }
-
-  // ========== RED FLAGS ==========
   if (redFlags.length > 0 && !redFlags.includes("none")) {
-    hypotheses.push({
-      condition: "⚠️ Red Flags Identificados - Avaliação Médica Prioritária",
+    hypotheses.unshift({
+      condition: "⚠️ Red Flags Identificados — Avaliação Médica Prioritária",
       confidence: "alta",
       reasoning: ["Sinais de alerta identificados no Caminho Clínico", "Possível patologia grave subjacente"],
       differentials: ["Fratura", "Infecção", "Neoplasia", "Síndrome da Cauda Equina"],
-      suggestedTests: ["Encaminhamento médico urgente", "Exames de imagem", "Exames laboratoriais"]
+      suggestedTests: ["Encaminhamento médico urgente", "Exames de imagem", "Exames laboratoriais"],
+      evidenceNote: "Henschke et al. BMJ 2009 (red flags in low back pain)",
     });
   }
 
   return hypotheses;
 }
+
 
 export function registerSuporteRoutes(router: Hono<{ Bindings: Env }>) {
   router.get("/patients/:patientId/suporte", authMiddleware, async (c) => {
@@ -566,11 +616,15 @@ export function registerSuporteRoutes(router: Hono<{ Bindings: Env }>) {
       `SELECT * FROM caminho WHERE patient_id = ?`
     ).bind(patientId).first<CaminhoRow>();
 
-    const latestEvolution = await c.env.DB.prepare(
-      `SELECT * FROM evolutions WHERE patient_id = ? ORDER BY session_date DESC LIMIT 1`
-    ).bind(patientId).first<EvolutionRow>();
+    // All evolutions chronologically — needed by clinical-engine for trend
+    // calculations (last3-vs-first3 basis). Worth the single extra query to
+    // get the unified, consistent trend across all surfaces.
+    const { results: allEvolutions } = await c.env.DB.prepare(
+      `SELECT * FROM evolutions WHERE patient_id = ? ORDER BY session_date ASC`
+    ).bind(patientId).all<EvolutionRow>();
+    const latestEvolution = allEvolutions.length > 0 ? allEvolutions[allEvolutions.length - 1] : null;
 
-    const structured = generateStructuredSuporte(evaluation, caminho, latestEvolution);
+    const structured = generateStructuredSuporte(evaluation, caminho, latestEvolution, allEvolutions);
 
     return c.json({
       evaluation,

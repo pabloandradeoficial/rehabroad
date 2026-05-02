@@ -1,5 +1,10 @@
 import { Hono } from "hono";
 import { authMiddleware } from "../lib/helpers";
+import {
+  computeTrend,
+  computePhase,
+  computeSeverity,
+} from "../lib/clinical-engine";
 
 export const clinicalContextRouter = new Hono<{ Bindings: Env }>();
 
@@ -330,51 +335,30 @@ clinicalContextRouter.get("/clinical-context/:patient_id", authMiddleware, async
 
   const totalSessions = evolutions.length;
   const lastEvolution = totalSessions > 0 ? evolutions[totalSessions - 1] : null;
-  const firstEvolution = totalSessions > 0 ? evolutions[0] : null;
 
   const painLevels = evolutions
     .filter((e: EvolutionRow) => e.pain_level !== null)
     .map((e: EvolutionRow) => e.pain_level as number);
 
-  const initialPainLevel = firstEvolution?.pain_level ?? latestEval?.pain_level ?? null;
-  const currentPainLevel = lastEvolution?.pain_level ?? latestEval?.pain_level ?? null;
-
-  // Pain trend: compare first-3 avg vs last-3 avg
-  let painTrend: "improving" | "worsening" | "stable" = "stable";
-  if (painLevels.length >= 2) {
-    const firstAvg = avg(painLevels.slice(0, 3));
-    const lastAvg = avg(painLevels.slice(-3));
-    const diff = firstAvg - lastAvg;
-    if (diff > 1.5) painTrend = "improving";
-    else if (diff < -1.5) painTrend = "worsening";
-  }
+  // Engine-computed trend, phase, severity. Same numbers used by suporte
+  // and alertas — guarantees no cross-surface contradictions.
+  const phase = computePhase(latestEval ?? null, evolutions);
+  const trend = computeTrend(latestEval ?? null, evolutions);
+  const currentPainLevel = lastEvolution?.pain_level ?? trend.current ?? null;
+  const initialPainLevel = trend.initial;
+  const painTrend = trend.direction === "unknown" ? "stable" : trend.direction;
+  const severity = computeSeverity(currentPainLevel, trend, phase, latestEval?.functional_status);
 
   // Deduplicated procedures list
   const allProcedures = evolutions.flatMap((e: EvolutionRow) => parseProcedures(e.procedures));
   const proceduresUsed = [...new Set(allProcedures)].slice(0, 20);
 
-  // Not improving: last-3 avg >= (previous-3 avg - 0.5)
-  const notImproving = (() => {
-    if (painLevels.length < 3) return false;
-    const last3 = painLevels.slice(-3);
-    const ref = painLevels.length >= 6 ? painLevels.slice(-6, -3) : painLevels.slice(0, 3);
-    return avg(last3) >= avg(ref) - 0.5;
-  })();
-
   const last3Pain = painLevels.slice(-3);
   const averagePainLast3Sessions =
     last3Pain.length > 0 ? Math.round(avg(last3Pain) * 10) / 10 : null;
 
-  // Clinical phase flags (based on days since latest evaluation/patient creation)
-  const referenceDate = latestEval?.created_at ?? patient.created_at;
-  const daysSinceEval = Math.floor(
-    (Date.now() - new Date(referenceDate).getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  const highPain = (currentPainLevel ?? 0) >= 7;
-  const isAcute = daysSinceEval <= 7;
-  const isSubacute = daysSinceEval > 7 && daysSinceEval <= 21;
-  const isChronic = daysSinceEval > 21;
+  const notImproving = trend.direction !== "improving" && totalSessions >= 3;
+  const highPain = severity.level === "high";
 
   const alerts = generateClinicalAlerts(evolutions, latestEval ?? null, hepCheckins);
 
@@ -418,12 +402,16 @@ clinicalContextRouter.get("/clinical-context/:patient_id", authMiddleware, async
       averagePainLast3Sessions,
     },
     clinicalFlags: {
-      isAcute,
-      isSubacute,
-      isChronic,
+      isAcute: phase.isAcute,
+      isSubacute: phase.isSubacute,
+      isChronic: phase.isChronic,
+      phase: phase.label,
+      daysSinceEval: phase.daysSince,
       highPain,
       notImproving,
       fewSessions: totalSessions < 3,
+      severityLevel: severity.level,
+      urgency: severity.urgency,
     },
     alerts,
   });

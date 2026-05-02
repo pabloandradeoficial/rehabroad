@@ -1,89 +1,39 @@
 import type { Hono } from "hono";
 import { authMiddleware } from "../../lib/helpers";
+import {
+  computeTrend,
+  computeSeverity,
+  computePhase,
+  computeTreatmentStatus,
+  type EvolutionPoint,
+  type InitialEvalPoint,
+} from "../../lib/clinical-engine";
 
 // ============================================
 // ALERTAS (ALERTS) API
+//
+// Status (green/yellow/red) for patient overview cards. Uses the single
+// clinical engine — same rules as Apoio Clínico's other surfaces.
 // ============================================
 
-interface InitialEval {
+interface InitialEval extends InitialEvalPoint {
   pain_level: number | null;
+  created_at?: string;
+  functional_status?: string | null;
 }
 
-interface EvolutionRow {
+interface EvolutionRow extends EvolutionPoint {
   pain_level: number | null;
   patient_response: string | null;
+  session_date?: string;
 }
 
-function calculateAlertStatus(initialEval: InitialEval | null, evolutions: EvolutionRow[]): {
-  status: "green" | "yellow" | "red";
-  color: string;
-  message: string;
-  details: string[];
-} {
-  const details: string[] = [];
-
-  if (!initialEval) {
-    return {
-      status: "yellow",
-      color: "#eab308",
-      message: "Avaliação inicial pendente",
-      details: ["Complete a avaliação inicial para acompanhar a evolução do paciente."]
-    };
-  }
-
-  if (evolutions.length === 0) {
-    return {
-      status: "yellow",
-      color: "#eab308",
-      message: "Aguardando primeira evolução",
-      details: ["Registre a primeira sessão de evolução para iniciar o monitoramento."]
-    };
-  }
-
-  const initialPain = initialEval.pain_level || 0;
-  const lastEvolution = evolutions[evolutions.length - 1];
-  const currentPain = lastEvolution.pain_level || 0;
-  const painDiff = initialPain - currentPain;
-
-  const recentEvolutions = evolutions.slice(-3);
-  let trend = "stable";
-  if (recentEvolutions.length >= 2) {
-    const painValues = recentEvolutions.map((e) => e.pain_level || 0);
-    const firstPain = painValues[0];
-    const lastPain = painValues[painValues.length - 1];
-    if (lastPain < firstPain) trend = "improving";
-    else if (lastPain > firstPain) trend = "worsening";
-  }
-
-  details.push(`Dor inicial: ${initialPain}/10`);
-  details.push(`Dor atual: ${currentPain}/10`);
-  details.push(`Sessões registradas: ${evolutions.length}`);
-
-  if (painDiff >= 3 || (currentPain <= 3 && trend === "improving")) {
-    return {
-      status: "green",
-      color: "#22c55e",
-      message: "Evolução adequada",
-      details: [...details, "Paciente apresenta melhora significativa."]
-    };
-  }
-
-  if (painDiff >= 1 || trend === "stable") {
-    return {
-      status: "yellow",
-      color: "#eab308",
-      message: "Atenção - evolução lenta",
-      details: [...details, "Considerar reavaliação do plano terapêutico."]
-    };
-  }
-
-  return {
-    status: "red",
-    color: "#ef4444",
-    message: "Alerta - estagnação ou piora",
-    details: [...details, "Recomenda-se reavaliação urgente do paciente."]
-  };
-}
+const STATUS_COLORS = {
+  green: "#22c55e",
+  yellow: "#eab308",
+  red: "#ef4444",
+  pending: "#eab308",
+} as const;
 
 export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
   router.get("/patients/:patientId/alertas", authMiddleware, async (c) => {
@@ -106,15 +56,31 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
       `SELECT * FROM evaluations WHERE patient_id = ? AND type = 'initial' ORDER BY created_at ASC LIMIT 1`
     ).bind(patientId).first<InitialEval>();
 
-    const alertStatus = calculateAlertStatus(initialEval, evolutions);
+    const phase = computePhase(initialEval ?? null, evolutions);
+    const trend = computeTrend(initialEval ?? null, evolutions);
+    const lastEvolution = evolutions.length > 0 ? evolutions[evolutions.length - 1] : null;
+    const currentPain = lastEvolution?.pain_level ?? initialEval?.pain_level ?? null;
+    const severity = computeSeverity(currentPain, trend, phase, initialEval?.functional_status);
+    const status = computeTreatmentStatus(trend, severity, evolutions.length, !!initialEval);
+
+    const details: string[] = [];
+    if (trend.initial != null) details.push(`Dor inicial: ${trend.initial}/10`);
+    if (trend.current != null) details.push(`Dor atual: ${trend.current}/10`);
+    details.push(`Sessões registradas: ${evolutions.length}`);
+    if (status.reason) details.push(status.reason);
 
     return c.json({
-      status: alertStatus.status,
-      color: alertStatus.color,
-      message: alertStatus.message,
-      details: alertStatus.details,
+      status: status.status,
+      color: STATUS_COLORS[status.status],
+      message: status.message,
+      details,
       evolutionCount: evolutions.length,
-      lastEvolution: evolutions.length > 0 ? evolutions[evolutions.length - 1] : null
+      lastEvolution,
+      // New engine outputs — surfaces are free to read these directly so we
+      // never recompute the same thing two ways again.
+      trend,
+      severity,
+      phase,
     });
   });
 
@@ -125,7 +91,8 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
       `SELECT p.*,
        (SELECT COUNT(*) FROM evolutions WHERE patient_id = p.id) as evolution_count,
        (SELECT pain_level FROM evolutions WHERE patient_id = p.id ORDER BY session_date DESC LIMIT 1) as last_pain_level,
-       (SELECT pain_level FROM evaluations WHERE patient_id = p.id AND type = 'initial' ORDER BY created_at ASC LIMIT 1) as initial_pain_level
+       (SELECT pain_level FROM evaluations WHERE patient_id = p.id AND type = 'initial' ORDER BY created_at ASC LIMIT 1) as initial_pain_level,
+       (SELECT created_at FROM evaluations WHERE patient_id = p.id AND type = 'initial' ORDER BY created_at ASC LIMIT 1) as initial_eval_created_at
        FROM patients p WHERE p.user_id = ?`
     ).bind(user!.id).all<{
       id: number;
@@ -133,36 +100,45 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
       evolution_count: number;
       last_pain_level: number | null;
       initial_pain_level: number | null;
+      initial_eval_created_at: string | null;
     }>();
 
-    type OverviewPatient = { id: number; name: string; evolution_count: number; last_pain_level: number | null; initial_pain_level: number | null };
-    const overview = patients.map((patient: OverviewPatient) => {
-      let status: "green" | "yellow" | "red" = "yellow";
-      let message = "Aguardando avaliação";
+    type OverviewPatient = {
+      id: number;
+      name: string;
+      evolution_count: number;
+      last_pain_level: number | null;
+      initial_pain_level: number | null;
+      initial_eval_created_at: string | null;
+    };
 
-      if (patient.initial_pain_level !== null && patient.last_pain_level !== null) {
-        const improvement = patient.initial_pain_level - patient.last_pain_level;
-        if (improvement >= 2) {
-          status = "green";
-          message = "Evolução adequada";
-        } else if (improvement >= 0) {
-          status = "yellow";
-          message = "Evolução lenta";
-        } else {
-          status = "red";
-          message = "Atenção - possível piora";
-        }
-      } else if (patient.evolution_count === 0) {
-        status = "yellow";
-        message = "Sem evoluções registradas";
-      }
+    // Per-patient: build minimal engine inputs from the aggregated query.
+    // We only have 2 pain points per patient (initial + last) — that's the
+    // "current-vs-initial" basis in the engine, sufficient for an overview.
+    const overview = patients.map((p: OverviewPatient) => {
+      const hasEval = p.initial_pain_level != null || !!p.initial_eval_created_at;
+      const synthEvolutions =
+        p.last_pain_level != null
+          ? [{ pain_level: p.last_pain_level } as EvolutionPoint]
+          : [];
+      const synthInitial: InitialEvalPoint | null = hasEval
+        ? {
+            pain_level: p.initial_pain_level,
+            created_at: p.initial_eval_created_at ?? undefined,
+          }
+        : null;
+      const phase = computePhase(synthInitial, synthEvolutions);
+      const trend = computeTrend(synthInitial, synthEvolutions);
+      const currentPain = p.last_pain_level ?? p.initial_pain_level ?? null;
+      const severity = computeSeverity(currentPain, trend, phase, null);
+      const status = computeTreatmentStatus(trend, severity, p.evolution_count, hasEval);
 
       return {
-        id: patient.id,
-        name: patient.name,
-        status,
-        message,
-        evolutionCount: patient.evolution_count
+        id: p.id,
+        name: p.name,
+        status: status.status,
+        message: status.message,
+        evolutionCount: p.evolution_count,
       };
     });
 
