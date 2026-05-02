@@ -73,14 +73,20 @@ function normalizePatient(data: unknown): Patient | null {
   };
 }
 
-function parsePatientsResponse(data: unknown): Patient[] {
-  const source = Array.isArray(data)
-    ? data
-    : data &&
-        typeof data === "object" &&
-        Array.isArray((data as { patients?: unknown }).patients)
-      ? (data as { patients: unknown[] }).patients
-      : [];
+export function parsePatientsResponse(data: unknown): Patient[] {
+  // The /api/patients endpoint was migrated to paginated form
+  // ({ data: [...], total, page, totalPages }) when the N+1 perf fix
+  // landed, but the parser was only checking `patients` and the array
+  // form. Caused a silent fallback to [] — patients were saved but never
+  // shown after refresh. Now we accept all three shapes.
+  let source: unknown[] = [];
+  if (Array.isArray(data)) {
+    source = data;
+  } else if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    if (Array.isArray(obj.data)) source = obj.data;
+    else if (Array.isArray(obj.patients)) source = obj.patients;
+  }
 
   return source
     .map((item) => normalizePatient(item))
