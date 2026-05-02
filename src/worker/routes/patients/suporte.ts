@@ -75,11 +75,62 @@ interface CaminhoRow {
   functional_limitations?: string | null;
 }
 
+interface HepCheckinAggregated {
+  exercise_id: number;
+  exercise_name: string;
+  checkin_count: number;
+  avg_pain: number | null;
+  max_pain: number | null;
+  last_difficulty: string | null;
+}
+
+// ─── HEP signal extraction ────────────────────────────────────────────────────
+//
+// HEP per-exercise pain is among the richest data we collect — patients
+// report pain (0-10) AFTER doing exercise X. A sustained high signal on a
+// specific exercise is far more diagnostic than aggregate session pain:
+// it pinpoints the loaded structure that hurts. Examples:
+//   - squat consistently 6+/10 with anterior knee → patellofemoral.
+//   - hop test 7+/10 with inferior pole → patellar tendinopathy.
+//   - overhead press 7+/10 with deltoid → impingement / RC.
+//
+// We surface "painful exercises" (≥3 checkins with mean pain ≥5) and
+// "well-tolerated" (≥3 checkins with mean ≤2) so the fisio can adjust
+// the plan and so the hypothesis engine can use the signal indirectly.
+
+function analyzeHepPattern(checkins: HepCheckinAggregated[]): {
+  painful: HepCheckinAggregated[];
+  welltolerated: HepCheckinAggregated[];
+} {
+  const painful = checkins.filter(
+    (c) => c.checkin_count >= 3 && c.avg_pain != null && c.avg_pain >= 5
+  );
+  const welltolerated = checkins.filter(
+    (c) => c.checkin_count >= 3 && c.avg_pain != null && c.avg_pain <= 2
+  );
+  // Sort painful by avg_pain desc — show worst offender first
+  painful.sort((a, b) => (b.avg_pain ?? 0) - (a.avg_pain ?? 0));
+  return { painful, welltolerated };
+}
+
+function calcAge(birthDate: string | null | undefined): number | null {
+  if (!birthDate) return null;
+  const birth = new Date(birthDate);
+  if (isNaN(birth.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+  return age;
+}
+
 function generateStructuredSuporte(
   evaluation: EvaluationRow | null,
   caminho: CaminhoRow | null,
   evolution: EvolutionRow | null,
   allEvolutions: EvolutionRow[],
+  patientBirthDate: string | null = null,
+  hepCheckinsAggregated: HepCheckinAggregated[] = [],
 ): StructuredSuporte {
   const insights: ClinicalInsight[] = [];
   const nextSteps: string[] = [];
@@ -92,7 +143,10 @@ function generateStructuredSuporte(
   const phase = computePhase(evaluation, allEvolutions);
   const trend = computeTrend(evaluation, allEvolutions);
   const currentPain = evolution?.pain_level ?? trend.current ?? evaluation?.pain_level ?? null;
-  const severity = computeSeverity(currentPain, trend, phase, evaluation?.functional_status);
+  const severity = computeSeverity(currentPain, trend, phase, {
+    age: calcAge(patientBirthDate),
+    functionalStatus: evaluation?.functional_status,
+  });
 
   if (!evaluation) {
     insights.push({
@@ -221,6 +275,38 @@ function generateStructuredSuporte(
         actions: ["Educação em dor", "Pacing de atividades", "Expectativas realistas"]
       });
     }
+
+    // HEP signal — per-exercise pain pattern is far more diagnostic than
+    // aggregate session pain. Surface "painful exercises" so fisio can
+    // modify the plan and (eventually) feed the hypothesis engine.
+    if (hepCheckinsAggregated.length > 0) {
+      const { painful, welltolerated } = analyzeHepPattern(hepCheckinsAggregated);
+
+      for (const ex of painful.slice(0, 3)) {
+        insights.push({
+          category: "evolution",
+          priority: "high",
+          title: `Exercício consistentemente doloroso: ${ex.exercise_name}`,
+          description: `Média de dor ${ex.avg_pain?.toFixed(1)}/10 em ${ex.checkin_count} check-ins. Considerar substituir, reduzir carga, ou investigar o movimento envolvido.`,
+          actions: [
+            "Substituir por variação isométrica",
+            "Reduzir amplitude/carga",
+            "Reavaliar estrutura sob estresse",
+          ],
+        });
+      }
+
+      if (welltolerated.length >= 2) {
+        const names = welltolerated.slice(0, 3).map((e) => e.exercise_name).join(", ");
+        insights.push({
+          category: "progression",
+          priority: "low",
+          title: "Exercícios bem tolerados",
+          description: `${names} com dor baixa consistente — candidatos a progressão de carga ou volume.`,
+          actions: ["Aumentar séries/repetições", "Adicionar resistência", "Manter na rotina"],
+        });
+      }
+    }
   }
 
   if (nextSteps.length === 0) {
@@ -235,7 +321,7 @@ function generateStructuredSuporte(
     }
   }
 
-  const diagnosticHypotheses = generateDiagnosticHypotheses(evaluation, caminho);
+  const diagnosticHypotheses = generateDiagnosticHypotheses(evaluation, caminho, allEvolutions);
 
   return {
     painStatus: {
@@ -538,6 +624,7 @@ const DX_RULES: DxRule[] = [
 function generateDiagnosticHypotheses(
   evaluation: EvaluationRow | null,
   caminho: CaminhoRow | null,
+  evolutions: EvolutionRow[] = [],
 ): DiagnosticHypothesis[] {
   const hypotheses: DiagnosticHypothesis[] = [];
 
@@ -553,7 +640,21 @@ function generateDiagnosticHypotheses(
     caminho?.relieving_factors,
     caminho?.functional_limitations,
   ].filter(Boolean).join(" | ").toLowerCase();
-  const blob = `${chiefComplaint} | ${history} | ${caminhoBlob}`;
+
+  // Scribe-generated text and free-text observations from session
+  // evolutions are clinical narrative we shouldn't ignore. The fisio
+  // documents what they saw / what the patient reported during the
+  // session — that's evidence on top of the static evaluation. Take the
+  // last 5 evolutions (recency-biased) so the engine reflects the
+  // CURRENT clinical picture, not signals from 6 months ago.
+  const recentObsBlob = evolutions
+    .slice(-5)
+    .map((e) => e.observations)
+    .filter(Boolean)
+    .join(" | ")
+    .toLowerCase();
+
+  const blob = `${chiefComplaint} | ${history} | ${caminhoBlob} | ${recentObsBlob}`;
 
   for (const rule of DX_RULES) {
     if (!rule.region.test(painLocation)) continue;
@@ -601,8 +702,8 @@ export function registerSuporteRoutes(router: Hono<{ Bindings: Env }>) {
     const patientId = c.req.param("patientId");
 
     const patient = await c.env.DB.prepare(
-      `SELECT id FROM patients WHERE id = ? AND user_id = ?`
-    ).bind(patientId, user!.id).first();
+      `SELECT id, birth_date FROM patients WHERE id = ? AND user_id = ?`
+    ).bind(patientId, user!.id).first<{ id: number; birth_date: string | null }>();
 
     if (!patient) {
       return c.json({ error: "Patient not found" }, 404);
@@ -624,7 +725,37 @@ export function registerSuporteRoutes(router: Hono<{ Bindings: Env }>) {
     ).bind(patientId).all<EvolutionRow>();
     const latestEvolution = allEvolutions.length > 0 ? allEvolutions[allEvolutions.length - 1] : null;
 
-    const structured = generateStructuredSuporte(evaluation, caminho, latestEvolution, allEvolutions);
+    // HEP per-exercise pattern (last 60 days). Aggregated server-side so
+    // the response payload stays small. Filtering to the patient's plans
+    // via a JOIN through hep_plans prevents cross-patient bleed.
+    const { results: hepCheckinsAggregated } = await c.env.DB.prepare(
+      `SELECT
+         hex.id AS exercise_id,
+         hex.exercise_name,
+         COUNT(hc.id) AS checkin_count,
+         AVG(hc.pain_level) AS avg_pain,
+         MAX(hc.pain_level) AS max_pain,
+         (SELECT difficulty FROM hep_checkins
+          WHERE exercise_id = hex.id
+          ORDER BY checked_at DESC LIMIT 1) AS last_difficulty
+       FROM hep_checkins hc
+       JOIN hep_exercises hex ON hc.exercise_id = hex.id
+       JOIN hep_plans hp ON hc.plan_id = hp.id
+       WHERE hp.patient_id = ?
+         AND hc.pain_level IS NOT NULL
+         AND hc.checked_at >= datetime('now', '-60 days')
+       GROUP BY hex.id, hex.exercise_name
+       HAVING COUNT(hc.id) >= 1`
+    ).bind(patientId).all<HepCheckinAggregated>();
+
+    const structured = generateStructuredSuporte(
+      evaluation,
+      caminho,
+      latestEvolution,
+      allEvolutions,
+      patient.birth_date,
+      hepCheckinsAggregated,
+    );
 
     return c.json({
       evaluation,

@@ -9,6 +9,17 @@ import {
   type InitialEvalPoint,
 } from "../../lib/clinical-engine";
 
+function calcAge(birthDate: string | null | undefined): number | null {
+  if (!birthDate) return null;
+  const birth = new Date(birthDate);
+  if (isNaN(birth.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+  return age;
+}
+
 // ============================================
 // ALERTAS (ALERTS) API
 //
@@ -42,7 +53,7 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
 
     const patient = await c.env.DB.prepare(
       `SELECT * FROM patients WHERE id = ? AND user_id = ?`
-    ).bind(patientId, user!.id).first();
+    ).bind(patientId, user!.id).first<{ birth_date: string | null }>();
 
     if (!patient) {
       return c.json({ error: "Patient not found" }, 404);
@@ -60,7 +71,10 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
     const trend = computeTrend(initialEval ?? null, evolutions);
     const lastEvolution = evolutions.length > 0 ? evolutions[evolutions.length - 1] : null;
     const currentPain = lastEvolution?.pain_level ?? initialEval?.pain_level ?? null;
-    const severity = computeSeverity(currentPain, trend, phase, initialEval?.functional_status);
+    const severity = computeSeverity(currentPain, trend, phase, {
+      age: calcAge(patient.birth_date),
+      functionalStatus: initialEval?.functional_status,
+    });
     const status = computeTreatmentStatus(trend, severity, evolutions.length, !!initialEval);
 
     const details: string[] = [];
@@ -88,7 +102,7 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
     const user = c.get("user");
 
     const { results: patients } = await c.env.DB.prepare(
-      `SELECT p.*,
+      `SELECT p.id, p.name, p.birth_date,
        (SELECT COUNT(*) FROM evolutions WHERE patient_id = p.id) as evolution_count,
        (SELECT pain_level FROM evolutions WHERE patient_id = p.id ORDER BY session_date DESC LIMIT 1) as last_pain_level,
        (SELECT pain_level FROM evaluations WHERE patient_id = p.id AND type = 'initial' ORDER BY created_at ASC LIMIT 1) as initial_pain_level,
@@ -97,6 +111,7 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
     ).bind(user!.id).all<{
       id: number;
       name: string;
+      birth_date: string | null;
       evolution_count: number;
       last_pain_level: number | null;
       initial_pain_level: number | null;
@@ -106,6 +121,7 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
     type OverviewPatient = {
       id: number;
       name: string;
+      birth_date: string | null;
       evolution_count: number;
       last_pain_level: number | null;
       initial_pain_level: number | null;
@@ -130,7 +146,9 @@ export function registerAlertasRoutes(router: Hono<{ Bindings: Env }>) {
       const phase = computePhase(synthInitial, synthEvolutions);
       const trend = computeTrend(synthInitial, synthEvolutions);
       const currentPain = p.last_pain_level ?? p.initial_pain_level ?? null;
-      const severity = computeSeverity(currentPain, trend, phase, null);
+      const severity = computeSeverity(currentPain, trend, phase, {
+        age: calcAge(p.birth_date),
+      });
       const status = computeTreatmentStatus(trend, severity, p.evolution_count, hasEval);
 
       return {

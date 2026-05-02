@@ -145,6 +145,39 @@ describe("computeSeverity", () => {
     expect(s.urgency).toBe("watch");
     expect(s.modifiers).toContain("limitação funcional");
   });
+
+  it("accepts the new structured context object (backwards compat with bare string)", () => {
+    const sStr = computeSeverity(2, stableTrend, chronicPhase, "limitado");
+    const sObj = computeSeverity(2, stableTrend, chronicPhase, { functionalStatus: "limitado" });
+    expect(sStr.urgency).toBe(sObj.urgency);
+    expect(sStr.modifiers).toEqual(sObj.modifiers);
+  });
+
+  it("AGE: bumps urgency for elderly (>=65) with moderate pain in acute phase", () => {
+    // Use acute phase so the second elderly rule (chronic+stable→urgent)
+    // doesn't fire — we want to test only the first bump (watch→concern).
+    const s = computeSeverity(5, stableTrend, acutePhase, { age: 72 });
+    expect(s.urgency).toBe("concern");
+    expect(s.modifiers.some((m) => m.includes("idoso"))).toBe(true);
+  });
+
+  it("AGE: ignores elderly bump when pain is low (no escalation)", () => {
+    const s = computeSeverity(2, stableTrend, chronicPhase, { age: 80 });
+    // EVA 2 → low → info; no idoso bump (only triggers for moderate+).
+    expect(s.urgency).toBe("info");
+  });
+
+  it("AGE: elderly + chronic + not improving → urgent (functional decline risk)", () => {
+    const s = computeSeverity(7, stableTrend, chronicPhase, { age: 75 });
+    expect(s.urgency).toBe("urgent");
+  });
+
+  it("AGE: young patient with same EVA does NOT get the elderly bump", () => {
+    const s = computeSeverity(5, stableTrend, chronicPhase, { age: 28 });
+    // EVA 5 → moderate → watch. Young → no bump → stays watch.
+    expect(s.urgency).toBe("watch");
+    expect(s.modifiers.some((m) => m.includes("idoso"))).toBe(false);
+  });
 });
 
 describe("computeTreatmentStatus", () => {

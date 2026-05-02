@@ -60,6 +60,7 @@ export function computePhase(
 // different contexts:
 //   - EVA 6 stable for 30 days vs EVA 6 dropping from 9 in a week.
 //   - EVA 7 with full ADLs vs EVA 7 confined to bed.
+//   - EVA 7 in a 25yo athlete vs EVA 7 in a 78yo with multiple comorbidities.
 //
 // Output `urgency` is what UIs should sort by; `level` is the raw EVA bucket
 // for compatibility with old code.
@@ -74,12 +75,26 @@ export interface SeverityAssessment {
   modifiers: string[];         // explains what shifted urgency up/down
 }
 
+export interface SeverityContext {
+  age?: number | null;         // years; null = unknown
+  functionalStatus?: string | null;
+}
+
 export function computeSeverity(
   currentPain: number | null,
   trend: PainTrend,
   phase: ClinicalPhase,
-  functionalStatus: string | null | undefined
+  ctx: SeverityContext | string | null | undefined = null,
 ): SeverityAssessment {
+  // Backwards compatibility: callers used to pass functional_status directly
+  // as the 4th arg. Detect that and migrate to the structured context.
+  const context: SeverityContext =
+    typeof ctx === "string"
+      ? { functionalStatus: ctx }
+      : ctx == null
+        ? {}
+        : ctx;
+
   const modifiers: string[] = [];
 
   // Base level from current pain
@@ -115,11 +130,38 @@ export function computeSeverity(
   }
 
   // Modifier: any pain with poor function → bump up
-  const fn = (functionalStatus ?? "").toLowerCase();
+  const fn = (context.functionalStatus ?? "").toLowerCase();
   if (fn && (fn.includes("ruim") || fn.includes("limit") || fn.includes("incapaz") || fn.includes("acam"))) {
     if (urgency === "info") urgency = "watch";
     else if (urgency === "watch") urgency = "concern";
     modifiers.push("limitação funcional");
+  }
+
+  // Modifier: elderly (>=65) with moderate+ pain → bump up. Older patients
+  // have lower physiological reserve, slower healing, higher fall risk
+  // when in pain — same EVA carries more clinical weight. CDC/IASP guidance
+  // on geriatric pain management. The modifier is conservative: only
+  // escalates when the base level is already moderate or higher.
+  if (context.age != null && context.age >= 65 && (level === "moderate" || level === "high")) {
+    if (urgency === "watch") urgency = "concern";
+    else if (urgency === "concern") urgency = "urgent";
+    modifiers.push(`idoso (${context.age}a)`);
+  }
+
+  // Modifier: elderly + chronic phase + not improving → urgent regardless
+  // of level. Prolonged uncontrolled pain in older adults is a known
+  // predictor of functional decline and disability.
+  if (
+    context.age != null &&
+    context.age >= 65 &&
+    phase.isChronic &&
+    trend.direction !== "improving" &&
+    (level === "moderate" || level === "high")
+  ) {
+    urgency = "urgent";
+    if (!modifiers.includes(`idoso (${context.age}a)`)) {
+      modifiers.push(`idoso crônico sem melhora`);
+    }
   }
 
   const label = labelFor(level);

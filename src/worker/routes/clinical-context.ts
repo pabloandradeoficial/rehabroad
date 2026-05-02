@@ -347,7 +347,10 @@ clinicalContextRouter.get("/clinical-context/:patient_id", authMiddleware, async
   const currentPainLevel = lastEvolution?.pain_level ?? trend.current ?? null;
   const initialPainLevel = trend.initial;
   const painTrend = trend.direction === "unknown" ? "stable" : trend.direction;
-  const severity = computeSeverity(currentPainLevel, trend, phase, latestEval?.functional_status);
+  const severity = computeSeverity(currentPainLevel, trend, phase, {
+    age: calcAge(patient.birth_date),
+    functionalStatus: latestEval?.functional_status,
+  });
 
   // Deduplicated procedures list
   const allProcedures = evolutions.flatMap((e: EvolutionRow) => parseProcedures(e.procedures));
