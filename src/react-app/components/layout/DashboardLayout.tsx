@@ -1,4 +1,4 @@
-import { Outlet, useLocation, NavLink } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { useState, useEffect, lazy, Suspense } from "react";
 import {
   Menu,
@@ -9,15 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Globe,
-  Lock,
-  AlertTriangle,
-  CreditCard,
-  LayoutDashboard,
-  Calendar,
-  HeartPulse,
-  Home,
   Bot,
-  Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
