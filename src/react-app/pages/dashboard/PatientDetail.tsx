@@ -199,7 +199,7 @@ export default function PatientDetailPage() {
     yellow: { bg: "bg-amber-500", text: "text-amber-500", border: "border-amber-500/40", bgLight: "bg-amber-500/10" },
     red: { bg: "bg-rose-500", text: "text-rose-500", border: "border-rose-500/40", bgLight: "bg-rose-500/10" },
   };
-  const currentStatus = alertStatus?.status || "yellow";
+  const currentStatus = (alertStatus?.status as keyof typeof statusColors) in statusColors ? (alertStatus?.status as keyof typeof statusColors) : "yellow";
   const colors = statusColors[currentStatus];
 
   return (
@@ -257,7 +257,7 @@ export default function PatientDetailPage() {
                   </div>
                   
                   <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground truncate" title={patient?.name}>{patient?.name}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground line-clamp-2" title={patient?.name}>{patient?.name}</h1>
                     <p className="text-sm text-muted-foreground mt-1">Prontuário Eletrônico</p>
                   </div>
                 </div>

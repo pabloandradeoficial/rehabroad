@@ -382,7 +382,7 @@ export default function DashboardLayout() {
             "bg-gradient-to-br from-primary to-primary/80 text-white",
             "lg:bottom-6 lg:right-6 lg:rounded-full lg:px-4 lg:py-3 lg:hover:scale-105 lg:transition-all",
             "max-lg:left-0 max-lg:right-0 max-lg:rounded-none max-lg:justify-center max-lg:py-2.5 max-lg:px-4",
-            "max-lg:bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))]"
+            "max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom,0px))]"
           )}
           title="Rehab Friend — Assistente IA"
         >

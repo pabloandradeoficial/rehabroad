@@ -681,10 +681,10 @@ function CaminhoContent() {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
                     Caminho Clínico
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2 md:truncate">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {selectedPatient?.name ?? "Estruture o raciocínio clínico do seu paciente"}
                   </p>
                 </div>
@@ -827,7 +827,7 @@ function CaminhoContent() {
         ))}
 
         {/* Bottom Save Button */}
-        <motion.div variants={itemVariants} className="sticky bottom-14 pt-4 pb-2 bg-background/95 backdrop-blur-sm -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent sm:backdrop-filter-none border-t border-border sm:border-0 mt-2 z-10">
+        <motion.div variants={itemVariants} className="sticky max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:bottom-0 pt-4 pb-2 bg-background/95 backdrop-blur-sm -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent sm:backdrop-filter-none border-t border-border sm:border-0 mt-2 z-10">
           <Button
             onClick={handleSave}
             disabled={saving}

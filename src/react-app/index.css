@@ -103,6 +103,7 @@ body[data-scroll-locked] {
     scroll-behavior: auto !important;
     overflow-x: hidden;
     max-width: 100vw;
+    overscroll-behavior-y: none; /* Prevents pull-to-refresh to feel 100% native */
   }
   
   /* Optimize images */

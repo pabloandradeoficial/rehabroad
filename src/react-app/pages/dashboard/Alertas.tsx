@@ -203,7 +203,9 @@ function AlertasContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {sortedOverview.map((alerta, index) => (
+                {sortedOverview.map((alerta, index) => {
+                  const statusInfo = statusConfig[alerta.status as keyof typeof statusConfig] || statusConfig.yellow;
+                  return (
                   <motion.div
                     key={alerta.id}
                     initial={{ opacity: 0, x: -20 }}
@@ -211,14 +213,14 @@ function AlertasContent() {
                     transition={{ delay: index * 0.05 }}
                     whileHover={{ scale: 1.01, x: 4 }}
                     onClick={() => navigate(`/dashboard/paciente/${alerta.id}`)}
-                    className={`relative p-4 rounded-2xl border ${statusConfig[alerta.status].border} bg-gradient-to-br ${statusConfig[alerta.status].cardBg} transition-all hover:shadow-lg cursor-pointer group`}
+                    className={`relative p-4 rounded-2xl border ${statusInfo.border} bg-gradient-to-br ${statusInfo.cardBg} transition-all hover:shadow-lg cursor-pointer group`}
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4 min-w-0">
                         {/* Patient Avatar with Status Ring */}
                         <div className="relative shrink-0">
                           <PatientAvatar name={alerta.name} size="md" />
-                          <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${statusConfig[alerta.status].gradient} border-2 border-card flex items-center justify-center`}>
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${statusInfo.gradient} border-2 border-card flex items-center justify-center`}>
                             {alerta.status === "green" && <TrendingUp className="w-2.5 h-2.5 text-white" />}
                             {alerta.status === "yellow" && <Minus className="w-2.5 h-2.5 text-white" />}
                             {alerta.status === "red" && <TrendingDown className="w-2.5 h-2.5 text-white" />}
@@ -227,12 +229,12 @@ function AlertasContent() {
                         
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <h3 className="font-bold text-foreground truncate">{alerta.name}</h3>
-                            <Badge variant="outline" className={`${statusConfig[alerta.status].text} border-current/30 text-xs shrink-0`}>
-                              {statusConfig[alerta.status].label}
+                            <h3 className="font-bold text-foreground line-clamp-1">{alerta.name}</h3>
+                            <Badge variant="outline" className={`${statusInfo.text} border-current/30 text-xs shrink-0`}>
+                              {statusInfo.label}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-1">{alerta.message}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-2">{alerta.message}</p>
                           <p className="text-xs text-muted-foreground/70 mt-1">
                             {alerta.evolutionCount} {alerta.evolutionCount === 1 ? "evolução" : "evoluções"}
                           </p>
@@ -243,7 +245,7 @@ function AlertasContent() {
                       <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-1 transition-all shrink-0" />
                     </div>
                   </motion.div>
-                ))}
+                )})}
 
                 {sortedOverview.length === 0 && (
                   <div className="text-center py-14">

@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { ChevronRight, Dumbbell, FileText, Heart, Lightbulb, Pencil, Plus, Sparkles, Stethoscope } from "lucide-react";
 import { Badge } from "@/react-app/components/ui/badge";
@@ -34,6 +34,7 @@ interface PatientEvaluationsTabProps {
 }
 
 export function PatientEvaluationsTab({ evaluations, loading, onNew, onEdit, suggestedExercises, getCategoryInfo }: PatientEvaluationsTabProps) {
+  const navigate = useNavigate();
   return (
     <>
       <div className="flex items-center justify-between">
@@ -182,6 +183,7 @@ export function PatientEvaluationsTab({ evaluations, loading, onNew, onEdit, sug
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.05 }}
+                  onClick={() => navigate("/dashboard/exercicios")}
                 >
                   <Card className="h-full border border-white/10 hover:border-amber-500/30 transition-all bg-gradient-to-br from-amber-500/5 to-orange-500/5 hover:shadow-lg hover:shadow-amber-500/10 group cursor-pointer">
                     <CardContent className="p-4">
