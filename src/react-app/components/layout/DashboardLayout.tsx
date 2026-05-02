@@ -376,7 +376,8 @@ export default function DashboardLayout() {
         </button>
       )}
 
-      {sharedOverlays}
+      {/* Shared overlays only when not blocked */}
+      {!shouldBlockAccess && sharedOverlays}
     </div>
   );
 }

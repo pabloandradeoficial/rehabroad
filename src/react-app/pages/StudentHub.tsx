@@ -521,7 +521,7 @@ export default function StudentHub() {
               <Globe className="w-3.5 h-3.5" />
               <span className="uppercase">{language}</span>
             </button>
-            <Badge className="bg-violet-50 text-violet-700 border-violet-200 text-[10px] px-2 py-0.5">
+            <Badge className="hidden sm:inline-flex bg-violet-50 text-violet-700 border-violet-200 text-[10px] px-2 py-0.5">
               <GraduationCap className="w-3 h-3 mr-1" />
               Estudante
             </Badge>
@@ -594,7 +594,7 @@ export default function StudentHub() {
         {!dailyChallengeCompleted && (
           <Card className="border border-gray-200 shadow-sm bg-white rounded-xl">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Flame className="w-4 h-4 text-orange-500" />
@@ -621,7 +621,7 @@ export default function StudentHub() {
         )}
 
         {!isPending && progress && !loadingProgress && (
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
               { label: "Casos", value: progress.cases_completed || 0, icon: "🧠" },
               { label: "Acertos", value: `${accuracy}%`, icon: "🎯" },
