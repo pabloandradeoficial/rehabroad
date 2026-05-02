@@ -827,7 +827,7 @@ export default function PainelPage() {
                       badge: "border-rose-200 text-rose-700 bg-rose-50",
                     },
                   };
-                  const colors = statusColors[status];
+                  const colors = statusColors[status as keyof typeof statusColors] || statusColors.yellow;
 
                   return (
                     <motion.div
