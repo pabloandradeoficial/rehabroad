@@ -38,13 +38,7 @@ import { OnboardingComplete } from "@/react-app/components/OnboardingComplete";
 
 const RehabFriendChat = lazy(() => import("@/react-app/components/RehabFriendChat"));
 
-const BOTTOM_NAV_ITEMS = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", end: true },
-  { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", end: false },
-  { to: "/dashboard/comite", icon: Users, label: "Comitê", end: false },
-  { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", end: false },
-  { to: "/dashboard/hep", icon: Home, label: "HEP", end: false },
-];
+
 
 // Pages that expired users can still access
 const ALLOWED_PAGES_FOR_EXPIRED = [
@@ -341,10 +335,7 @@ export default function DashboardLayout() {
       {/* Main Content */}
       <main
         className={cn(
-          "min-h-dvh pt-16 lg:pt-0 lg:pb-0 flex flex-col transition-all duration-300",
-          isPremium
-            ? "pb-[calc(7rem+env(safe-area-inset-bottom,0px))]"
-            : "pb-[calc(4rem+env(safe-area-inset-bottom,0px))]",
+          "min-h-dvh pt-16 lg:pt-0 lg:pb-0 flex flex-col transition-all duration-300 pb-safe",
           sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
         )}
       >
@@ -378,11 +369,10 @@ export default function DashboardLayout() {
           data-onboarding="rehab-friend-btn"
           onClick={() => setRehabFriendOpen(true)}
           className={cn(
-            "fixed z-[39] flex items-center gap-2 shadow-lg",
+            "fixed z-[39] flex items-center justify-center gap-2 shadow-xl",
             "bg-gradient-to-br from-primary to-primary/80 text-white",
-            "lg:bottom-6 lg:right-6 lg:rounded-full lg:px-4 lg:py-3 lg:hover:scale-105 lg:transition-all",
-            "max-lg:left-0 max-lg:right-0 max-lg:rounded-none max-lg:justify-center max-lg:py-2.5 max-lg:px-4",
-            "max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom,0px))]"
+            "bottom-[env(safe-area-inset-bottom,1.5rem)] right-6 rounded-full px-4 py-3 hover:scale-105 transition-all",
+            "mb-6 lg:mb-0" // Add margin on mobile to stay above gesture bar
           )}
           title="Rehab Friend — Assistente IA"
         >
@@ -392,36 +382,6 @@ export default function DashboardLayout() {
       )}
 
       {sharedOverlays}
-
-      {/* Mobile Bottom Navigation */}
-      <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-[40] bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 flex items-stretch px-2 pb-[env(safe-area-inset-bottom,0px)]"
-      >
-        {BOTTOM_NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) =>
-              cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 text-[10px] font-semibold transition-all duration-200 min-h-[64px]",
-                isActive
-                  ? "text-teal-600 dark:text-teal-400"
-                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <div className={cn("relative p-1.5 rounded-xl transition-colors duration-200", isActive && "bg-teal-50 dark:bg-teal-500/10")}>
-                  <item.icon className={cn("w-5 h-5", isActive && "text-teal-600 dark:text-teal-400")} />
-                </div>
-                <span className="leading-tight">{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
     </div>
   );
 }
