@@ -32,24 +32,27 @@ import { Button } from "@/react-app/components/ui/button";
 
 const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
 
-const navItems = [
+const menuPrincipalItems = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", premium: false, dataOnboarding: undefined },
   { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", premium: false, dataOnboarding: undefined },
-  { to: "/dashboard/comite", icon: Users, label: "Comitê Executivo", premium: false, dataOnboarding: undefined },
-  { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", premium: true, dataOnboarding: "apoio-clinico-link" },
-  { to: "/dashboard/caminho", icon: Route, label: "Caminho", premium: true, dataOnboarding: undefined },
-  { to: "/dashboard/biblioteca", icon: Library, label: "Minha Biblioteca", premium: false, dataOnboarding: undefined },
   { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", premium: false, dataOnboarding: undefined },
+  { to: "/dashboard/caminho", icon: Route, label: "Caminho", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", premium: true, dataOnboarding: "apoio-clinico-link" },
+  { to: "/dashboard/testes", icon: ClipboardCheck, label: "Testes Ortopédicos", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", premium: true, dataOnboarding: undefined },
   { to: "/dashboard/alertas", icon: Bell, label: "Indicadores", premium: true, dataOnboarding: undefined },
   { to: "/dashboard/exportacao", icon: FileText, label: "Exportação", premium: true, dataOnboarding: undefined },
-  { to: "/dashboard/testes", icon: ClipboardCheck, label: "Testes", premium: true, dataOnboarding: undefined },
 ];
 
-const specialItems = [
+const ferramentasIaItems = [
   { to: "/dashboard/neuroflux", icon: Brain, label: "NeuroFlux", color: "violet", premium: true },
-  { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", color: "teal", premium: true },
-  { to: "/dashboard/hep", icon: Home, label: "Plano Domiciliar", color: "teal", premium: true },
+  { to: "/dashboard/comite", icon: Users, label: "Comitê Executivo", color: "teal", premium: false },
+  { to: "/dashboard/biblioteca", icon: Library, label: "Minha Biblioteca", color: "teal", premium: false },
+];
+
+const complementoItems = [
   { to: "/dashboard/forum", icon: Users, label: "Comunidade", color: "teal", premium: false },
+  { to: "/dashboard/hep", icon: Home, label: "Plano Domiciliar", color: "teal", premium: true },
 ];
 
 interface SidebarProps {
@@ -171,7 +174,7 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
           </div>
         )}
         <ul className="space-y-0.5">
-          {navItems.map((item) => (
+          {menuPrincipalItems.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
@@ -211,7 +214,7 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
         )}
         {collapsed && <div className="mt-4" />}
         <ul className="space-y-1">
-          {specialItems.map((item) => (
+          {ferramentasIaItems.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
@@ -247,6 +250,44 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                     )}
                     {item.to === "/dashboard/neuroflux" && (
                       <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+
+        {!collapsed && (
+          <div className="mt-6 mb-2">
+            <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              Complemento
+            </span>
+          </div>
+        )}
+        {collapsed && <div className="mt-4" />}
+        <ul className="space-y-0.5">
+          {complementoItems.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                title={collapsed ? item.label : undefined}
+                className={({ isActive }) =>
+                  cn(
+                    "group flex items-center rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
+                    collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
+                    isActive
+                      ? "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )
+                }
+              >
+                <item.icon className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1">{item.label}</span>
+                    {item.premium && !isPremium && (
+                      <Lock className="w-3.5 h-3.5 text-slate-600" />
                     )}
                   </>
                 )}
