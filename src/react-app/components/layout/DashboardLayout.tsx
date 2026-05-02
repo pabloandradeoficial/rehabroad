@@ -9,6 +9,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Globe,
+  Lock,
+  AlertTriangle,
+  CreditCard,
   Bot,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
