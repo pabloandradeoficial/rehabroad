@@ -6,23 +6,20 @@ import {
   HeartPulse,
   Bell,
   LogOut,
-  Crown,
   Lock,
   FileText,
-  MessageSquare,
   ClipboardCheck,
   Brain,
-  Shield,
   Dumbbell,
   Calendar,
   Users,
   Sparkles,
-  ChevronRight,
   DollarSign,
-  Gift,
-  GraduationCap,
-  MapPin,
   Home,
+  MessageSquare,
+  Gift,
+  Shield,
+  GraduationCap,
   Library,
 } from "lucide-react";
 import { useSubscription } from "@/react-app/contexts/SubscriptionContext";
@@ -34,13 +31,13 @@ const OWNER_EMAIL = "pabloandradeoficial@gmail.com";
 
 const menuPrincipalItems = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Prontuário", premium: false, dataOnboarding: undefined },
-  { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", premium: false, dataOnboarding: undefined },
+  { to: "/dashboard/agenda", icon: Calendar, label: "Agenda", premium: false, dataOnboarding: undefined, badge: 3 },
   { to: "/dashboard/financeiro", icon: DollarSign, label: "Financeiro", premium: false, dataOnboarding: undefined },
   { to: "/dashboard/caminho", icon: Route, label: "Caminho", premium: true, dataOnboarding: undefined },
   { to: "/dashboard/suporte", icon: HeartPulse, label: "Apoio Clínico", premium: true, dataOnboarding: "apoio-clinico-link" },
   { to: "/dashboard/testes", icon: ClipboardCheck, label: "Testes Ortopédicos", premium: true, dataOnboarding: undefined },
   { to: "/dashboard/exercicios", icon: Dumbbell, label: "Exercícios", premium: true, dataOnboarding: undefined },
-  { to: "/dashboard/alertas", icon: Bell, label: "Indicadores", premium: true, dataOnboarding: undefined },
+  { to: "/dashboard/alertas", icon: Bell, label: "Indicadores", premium: true, dataOnboarding: undefined, badge: 1 },
   { to: "/dashboard/exportacao", icon: FileText, label: "Exportação", premium: true, dataOnboarding: undefined },
 ];
 
@@ -58,10 +55,9 @@ const complementoItems = [
 interface SidebarProps {
   className?: string;
   collapsed?: boolean;
-  onRestartTour?: () => void;
 }
 
-export default function Sidebar({ className, collapsed = false, onRestartTour }: SidebarProps) {
+export default function Sidebar({ className, collapsed = false }: SidebarProps) {
   const { user, logout } = useAppAuth();
   const { isPremium } = useSubscription();
 
@@ -91,12 +87,12 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
     <aside
       className={cn(
         "flex flex-col h-full",
-        "bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950",
-        "border-r border-white/5",
+        "bg-white dark:bg-slate-950",
+        "border-r border-slate-200 dark:border-white/5",
         className
       )}
     >
-      <div className={cn("border-b border-white/5", collapsed ? "p-3" : "p-5")}>
+      <div className={cn("border-b border-slate-100 dark:border-white/5", collapsed ? "p-3" : "p-5")}>
         <div className="flex items-center gap-3">
           <div className="relative flex-shrink-0">
             <div
@@ -111,64 +107,18 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
           </div>
           {!collapsed && (
             <div>
-              <h1 className="font-bold text-white tracking-tight text-lg">REHABROAD</h1>
-              <p className="text-[11px] text-slate-400 font-medium">Copiloto Clínico</p>
+              <h1 className="font-bold text-slate-900 dark:text-white tracking-tight text-lg">REHABROAD</h1>
+              <p className="text-[11px] text-slate-500 font-medium">Copiloto Clínico</p>
             </div>
           )}
         </div>
       </div>
 
-      <div className={cn(collapsed ? "p-2" : "p-4")}>
-        <NavLink
-          to="/dashboard/perfil"
-          data-onboarding="user-profile"
-          className={cn(
-            "flex items-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors cursor-pointer",
-            collapsed ? "p-2 justify-center" : "gap-3 p-3"
-          )}
-        >
-          {userPicture ? (
-            <img
-              src={userPicture}
-              alt={userName}
-              className={cn(
-                "rounded-xl ring-2 ring-white/10",
-                collapsed ? "w-9 h-9" : "w-10 h-10"
-              )}
-            />
-          ) : (
-            <div
-              className={cn(
-                "rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center flex-shrink-0",
-                collapsed ? "w-9 h-9" : "w-10 h-10"
-              )}
-            >
-              <span className={cn("font-bold text-white", collapsed ? "text-xs" : "text-sm")}>
-                {userInitials}
-              </span>
-            </div>
-          )}
-          {!collapsed && (
-            <>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{userName}</p>
-                <p className="text-xs text-slate-400 truncate">{userEmail}</p>
-              </div>
-              {isPremium && (
-                <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <Crown className="w-3.5 h-3.5 text-amber-400" />
-                </div>
-              )}
-            </>
-          )}
-        </NavLink>
-      </div>
-
-      <div className="relative flex-1 overflow-hidden">
-      <nav className={cn("h-full overflow-y-auto overscroll-contain scrollbar-thin", collapsed ? "px-2" : "px-3")}>
+      <div className="relative flex-1 overflow-hidden mt-4">
+      <nav className={cn("h-full overflow-y-auto overscroll-contain scrollbar-thin", collapsed ? "px-2" : "px-4")}>
         {!collapsed && (
-          <div className="mb-2">
-            <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="mb-3 px-3">
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               Menu Principal
             </span>
           </div>
@@ -183,22 +133,30 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                 {...(item.dataOnboarding ? { "data-onboarding": item.dataOnboarding } : {})}
                 className={({ isActive }) =>
                   cn(
-                    "group flex items-center rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
+                    "group relative flex items-center rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px]",
                     collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                     isActive
-                      ? "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   )
                 }
               >
-                <item.icon className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+                <item.icon className="w-5 h-5 flex-shrink-0" />
                 {!collapsed && (
                   <>
                     <span className="flex-1">{item.label}</span>
                     {item.premium && !isPremium && (
-                      <Lock className="w-3.5 h-3.5 text-slate-600" />
+                      <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    )}
+                    {item.badge && (
+                      <span className="flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full bg-slate-200 dark:bg-slate-700 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                        {item.badge}
+                      </span>
                     )}
                   </>
+                )}
+                {collapsed && item.badge && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
                 )}
               </NavLink>
             </li>
@@ -206,14 +164,14 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
         </ul>
 
         {!collapsed && (
-          <div className="mt-6 mb-2">
-            <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="mt-8 mb-3 px-3">
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               Ferramentas IA
             </span>
           </div>
         )}
-        {collapsed && <div className="mt-4" />}
-        <ul className="space-y-1">
+        {collapsed && <div className="mt-6" />}
+        <ul className="space-y-0.5">
           {ferramentasIaItems.map((item) => (
             <li key={item.to}>
               <NavLink
@@ -221,23 +179,21 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
                   cn(
-                    "group flex items-center rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
+                    "group relative flex items-center rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px]",
                     collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                     isActive
-                      ? item.color === "violet"
-                        ? "bg-gradient-to-r from-violet-500/20 to-purple-500/10 text-violet-400 border-l-2 border-violet-400"
-                        : "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   )
                 }
               >
                 <div
                   className={cn(
-                    "rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 flex-shrink-0",
+                    "rounded-lg flex items-center justify-center flex-shrink-0",
                     collapsed ? "w-6 h-6" : "w-7 h-7",
                     item.color === "violet"
-                      ? "bg-gradient-to-br from-violet-500/30 to-purple-600/30"
-                      : "bg-gradient-to-br from-teal-500/30 to-emerald-600/30"
+                      ? "bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400"
+                      : "bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400"
                   )}
                 >
                   <item.icon className={cn(collapsed ? "w-3.5 h-3.5" : "w-4 h-4")} />
@@ -246,10 +202,10 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                   <>
                     <span className="flex-1">{item.label}</span>
                     {item.premium && !isPremium && (
-                      <Lock className="w-3.5 h-3.5 text-slate-600" />
+                      <Lock className="w-3.5 h-3.5 text-slate-400" />
                     )}
                     {item.to === "/dashboard/neuroflux" && (
-                      <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                      <Sparkles className="w-4 h-4 text-violet-500" />
                     )}
                   </>
                 )}
@@ -259,13 +215,13 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
         </ul>
 
         {!collapsed && (
-          <div className="mt-6 mb-2">
-            <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="mt-8 mb-3 px-3">
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               Complemento
             </span>
           </div>
         )}
-        {collapsed && <div className="mt-4" />}
+        {collapsed && <div className="mt-6" />}
         <ul className="space-y-0.5">
           {complementoItems.map((item) => (
             <li key={item.to}>
@@ -274,20 +230,20 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
                   cn(
-                    "group flex items-center rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
+                    "group relative flex items-center rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px]",
                     collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                     isActive
-                      ? "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   )
                 }
               >
-                <item.icon className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+                <item.icon className="w-5 h-5 flex-shrink-0" />
                 {!collapsed && (
                   <>
                     <span className="flex-1">{item.label}</span>
                     {item.premium && !isPremium && (
-                      <Lock className="w-3.5 h-3.5 text-slate-600" />
+                      <Lock className="w-3.5 h-3.5 text-slate-400" />
                     )}
                   </>
                 )}
@@ -297,13 +253,13 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
         </ul>
 
         {!collapsed && (
-          <div className="mt-6 mb-2">
-            <span className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="mt-8 mb-3 px-3">
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               Suporte
             </span>
           </div>
         )}
-        {collapsed && <div className="mt-4" />}
+        {collapsed && <div className="mt-6" />}
         <ul className="space-y-0.5">
           <li>
             <NavLink
@@ -311,15 +267,15 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
               title={collapsed ? "Contato" : undefined}
               className={({ isActive }) =>
                 cn(
-                  "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                  "group relative flex items-center rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px]",
                   collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                   isActive
-                    ? "bg-gradient-to-r from-teal-500/20 to-emerald-500/10 text-teal-400 border-l-2 border-teal-400"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                    ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 )
               }
             >
-              <MessageSquare className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+              <MessageSquare className="w-5 h-5 flex-shrink-0" />
               {!collapsed && <span className="flex-1">Contato</span>}
             </NavLink>
           </li>
@@ -330,15 +286,15 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
               title={collapsed ? "Indicar Colega" : undefined}
               className={({ isActive }) =>
                 cn(
-                  "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                  "group relative flex items-center rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px]",
                   collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                   isActive
-                    ? "bg-gradient-to-r from-violet-500/20 to-purple-500/10 text-violet-400 border-l-2 border-violet-400"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                    ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 )
               }
             >
-              <Gift className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+              <Gift className="w-5 h-5 flex-shrink-0" />
               {!collapsed && <span className="flex-1">Indicar Colega</span>}
             </NavLink>
           </li>
@@ -351,15 +307,15 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                   title={collapsed ? "Admin" : undefined}
                   className={({ isActive }) =>
                     cn(
-                      "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                      "group relative flex items-center rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px]",
                       collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                       isActive
-                        ? "bg-gradient-to-r from-purple-500/20 to-violet-500/10 text-purple-400 border-l-2 border-purple-400"
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                        : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
                     )
                   }
                 >
-                  <Shield className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+                  <Shield className="w-5 h-5 flex-shrink-0" />
                   {!collapsed && <span className="flex-1">Admin</span>}
                 </NavLink>
               </li>
@@ -370,15 +326,15 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
                   title={collapsed ? "Admin Estudante" : undefined}
                   className={({ isActive }) =>
                     cn(
-                      "group flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                      "group relative flex items-center rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px]",
                       collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                       isActive
-                        ? "bg-gradient-to-r from-violet-500/20 to-purple-500/10 text-violet-400 border-l-2 border-violet-400"
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                        : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
                     )
                   }
                 >
-                  <GraduationCap className="w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-110" />
+                  <GraduationCap className="w-5 h-5 flex-shrink-0" />
                   {!collapsed && <span className="flex-1">Admin Estudante</span>}
                 </NavLink>
               </li>
@@ -386,91 +342,60 @@ export default function Sidebar({ className, collapsed = false, onRestartTour }:
           )}
         </ul>
       </nav>
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-950 to-transparent" />
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-slate-950 to-transparent" />
       </div>
 
-      <div className={cn(collapsed ? "p-2" : "p-3")}>
+      <div className={cn(collapsed ? "px-2 py-4" : "p-4")}>
         <NavLink
-          to="/dashboard/plano"
-          title={collapsed ? (isPremium ? "Plano Ativo" : "Seja Premium") : undefined}
+          to="/dashboard/perfil"
+          data-onboarding="user-profile"
+          className={cn(
+            "flex items-center rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer",
+            collapsed ? "justify-center" : "gap-3"
+          )}
         >
-          <div
-            className={cn(
-              "relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02]",
-              collapsed ? "p-2.5 flex items-center justify-center" : "p-4",
-              isPremium
-                ? "bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30"
-                : "bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30"
-            )}
-          >
-            {collapsed ? (
-              <Crown className={cn("w-5 h-5", isPremium ? "text-emerald-400" : "text-amber-400")} />
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Crown className={cn("w-5 h-5", isPremium ? "text-emerald-400" : "text-amber-400")} />
-                    <span
-                      className={cn(
-                        "font-semibold text-sm",
-                        isPremium ? "text-emerald-400" : "text-amber-400"
-                      )}
-                    >
-                      {isPremium ? "Plano Ativo" : "Seja Premium"}
-                    </span>
-                  </div>
-                  <ChevronRight
-                    className={cn("w-4 h-4", isPremium ? "text-emerald-400" : "text-amber-400")}
-                  />
-                </div>
-                <p className="text-xs text-slate-400">
-                  {isPremium
-                    ? "Você tem acesso a todas as funcionalidades"
-                    : "Desbloqueie recursos avançados por R$29/mês"}
-                </p>
-                {!isPremium && (
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full blur-2xl" />
-                )}
-              </>
-            )}
-          </div>
+          {userPicture ? (
+            <img
+              src={userPicture}
+              alt={userName}
+              className={cn(
+                "rounded-full object-cover",
+                collapsed ? "w-10 h-10" : "w-10 h-10"
+              )}
+            />
+          ) : (
+            <div
+              className={cn(
+                "rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 text-slate-600 dark:text-slate-300",
+                collapsed ? "w-10 h-10" : "w-10 h-10"
+              )}
+            >
+              <span className="font-bold text-sm">
+                {userInitials}
+              </span>
+            </div>
+          )}
+          {!collapsed && (
+            <>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{userName}</p>
+                <p className="text-[11px] text-slate-500 truncate">{userEmail}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLogout();
+                }}
+                className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 shrink-0"
+                title="Sair"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </>
+          )}
         </NavLink>
-      </div>
-
-      <div
-        className={cn("border-t border-white/5", collapsed ? "p-2" : "p-3")}
-        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
-      >
-        <div className={cn("flex items-center", collapsed ? "flex-col gap-1 justify-center" : "justify-between")}>
-          {onRestartTour && !collapsed && (
-            <button
-              onClick={onRestartTour}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-slate-500 hover:text-teal-400 hover:bg-teal-500/10 transition-colors"
-              title="Rever tour guiado"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              <span>Rever tour</span>
-            </button>
-          )}
-          {onRestartTour && collapsed && (
-            <button
-              onClick={onRestartTour}
-              className="p-2 rounded-lg text-slate-500 hover:text-teal-400 hover:bg-teal-500/10 transition-colors"
-              title="Rever tour guiado"
-            >
-              <MapPin className="w-4 h-4" />
-            </button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleLogout}
-            className="text-slate-400 hover:text-red-400 hover:bg-red-500/10"
-            title="Sair"
-          >
-            <LogOut className="w-4 h-4" />
-          </Button>
-        </div>
       </div>
     </aside>
   );
