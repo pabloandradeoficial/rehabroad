@@ -217,3 +217,9 @@ if (redirectUrl.hostname !== 'rehabroad.com.br' && !redirectUrl.hostname.endsWit
 **Arquivo:** `e2e/fluxos-criticos.spec.ts`
 **EsforÃ§o:** ~3-4h
 **Depende de:** Nada
+
+---
+
+### TODO-E10: Feedback Loop do Apoio Clínico
+**O que:** Adicionar tabela clinical_suggestion_feedback e rotas POST/GET /api/clinical-feedback, junto com botões na UI.
+**Status:** Em Andamento (Frontend e Backend route). Migration aplicada.

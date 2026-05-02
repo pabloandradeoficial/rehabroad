@@ -26,7 +26,9 @@ import {
   ChevronDown,
   User,
   Zap,
-  Download
+  Download,
+  Check,
+  X
 } from "lucide-react";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Badge } from "@/react-app/components/ui/badge";
@@ -35,6 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePatients } from "@/react-app/hooks/usePatients";
 import { useSuporte, type ClinicalInsight, type DiagnosticHypothesis } from "@/react-app/hooks/useSuporte";
 import { useClinicalContext, type ClinicalAlert } from "@/react-app/hooks/useClinicalContext";
+import { useClinicalFeedback, type FeedbackValue } from "@/react-app/hooks/useClinicalFeedback";
 import PremiumGate from "@/react-app/components/PremiumGate";
 import { MobileHeader } from "@/react-app/components/layout/MobileHeader";
 import { getSuggestedExercises, exerciseCategories } from "@/data/exercises";
@@ -117,7 +120,15 @@ function TrendBadge({ trend, changePercent }: { trend: string | null; changePerc
 }
 
 // Insight Item
-function InsightItem({ insight }: { insight: ClinicalInsight }) {
+function InsightItem({ 
+  insight, 
+  feedback, 
+  onFeedback 
+}: { 
+  insight: ClinicalInsight;
+  feedback?: FeedbackValue;
+  onFeedback?: (val: FeedbackValue) => void;
+}) {
   const config = {
     high: { icon: AlertCircle, color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" },
     medium: { icon: AlertTriangle, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
@@ -140,6 +151,28 @@ function InsightItem({ insight }: { insight: ClinicalInsight }) {
                   <ChevronRight className="w-3 h-3 text-primary" />{action}
                 </span>
               ))}
+            </div>
+          )}
+          
+          {onFeedback && (
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-black/5 dark:border-white/5">
+              <span className="text-[10px] text-muted-foreground mr-1">Este insight foi:</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`h-6 px-2 text-[10px] gap-1 ${feedback === "useful" ? "bg-emerald-500/20 text-emerald-700 border-emerald-500/30" : ""}`}
+                onClick={() => onFeedback("useful")}
+              >
+                <Check className="w-3 h-3" /> Útil
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`h-6 px-2 text-[10px] gap-1 ${feedback === "not_applicable" ? "bg-red-500/20 text-red-700 border-red-500/30" : ""}`}
+                onClick={() => onFeedback("not_applicable")}
+              >
+                <X className="w-3 h-3" /> Não se aplica
+              </Button>
             </div>
           )}
         </div>
@@ -212,7 +245,15 @@ function ClinicalAlertCard({ alert }: { alert: ClinicalAlert }) {
 }
 
 // Diagnostic Card
-function DiagnosticCard({ hypothesis }: { hypothesis: DiagnosticHypothesis }) {
+function DiagnosticCard({ 
+  hypothesis,
+  feedback,
+  onFeedback
+}: { 
+  hypothesis: DiagnosticHypothesis;
+  feedback?: FeedbackValue;
+  onFeedback?: (val: FeedbackValue) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const confidence = {
     alta: { badge: "bg-emerald-500/10 text-emerald-600", dot: "bg-emerald-500" },
@@ -278,6 +319,36 @@ function DiagnosticCard({ hypothesis }: { hypothesis: DiagnosticHypothesis }) {
               ))}
             </div>
           </div>
+          
+          {onFeedback && (
+            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/50">
+              <span className="text-xs text-muted-foreground mr-2">Avalie esta hipótese:</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`h-7 px-3 text-xs gap-1.5 ${feedback === "confirmed" ? "bg-emerald-500/20 text-emerald-700 border-emerald-500/30" : ""}`}
+                onClick={() => onFeedback("confirmed")}
+              >
+                <Check className="w-3.5 h-3.5" /> Confirmada
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`h-7 px-3 text-xs gap-1.5 ${feedback === "useful" ? "bg-blue-500/20 text-blue-700 border-blue-500/30" : ""}`}
+                onClick={() => onFeedback("useful")}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" /> Útil
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`h-7 px-3 text-xs gap-1.5 ${feedback === "not_applicable" ? "bg-red-500/20 text-red-700 border-red-500/30" : ""}`}
+                onClick={() => onFeedback("not_applicable")}
+              >
+                <X className="w-3.5 h-3.5" /> Descartada
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -311,6 +382,7 @@ function SuporteContent() {
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const { suporte, loading: suporteLoading, refetch } = useSuporte(selectedPatientId || null);
   const { context: clinicalContext } = useClinicalContext(selectedPatientId || null);
+  const { feedbacks, submitFeedback } = useClinicalFeedback(selectedPatientId ? parseInt(selectedPatientId, 10) : null);
 
   const selectedPatient = patients.find(p => p.id.toString() === selectedPatientId);
 
@@ -633,7 +705,11 @@ function SuporteContent() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <InsightItem insight={insight} />
+                  <InsightItem 
+                    insight={insight} 
+                    feedback={feedbacks[`insight:${insight.title}`]}
+                    onFeedback={(val) => submitFeedback("insight", insight.title, val)}
+                  />
                 </motion.div>
               ))}
             </div>
@@ -673,7 +749,11 @@ function SuporteContent() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
                 >
-                  <InsightItem insight={insight} />
+                  <InsightItem 
+                    insight={insight} 
+                    feedback={feedbacks[`insight:${insight.title}`]}
+                    onFeedback={(val) => submitFeedback("insight", insight.title, val)}
+                  />
                 </motion.div>
               ))}
             </div>
@@ -694,7 +774,11 @@ function SuporteContent() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <DiagnosticCard hypothesis={h} />
+                  <DiagnosticCard 
+                    hypothesis={h} 
+                    feedback={feedbacks[`hypothesis:${h.condition}`]}
+                    onFeedback={(val) => submitFeedback("hypothesis", h.condition, val)}
+                  />
                 </motion.div>
               ))}
             </div>

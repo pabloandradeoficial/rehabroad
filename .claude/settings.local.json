@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tr '\\\\\\\\n' '\\\\n')",
+      "Bash(npm run *)",
+      "Bash(npm audit *)",
+      "Bash(npx tsc *)",
+      "Bash(npm test *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npx playwright *)",
+      "Bash(ls -la .github)",
+      "Bash(head -30 wrangler.toml)",
+      "Bash(head -15 netlify.toml)",
+      "Bash(npx wrangler *)",
+      "Bash(curl -sI \"https://019c2fbd-8a66-73a6-aa9f-663d3e6c8af7.rehabroad.workers.dev/api/users/me\")",
+      "Bash(curl -sI \"https://rehabroad.com.br/api/users/me\")",
+      "Bash(grep -n \"url:.*\\\\\"/\\\\\"\\\\\\\\|url:.*'/'\\\\\\\\|page.url\" src/worker/routes/misc.ts)",
+      "Bash(curl -s -o /dev/null -w \"/sitemap.xml: %{http_code}\\\\n\" \"https://rehabroad.com.br/sitemap.xml\")",
+      "Bash(curl -s \"https://rehabroad.com.br/sitemap.xml\")",
+      "Bash(curl -s \"https://019c2fbd-8a66-73a6-aa9f-663d3e6c8af7.rehabroad.workers.dev/sitemap.xml\")",
+      "Bash(curl -s \"https://rehabroad.com.br/\")",
+      "Bash(curl -s -I \"https://rehabroad.com.br/\")",
+      "Bash(curl -s \"https://rehabroad.com.br/?_=$\\(date +%s\\)\")",
+      "Bash(sed -i '255,565d' src/worker/routes/patients/suporte.ts)",
+      "Bash(sed -n '252,260p' src/worker/routes/patients/suporte.ts)",
+      "Bash(ls src/react-app/lib/*.test.* src/react-app/hooks/*.test.*)",
+      "Bash(ls src/react-app/__tests__/)"
+    ]
+  }
+}

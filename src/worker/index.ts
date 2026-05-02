@@ -23,6 +23,7 @@ import { profileRouter } from "./routes/profile";
 import { studentCasesRouter, generateWeeklyCases } from "./routes/student-cases";
 import { studentAnamneseRouter } from "./routes/student-anamnese";
 import { comiteRouter } from "./routes/comite";
+import { clinicalFeedbackRouter } from "./routes/clinical-feedback";
 
 const app = new Hono<HonoApp>();
 
@@ -141,6 +142,9 @@ app.route("/api/neuroflux", neurofluxRouter);
 
 // Clinical Context routes: /api/clinical-context/:patient_id
 app.route("/api", clinicalContextRouter);
+
+// Clinical Feedback routes: /api/clinical-feedback
+app.route("/api", clinicalFeedbackRouter);
 
 // HEP routes: /api/hep/*
 app.route("/api/hep", hepRouter);
