@@ -91,8 +91,8 @@ export function SmartAlerts({ alerts, weeklyPriorities, stats }: SmartAlertsProp
             <div className="space-y-2">
               <AnimatePresence mode="popLayout">
                 {alerts.slice(0, 4).map((alert, index) => {
-                  const Icon = alertTypeIcons[alert.type];
-                  const styles = severityStyles[alert.severity];
+                  const Icon = alertTypeIcons[alert.type as keyof typeof alertTypeIcons] || AlertCircle;
+                  const styles = severityStyles[alert.severity as keyof typeof severityStyles] || severityStyles.info;
                   
                   return (
                     <motion.div
