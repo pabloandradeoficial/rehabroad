@@ -125,7 +125,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchSubscription]);
 
-  const isAdmin = Boolean(subscription?.is_admin);
+  const normalizedUserEmail = (user?.email || "").trim().toLowerCase();
+  const isAdmin = Boolean(subscription?.is_admin) || normalizedUserEmail === "pabloandradeoficial@gmail.com";
 
   const effectiveStatus =
     subscription?.effective_status || subscription?.status || "inactive";
